@@ -1,0 +1,7 @@
+# Never commit game files or derived data
+*.win
+*.dat
+decomp/
+dump/
+work/
+*.zip
