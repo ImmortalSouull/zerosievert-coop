@@ -55,3 +55,9 @@ Steam lobby invites. Host-authoritative raid simulation. Consider GMLoader later
 
 ## Log
 - 2026-10-03: recon, backups, UTMT CLI 0.9.2.0 installed, `info` reads data.win OK. Ready to start.
+
+## HARD RULE: Steam playtime budget
+Owner must stay refund-eligible (< 2 h Steam playtime). Agent budget: 60 min total, enforced by
+`tools/game_guard.py` (ledger in `playtime_ledger.json`, auto-kill at deadline). EVERY game launch
+goes through the guard. Never launch the exe directly. Never try to hide time from Steam.
+Steam local playtime at start (2026-10-03 01:25): no Playtime recorded (~0 min).
