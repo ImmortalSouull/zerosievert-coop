@@ -5,13 +5,15 @@ well below that. Each run is recorded in playtime_ledger.json *before* the game 
 process tree is killed at the deadline even if nobody is watching.
 
   python tools/game_guard.py status
-  python tools/game_guard.py run --max-minutes 5 --note "net skeleton test" -- "<exe>" [args...]
+  python tools/game_guard.py run --max-minutes 5 --note "net test" --launch "-coop_host" --launch "-coop_join 127.0.0.1"
+  python tools/game_guard.py stop      # end a run early (kills every game instance)
 """
 import argparse
 import datetime as dt
 import json
 import math
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -19,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER = ROOT / "playtime_ledger.json"
-CAP_MINUTES = 60          # agent budget; the rest of the 2 h is left for the owner's own playtests
+CAP_MINUTES = 80          # agent budget incl. showcase recording; rest of the 2 h is the owner's
 APP_ID = "1782120"
 STEAM_LOCALCONFIG = Path(r"C:\Program Files (x86)\Steam\userdata\976250676\config\localconfig.vdf")
 EXE_NAME = "ZERO Sievert.exe"
@@ -79,33 +81,57 @@ def cmd_status(_):
     print(f"running game pids: {running_game_pids()}")
 
 
+GAME_EXE = r"C:\Program Files (x86)\Steam\steamapps\common\ZERO Sievert\ZERO Sievert.exe"
+
+
+def kill_all_game():
+    for pid in running_game_pids():
+        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
+
+
 def cmd_run(a):
+    """Launch one game instance per --launch (args string) and police ALL game processes by name,
+    so a Steam relaunch or a second instance can never run past the deadline untracked."""
     led = load()
     used = used_minutes(led)
     left = led["cap_minutes"] - used
     if a.max_minutes > left:
         sys.exit(f"REFUSED: run needs {a.max_minutes} min, only {left} min of budget left")
-    if running_game_pids() and not a.allow_concurrent:
+    if running_game_pids():
         sys.exit(f"REFUSED: game already running {running_game_pids()}")
     start = time.time()
     session = {"start": start, "deadline": start + a.max_minutes * 60, "end": None,
                "note": a.note, "started": dt.datetime.now().isoformat(timespec="seconds")}
     led["sessions"].append(session)
     save(led)  # recorded before launch: a crash of this script still counts the time
-    cmd = a.command[1:] if a.command and a.command[0] == "--" else a.command
-    proc = subprocess.Popen(cmd, cwd=a.cwd or str(Path(cmd[0]).parent))
-    print(f"launched pid {proc.pid}, hard stop in {a.max_minutes} min", flush=True)
-    try:
-        proc.wait(timeout=a.max_minutes * 60)
-        reason = f"exited code {proc.returncode}"
-    except subprocess.TimeoutExpired:
-        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True)
-        reason = "killed at deadline"
+    for i, args in enumerate(a.launch or [""]):
+        subprocess.Popen([GAME_EXE] + shlex.split(args, posix=False), cwd=str(Path(GAME_EXE).parent))
+        print(f"launched instance {i}: {args}", flush=True)
+        if i + 1 < len(a.launch or [""]):
+            time.sleep(a.stagger)
+    seen = False
+    reason = "all instances exited"
+    while True:
+        pids = running_game_pids()
+        if pids:
+            seen = True
+        elif seen or time.time() - start > 60:
+            break
+        if time.time() >= session["deadline"]:
+            kill_all_game()
+            reason = "killed at deadline"
+            break
+        time.sleep(1)
     session["end"] = time.time()
     session["minutes"] = round((session["end"] - start) / 60, 2)
     session["result"] = reason
     save(led)
     print(f"{reason}; session {session['minutes']} min; budget used {used_minutes(led)}/{led['cap_minutes']}")
+
+
+def cmd_stop(_):
+    kill_all_game()
+    print("killed all game instances")
 
 
 def main():
@@ -115,10 +141,10 @@ def main():
     r = sub.add_parser("run")
     r.add_argument("--max-minutes", type=float, required=True)
     r.add_argument("--note", default="")
-    r.add_argument("--cwd")
-    r.add_argument("--allow-concurrent", action="store_true")
-    r.add_argument("command", nargs=argparse.REMAINDER)
+    r.add_argument("--launch", action="append", help="args for one instance; repeat for more")
+    r.add_argument("--stagger", type=float, default=4.0)
     r.set_defaults(fn=cmd_run)
+    sub.add_parser("stop").set_defaults(fn=cmd_stop)
     a = p.parse_args()
     a.fn(a)
 

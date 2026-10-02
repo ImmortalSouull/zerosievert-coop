@@ -1,0 +1,223 @@
+### findreplace gml_GlobalScript___db_init
+<<<FIND
+global.database_savedata_root = steam_initialised() ? (string(steam_get_user_account_id()) + "/") : "offline/";
+<<<REPLACE
+global.database_savedata_root = steam_initialised() ? (string(steam_get_user_account_id()) + "/") : "offline/";
+global.database_savedata_root = coop_save_root_override(global.database_savedata_root);
+<<<END
+
+### findreplace gml_GlobalScript_db_cloud_enabled
+<<<FIND
+return true && steam_initialised()
+<<<REPLACE
+return !coop_test_mode() && steam_initialised()
+<<<END
+
+### append gml_Object_obj_logo_screen_Create_0
+coop_boot();
+<<<END
+
+### findreplace gml_Object_obj_logo_screen_Step_0
+<<<FIND
+if (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) || obj_gamepad.input_released[UnknownEnum.Value_29])
+<<<REPLACE
+if (coop_test_mode() || keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) || obj_gamepad.input_released[UnknownEnum.Value_29])
+<<<END
+
+### findreplace gml_GlobalScript_go_to_map
+<<<FIND
+    db_open("raid");
+    db_write("Map", "Map id", arg0);
+<<<REPLACE
+    coop_hook_go_to_map(arg0);
+    db_open("raid");
+    db_write("Map", "Map id", arg0);
+<<<END
+
+### findreplace gml_Object_obj_map_generator_Create_0
+<<<FIND
+global.map_seed = undefined ?? irandom(4294967295);
+<<<REPLACE
+global.map_seed = coop_take_seed() ?? irandom(4294967295);
+<<<END
+
+### findreplace gml_GlobalScript_bullet_spawn_add_data
+<<<FIND
+function bullet_spawn_add_data(arg0)
+{
+<<<REPLACE
+function bullet_spawn_add_data(arg0)
+{
+    coop_on_bullet_spawned(arg0);
+<<<END
+
+### findreplace gml_GlobalScript_bullet_hit_npc
+<<<FIND
+function bullet_hit_npc(arg0, arg1)
+{
+<<<REPLACE
+function bullet_hit_npc(arg0, arg1)
+{
+    if (coop_bullet_hit_npc(arg0, arg1))
+    {
+        exit;
+    }
+<<<END
+
+### prepend gml_Object_obj_enemy_anomaly_electric_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_anomaly_fire_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_big_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_blink_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_boar_zombie_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_boar_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_crystal_violet_npp_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_crystal_violet_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_ghoul_2_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_ghoul_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_mutant_parent_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_rat_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_spider_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_enemy_wolf_brown_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_green_quest_swamp_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_guardia_ingresso_1_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_npc_human_parent_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_npc_parent_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_rat_v2_Step_0
+if (coop_npc_skip_step())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_npc_parent_Alarm_3
+if (coop_npc_skip_alarm())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_npc_parent_Alarm_5
+if (coop_npc_skip_alarm())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_npc_parent_Alarm_6
+if (coop_npc_skip_alarm())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_npc_parent_Destroy_0
+coop_npc_on_destroyed();
+<<<END
