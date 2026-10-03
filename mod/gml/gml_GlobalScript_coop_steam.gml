@@ -62,6 +62,15 @@ function coop_steam_on_async()
     {
         exit;
     }
+    // "Join game" from the friends list arrives with a connect string.
+    var _connect = ds_map_find_value(async_load, "connect");
+    if (is_string(_connect) && string_pos("+connect_lobby", _connect) > 0 && _c.role == "none")
+    {
+        var _parts = string_split(_connect, " ");
+        coop_log("join via friends list: ", _connect);
+        coop_steam_join_lobby(int64(_parts[array_length(_parts) - 1]));
+        exit;
+    }
     switch (_type)
     {
         case "lobby_created":
@@ -71,6 +80,9 @@ function coop_steam_on_async()
             if (_ok == undefined || _ok)
             {
                 steam_lobby_set_data("zs_coop", string(COOP_VERSION));
+                // Friends can also use "Join game" in the Steam friends list.
+                steam_set_rich_presence("connect", "+connect_lobby " + string(_c.lobby));
+                steam_set_rich_presence("status", "ZERO Sievert co-op");
                 steam_lobby_activate_invite_overlay();
                 coop_notify(coop_t("Lobby ready - invite your friend in the Steam overlay", "Лобби готово - пригласите друга через оверлей Steam"));
             }

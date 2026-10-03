@@ -45,6 +45,14 @@ if ($Action -eq "uninstall") {
 }
 
 $h = Sha $data
+# Upgrade from an older co-op version: start again from the vanilla backup.
+if ($h -ne $cfg.vanilla_sha256 -and $h -ne $cfg.modded_sha256 -and (Test-Path (Join-Path $backup "data.win"))) {
+    if ((Sha (Join-Path $backup "data.win")) -eq $cfg.vanilla_sha256) {
+        Say "Updating an older co-op version..." "Обновляем старую версию кооп-мода..."
+        Copy-Item (Join-Path $backup "data.win") $data -Force
+        $h = $cfg.vanilla_sha256
+    }
+}
 if ($h -ne $cfg.vanilla_sha256 -and $h -ne $cfg.modded_sha256) {
     Say "Your data.win does not match the game version this mod was built for ($($cfg.game_version)). Update/verify the game in Steam, or wait for a mod update." "Ваш data.win не совпадает с версией игры, под которую собран мод ($($cfg.game_version)). Обновите/проверьте игру в Steam или дождитесь обновления мода."
     exit 1

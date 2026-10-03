@@ -252,6 +252,69 @@
       "started": "2026-10-03T02:53:27",
       "minutes": 0.68,
       "result": "all instances exited"
+    },
+    {
+      "start": 1791023516.0770311,
+      "deadline": 1791023636.0770311,
+      "end": 1791023541.445154,
+      "note": "UI fix check: revive scenario",
+      "started": "2026-10-03T12:31:56",
+      "minutes": 0.42,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791028661.6371803,
+      "deadline": 1791029381.6371803,
+      "end": 1791028752.8755379,
+      "note": "live Steam test with friend Ondrey (host)",
+      "started": "2026-10-03T13:57:41",
+      "minutes": 1.52,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791028796.656388,
+      "deadline": 1791029516.656388,
+      "end": 1791028937.9486904,
+      "note": "live Steam test with friend Ondrey (host) #2",
+      "started": "2026-10-03T13:59:56",
+      "minutes": 2.35,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791028951.4032545,
+      "deadline": 1791029071.4032545,
+      "end": 1791029000.4014158,
+      "note": "UI check: smaller down/revive UI",
+      "started": "2026-10-03T14:02:31",
+      "minutes": 0.82,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791029028.2020533,
+      "deadline": 1791029178.2020533,
+      "end": 1791029102.2742493,
+      "note": "showcase take A v2 (small UI)",
+      "started": "2026-10-03T14:03:48",
+      "minutes": 1.23,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791029138.234574,
+      "deadline": 1791029288.234574,
+      "end": 1791029288.889442,
+      "note": "showcase take A v3 (small UI)",
+      "started": "2026-10-03T14:05:38",
+      "minutes": 2.51,
+      "result": "killed at deadline"
+    },
+    {
+      "start": 1791029353.1251104,
+      "deadline": 1791029503.1251104,
+      "end": 1791029417.6129506,
+      "note": "showcase take A v4 (small UI)",
+      "started": "2026-10-03T14:09:13",
+      "minutes": 1.07,
+      "result": "all instances exited"
     }
   ]
 }

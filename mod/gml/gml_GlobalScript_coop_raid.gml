@@ -231,6 +231,10 @@ function coop_scenario_step()
             coop_log("scenario: host takes lethal damage while partner is down");
             obj_player.hp = 0;
         }
+        if (_c.role == "guest" && _t == 330)
+        {
+            screen_save("coop_down.png");
+        }
         if (_c.role == "guest" && _t == 240)
         {
             coop_log("scenario: taking lethal damage");
@@ -257,6 +261,10 @@ function coop_scenario_step()
                 if (_k == 90)
                 {
                     screen_save("coop_revive_menu.png");
+                }
+                if (_k == 220)
+                {
+                    screen_save("coop_reviving.png");
                 }
             }
         }

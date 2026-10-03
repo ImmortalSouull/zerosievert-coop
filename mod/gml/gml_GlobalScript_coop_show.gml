@@ -52,7 +52,11 @@ function coop_show_hub_step(_t)
     {
         if (_t == 20) { _c.panel = true; _c.ip_edit = false; _c.last_ip = "127.0.0.1"; }
         if (_t == 200) _c.panel = false;
-        if (_t == 230 && _c.connected && _c.peer_hub_ready) go_to_map(1);
+        if (_t >= 230 && !_c.autoraid_done && _c.connected && _c.peer_hub_ready)
+        {
+            _c.autoraid_done = true;
+            go_to_map(1);
+        }
     }
 }
 

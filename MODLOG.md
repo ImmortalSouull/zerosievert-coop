@@ -103,3 +103,18 @@ Test harness: tools/test2.sh, tools/wait.sh, tools/logs.sh, tools/shots.sh; test
 2. Kill credit / XP / quest progress for guest kills (Destroy event on host decides).
 3. Joining a raid already in progress; host extraction rules; grenades/explosions replication check.
 4. Remove the 1-solid map drift risk entirely (seen once before per-step reseed; equal since).
+
+## 2026-10-03 afternoon: first live test + v0.1.1
+- LIVE Steam test with the user's friend (Ondrey, v0.1.0): invite overlay -> lobby -> P2P connected,
+  guest followed into raid, puppet + bullets + NPC stream OK, ping ~117 ms. Steam path confirmed.
+- Bug: F7 panel clicks offset in bunker/raid. Cause: with a player present the game locks the OS mouse
+  to the window centre every frame and moves its own virtual cursor (obj_cursor, room coords);
+  device_mouse_x_to_gui is meaningless there. Fix: map obj_cursor through the camera; window coords in
+  menus. Also keyboard nav (up/down/Enter), Esc closes panel without opening pause, clicks don't shoot.
+- Bug: F7 dead after Exit to menu -> New game -> bunker. Root cause not reproduced; fix: coop_ensure_alive()
+  at top of obj_controller/obj_main_menu Step re-activates or recreates obj_coop (logs which happened).
+- Smaller down screen (bottom line + timer bar) and compact revive context menu next to the partner.
+- Steam rich presence "connect" -> friends can use "Join game" in the friends list.
+- Installer upgrades an older co-op install (restores vanilla from coop_backup first).
+- Protocol unchanged (COOP_VERSION 1): v0.1.0 and v0.1.1 can still play together.
+- Agent playtime 39/80 min after this session.

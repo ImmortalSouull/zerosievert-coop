@@ -25,7 +25,7 @@
 function coop_net_start()
 {
     var _c = coop();
-    if (_c.transport == "udp")
+    if (_c.transport == "udp" && _c.sock < 0)
     {
         if (_c.role == "host")
         {
@@ -64,6 +64,7 @@ function coop_net_stop()
     if (_c.lobby != 0)
     {
         steam_lobby_leave();
+        steam_clear_rich_presence();
         _c.lobby = 0;
     }
     _c.connected = false;

@@ -265,3 +265,21 @@ function coop_gen_reseed()
     _c.gen_step++;
     random_set_seed((_c.gen_seed + _c.gen_step * 7919) mod 2147483647);
 }
+
+// Hook: top of obj_controller / obj_main_menu Step. The controller must survive every room change,
+// pause and menu; if anything deactivated or destroyed it, bring it back.
+function coop_ensure_alive()
+{
+    if (instance_exists(obj_coop))
+    {
+        exit;
+    }
+    instance_activate_object(obj_coop);
+    if (instance_exists(obj_coop))
+    {
+        coop_log("controller was deactivated - reactivated in ", room_get_name(room));
+        exit;
+    }
+    coop_log("controller was missing - recreated in ", room_get_name(room));
+    instance_create_depth(0, 0, -15000, obj_coop);
+}
