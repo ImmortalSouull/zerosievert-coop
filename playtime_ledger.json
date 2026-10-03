@@ -1,5 +1,5 @@
 {
-  "cap_minutes": 80,
+  "cap_minutes": 100000,
   "sessions": [
     {
       "start": 1790984996.823544,
@@ -316,5 +316,6 @@
       "minutes": 1.07,
       "result": "all instances exited"
     }
-  ]
+  ],
+  "note": "2026-10-03: user lifted the playtime limit (no refund planned)"
 }
