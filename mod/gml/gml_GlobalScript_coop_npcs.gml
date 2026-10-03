@@ -70,7 +70,7 @@ function coop_npc_skip_alarm()
 function coop_npc_host_step()
 {
     var _c = coop();
-    if (_c.role != "host" || !_c.connected || !_c.peer_in_raid || !coop_in_raid())
+    if (_c.role != "host" || !coop_shared_ready())
     {
         exit;
     }
@@ -231,6 +231,7 @@ function coop_npc_guest_purge()
     {
         if (!variable_instance_exists(id, "coop_replica"))
         {
+            coop_npc_list_forget(id);
             instance_destroy(id, false);
         }
     }
@@ -273,6 +274,7 @@ function coop_npc_on_spawn(_b)
             variable_instance_set(id, _names[_i], variable_struct_get(_data, _names[_i]));
         }
         hp_set = true;
+        coop_npc_list_forget(id); // the off-screen patrol simulation must not move replicas
         coop_tx = _x;
         coop_ty = _y;
         coop_flash = 0;
@@ -422,4 +424,22 @@ function coop_npc_on_gone(_b)
 
 function coop_npc_on_hit(_b)
 {
+}
+
+// obj_controller simulates off-screen patrols through global.list_n_id; drop an NPC from it.
+function coop_npc_list_forget(_inst)
+{
+    if (!variable_global_exists("list_n_id"))
+    {
+        exit;
+    }
+    var _n = array_length(global.list_n_id);
+    for (var _i = 0; _i < _n; _i++)
+    {
+        if (global.list_n_id[_i] == _inst)
+        {
+            global.list_n_id[_i] = -4;
+            global.list_n_hp[_i] = -10;
+        }
+    }
 }

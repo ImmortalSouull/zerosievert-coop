@@ -7,7 +7,7 @@
 function coop_on_bullet_spawned(_bull)
 {
     var _c = coop();
-    if (!_c.connected || !_c.peer_in_raid || !coop_in_raid())
+    if (!coop_shared_ready())
     {
         exit;
     }
@@ -83,6 +83,8 @@ function coop_bullet_on_message(_b)
     var _npc_name = buffer_read(_b, buffer_string);
     var _scoped = buffer_read(_b, buffer_u8);
     var _sniper = buffer_read(_b, buffer_f32);
+    var _cc = coop();
+    _cc.bullets_recv = (variable_struct_exists(_cc, "bullets_recv") ? _cc.bullets_recv : 0) + 1;
     if (!coop_in_raid() || !object_exists(_obj))
     {
         exit;

@@ -28,6 +28,7 @@ function coop_init_globals()
         seed: undefined,
         peer_in_raid: false,
         peer_hub_ready: false,
+        peer_ready: false,
         pending_raid: undefined,
         peer_map: -1,
         peer_name: "Partner",
@@ -153,12 +154,25 @@ function coop_active()
 function coop_guest_in_raid()
 {
     var _c = coop();
-    return _c.role == "guest" && _c.connected && _c.peer_in_raid && coop_in_raid();
+    return _c.role == "guest" && coop_shared_ready();
 }
 
 function coop_in_raid()
 {
     return room == room1 && instance_exists(obj_map_generator);
+}
+
+// Raid map fully generated (instances may be created/destroyed freely without affecting the map).
+function coop_raid_ready()
+{
+    return coop_in_raid() && obj_map_generator.state == 21;
+}
+
+// Both players are in the same raid and both maps are finished.
+function coop_shared_ready()
+{
+    var _c = coop();
+    return _c.connected && _c.peer_in_raid && _c.peer_ready && coop_raid_ready();
 }
 
 function coop_log()

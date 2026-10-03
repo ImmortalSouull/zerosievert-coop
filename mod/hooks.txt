@@ -336,3 +336,7 @@ function player_step_grim_reaper()
 <<<REPLACE
     return coop_nearest_standing_player(arg0, arg1);
 <<<END
+
+### prepend gml_Object_obj_chest_general_Alarm_0
+coop_chest_seed();
+<<<END

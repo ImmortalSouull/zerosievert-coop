@@ -148,7 +148,7 @@ function coop_puppet_ensure(_x, _y)
     {
         return _p;
     }
-    if (!coop_in_raid() || !instance_exists(obj_player))
+    if (!coop_raid_ready() || !instance_exists(obj_player))
     {
         return -4;
     }

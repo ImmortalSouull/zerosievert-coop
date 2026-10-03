@@ -239,6 +239,7 @@ function coop_handle_message(_b, _size)
             var _loc = buffer_read(_b, buffer_u8);
             var _pmap = buffer_read(_b, buffer_s8);
             var _rid = buffer_read(_b, buffer_f64);
+            var _rdy = buffer_read(_b, buffer_u8);
             var _in = (_loc == 2) && _rid >= 0 && _c.gen_seed != undefined && _rid == _c.gen_seed && coop_in_raid();
             var _was = _c.peer_in_raid;
             if (_c.peer_in_raid != _in)
@@ -246,6 +247,11 @@ function coop_handle_message(_b, _size)
                 coop_log("peer in raid = ", _in, " map ", _pmap);
             }
             _c.peer_in_raid = _in;
+            if (_in && _rdy && !_c.peer_ready)
+            {
+                coop_log("peer map ready");
+            }
+            _c.peer_ready = _in && _rdy;
             _c.peer_hub_ready = (_loc == 1);
             _c.peer_map = _pmap;
             if (!_in)
@@ -360,6 +366,7 @@ function coop_send_raid_state()
     buffer_write(_c.send_buf, buffer_u8, _loc);
     buffer_write(_c.send_buf, buffer_s8, _in ? obj_map_generator.area : -1);
     buffer_write(_c.send_buf, buffer_f64, (_in && _c.gen_seed != undefined) ? _c.gen_seed : -1);
+    buffer_write(_c.send_buf, buffer_u8, coop_raid_ready());
     coop_msg_send(true);
 }
 

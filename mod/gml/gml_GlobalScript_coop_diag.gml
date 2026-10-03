@@ -15,6 +15,10 @@ function coop_diag_step()
     if (!_c.diag_fp_done && obj_map_generator.state == 21)
     {
         _c.diag_fp_done = true;
+        if (_c.connected)
+        {
+            coop_send_raid_state();
+        }
         instance_activate_all();
         var _n = 0;
         var _h = 0;
@@ -39,6 +43,6 @@ function coop_diag_step()
         coop_log("status: me=", floor(obj_player.x), ",", floor(obj_player.y),
             " partner=", instance_exists(_p) ? (string(floor(_p.x)) + "," + string(floor(_p.y))) : "none",
             " npcs(active)=", _npcs, " replicas=", _replicas, " known=", ds_map_size(_c.npc_by_nid),
-            " sent=", _c.stats_sent, " recv=", _c.stats_recv, " ping=", _c.ping);
+            " sent=", _c.stats_sent, " recv=", _c.stats_recv, " ping=", _c.ping, " bullets_in=", variable_struct_exists(_c, "bullets_recv") ? _c.bullets_recv : 0);
     }
 }

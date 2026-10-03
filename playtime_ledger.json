@@ -153,6 +153,60 @@
       "started": "2026-10-03T02:35:15",
       "minutes": 1.14,
       "result": "all instances exited"
+    },
+    {
+      "start": 1790987882.098536,
+      "deadline": 1790988002.098536,
+      "end": 1790987916.2871685,
+      "note": "test #18: chest sync + bullets",
+      "started": "2026-10-03T02:38:02",
+      "minutes": 0.57,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790987960.9425123,
+      "deadline": 1790988080.9425123,
+      "end": 1790988010.148528,
+      "note": "test #19: chest sync + bullets, gen gating",
+      "started": "2026-10-03T02:39:20",
+      "minutes": 0.82,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790988046.0860388,
+      "deadline": 1790988166.0860388,
+      "end": 1790988081.14259,
+      "note": "test #20: chest sync + bullets, list fix",
+      "started": "2026-10-03T02:40:46",
+      "minutes": 0.58,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790988094.618991,
+      "deadline": 1790988214.618991,
+      "end": 1790988133.2791088,
+      "note": "test #21: chest sync + bullets",
+      "started": "2026-10-03T02:41:34",
+      "minutes": 0.64,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790988147.465371,
+      "deadline": 1790988267.465371,
+      "end": 1790988261.9457982,
+      "note": "test #22: chest sync",
+      "started": "2026-10-03T02:42:27",
+      "minutes": 1.91,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790988278.6000278,
+      "deadline": 1790988398.6000278,
+      "end": 1790988321.9016654,
+      "note": "test #23: chest sync debug",
+      "started": "2026-10-03T02:44:38",
+      "minutes": 0.72,
+      "result": "all instances exited"
     }
   ]
 }

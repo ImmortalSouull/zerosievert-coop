@@ -151,6 +151,57 @@ function coop_scenario_step()
     }
     _c.sc_t++;
     var _t = _c.sc_t;
+    if (_c.scenario == "chest")
+    {
+        if (_t == 199 || _t == 259 || _t == 299 || _t == 419)
+        {
+            instance_activate_object(obj_chest_general);
+        }
+        if (_t == 200 || _t == 420)
+        {
+            var _ch = instance_nearest(obj_player.x, obj_player.y, obj_chest_general);
+            if (instance_exists(_ch))
+            {
+                _c.sc_chest = coop_chest_key(_ch);
+                var _j = json_stringify(coop_chest_read(_ch));
+                coop_log("scenario chest t=", _t, " ", _c.sc_chest, " len=", string_length(_j), " md5=", md5_string_utf8(_j));
+            }
+        }
+        if (_c.role == "host" && _t == 260)
+        {
+            var _ch2 = instance_nearest(obj_player.x, obj_player.y, obj_chest_general);
+            if (instance_exists(_ch2))
+            {
+                obj_player.x = _ch2.x + 10;
+                obj_player.y = _ch2.y + 10;
+            }
+        }
+        if (_c.role == "host" && _t == 300)
+        {
+            var _ch3 = instance_nearest(obj_player.x, obj_player.y, obj_chest_general);
+            if (!instance_exists(_ch3)) exit;
+            db_open("all loot");
+            var _it = db_read("chest_" + string(_ch3.id), "items", []);
+            if (array_length(_it) > 0) array_delete(_it, 0, 1);
+            db_write("chest_" + string(_ch3.id), "items", _it);
+            db_close();
+            coop_log("scenario: host took first item from ", coop_chest_key(_ch3));
+        }
+        if (_t == 110)
+        {
+            coop_log("scenario: weapon=", obj_player.arma_now, " slot=", obj_player.weapon_slot_now);
+        }
+        if (_c.role == "guest" && _t >= 120 && _t <= 400 && _t mod 25 == 0)
+        {
+            with (obj_player)
+            {
+                if (item_exists(arma_now) && item_get_category(arma_now) == "weapon")
+                {
+                    scr_shoot(_t * 7 mod 360, 1, item_weapon_get_damage(arma_now), 1);
+                }
+            }
+        }
+    }
     if (_c.scenario == "revive")
     {
         if (_c.role == "guest" && _t == 240)
