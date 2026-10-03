@@ -202,8 +202,18 @@ function coop_scenario_step()
             }
         }
     }
-    if (_c.scenario == "revive")
+    if (_c.scenario == "revive" || _c.scenario == "both")
     {
+        if (_c.scenario == "both" && _c.role == "guest" && _t == 800)
+        {
+            coop_log("scenario: second lethal damage");
+            obj_player.hp = 0;
+        }
+        if (_c.scenario == "both" && _c.role == "host" && coop_down().count == 0 && variable_struct_exists(_c, "sc_rev_t") && _t > _c.sc_rev_t + 520 && coop_partner_is_down())
+        {
+            coop_log("scenario: host takes lethal damage while partner is down");
+            obj_player.hp = 0;
+        }
         if (_c.role == "guest" && _t == 240)
         {
             coop_log("scenario: taking lethal damage");

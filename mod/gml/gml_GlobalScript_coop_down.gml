@@ -52,6 +52,11 @@ function coop_down_is_down()
 
 function coop_partner_is_down()
 {
+    var _c = coop();
+    if (variable_struct_exists(_c, "revived_at") && current_time - _c.revived_at < 1500)
+    {
+        return false; // we just revived them; their state packet may still say "down"
+    }
     var _p = coop_partner();
     return instance_exists(_p) && variable_instance_exists(_p, "coop_flags") && (_p.coop_flags & 2) != 0;
 }
@@ -135,19 +140,17 @@ function coop_down_on_message(_type, _b)
             coop_notify(coop_t(coop().peer_name + " is down! Go to them and press [E]", coop().peer_name + " ранен! Подойдите и нажмите [E]"));
             break;
         case COOP_MSG_DEAD:
+            coop_log("partner death message, both=", _arg);
             if (_arg == 1)
             {
                 // Partner went down while we were down: both die.
-                if (_d.active && instance_exists(obj_player))
-                {
-                    _d.force_death = true;
-                    obj_player.hp = 0;
-                }
+                coop_down_force_death("both down");
                 coop_notify(coop_t("Both of you are down - the raid is over", "Вы оба ранены - рейд окончен"));
             }
             else
             {
                 coop_notify(coop_t(coop().peer_name + " died", coop().peer_name + " погиб"));
+                coop_down_force_death("partner died, nobody can revive");
             }
             break;
         case COOP_MSG_REVIVE:
@@ -208,10 +211,12 @@ function coop_down_step()
         }
         if (_d.timer <= 0)
         {
-            coop_log("down timer expired");
             coop_down_send(COOP_MSG_DEAD, 0);
-            _d.force_death = true;
-            obj_player.hp = 0;
+            coop_down_force_death("down timer expired");
+        }
+        else if (!coop().peer_in_raid || !coop().connected)
+        {
+            coop_down_force_death("partner left the raid");
         }
     }
     coop_revive_step();
@@ -352,6 +357,12 @@ function coop_revive_step()
                 }
                 inventory_remove_item(_item, 1);
             }
+            _c.revived_at = current_time;
+            var _pp = coop_partner();
+            if (instance_exists(_pp))
+            {
+                _pp.coop_flags = _pp.coop_flags & ~2;
+            }
             coop_msg_begin(COOP_MSG_REVIVE);
             buffer_write(_c.send_buf, buffer_u8, 1);
             buffer_write(_c.send_buf, buffer_f32, _r.opt.hp);
@@ -447,4 +458,22 @@ function coop_friendly_fire_hit(_bull, _target)
         return false;
     }
     return object_is_player(_bull.shooter_id) && _bull.shooter_id != _target.id;
+}
+
+// Kill the local player for real while down (the down clamp must stop first).
+function coop_down_force_death(_why)
+{
+    var _d = coop_down();
+    if (!_d.active || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    coop_log("forced death: ", _why);
+    _d.active = false;
+    _d.force_death = true;
+    with (obj_player)
+    {
+        image_angle = 0;
+        hp = 0;
+    }
 }

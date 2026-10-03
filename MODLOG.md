@@ -83,3 +83,12 @@ Working (2 local instances, UDP): connect, host-led raid start w/ shared seed, i
   NPC replication (231 NPCs), bullets, down/revive end-to-end (Medikit T-000 -> 40 hp).
 Test harness: tools/test2.sh, tools/wait.sh, tools/logs.sh, tools/shots.sh; test-mode flags
   -coop_root/-coop_slot/-coop_autoraid/-coop_bot/-coop_scenario revive.
+- Shared containers: chest content rolled in obj_chest_general Alarm_0 -> reseed from raid seed + position
+  => identical loot on both; changes synced (db "all loot", chest_<id>.items) by object+position key. Verified.
+- Sync gated on both maps finished (obj_map_generator.state == 21 on both, RAID_STATE ready flag): purging
+  guest NPCs during generation changed the map. Guest must also drop purged NPCs from global.list_n_id
+  (obj_controller off-screen patrol sim) or it crashes.
+- Down rules verified: 2nd down timer N/2, both down -> both die (fixed: down HP clamp blocked forced death;
+  revive race: partner flag lags ~1 frame packet -> 1.5 s grace after reviving).
+- Steam: lobby create + invite overlay verified (single account); P2P traffic untested (needs 2 accounts).
+- Installer verified (vanilla -> install -> uninstall -> install), difficulty tabs verified in game.

@@ -207,6 +207,33 @@
       "started": "2026-10-03T02:44:38",
       "minutes": 0.72,
       "result": "all instances exited"
+    },
+    {
+      "start": 1790988348.8092785,
+      "deadline": 1790988468.8092785,
+      "end": 1790988395.2646134,
+      "note": "test #24: second down + both down",
+      "started": "2026-10-03T02:45:48",
+      "minutes": 0.77,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790988415.2044172,
+      "deadline": 1790988535.2044172,
+      "end": 1790988464.2410038,
+      "note": "test #25: second down + both down",
+      "started": "2026-10-03T02:46:55",
+      "minutes": 0.82,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790988492.9310162,
+      "deadline": 1790988612.9310162,
+      "end": 1790988540.7244864,
+      "note": "test #26: both down fix",
+      "started": "2026-10-03T02:48:12",
+      "minutes": 0.8,
+      "result": "all instances exited"
     }
   ]
 }
