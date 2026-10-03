@@ -4,17 +4,18 @@
 // only on the host, where NPCs are real; on the guest NPCs are replicas and hits are cosmetic.
 
 // Hook: end of bullet_spawn_add_data(bullet), i.e. every scr_shoot() bullet.
-function coop_on_bullet_spawned(_bull)
+function coop_on_bullet_spawned_inner(_bull)
 {
     var _c = coop();
     if (!coop_shared_ready())
     {
         exit;
     }
-    if (!instance_exists(_bull) || variable_instance_exists(_bull, "coop_remote"))
+    if (!instance_exists(_bull) || variable_instance_exists(_bull, "coop_remote") || variable_instance_exists(_bull, "coop_sent"))
     {
         exit;
     }
+    _bull.coop_sent = true;
     var _shooter = _bull.shooter_id;
     var _kind = -1;
     var _ref = 0;
@@ -43,20 +44,27 @@ function coop_on_bullet_spawned(_bull)
         buffer_write(_b, buffer_f32, direction);
         buffer_write(_b, buffer_f32, hspd);
         buffer_write(_b, buffer_f32, vspd);
-        buffer_write(_b, buffer_f32, damage);
-        buffer_write(_b, buffer_f32, timer);
-        buffer_write(_b, buffer_f32, penetration);
-        buffer_write(_b, buffer_string, string(shooter_faction));
-        buffer_write(_b, buffer_string, string(weapon_used));
-        buffer_write(_b, buffer_string, string(ammo_id_used));
-        buffer_write(_b, buffer_f32, fin_x);
-        buffer_write(_b, buffer_f32, fin_y);
+        buffer_write(_b, buffer_f32, coop_var(id, "damage", 0));
+        buffer_write(_b, buffer_f32, coop_var(id, "timer", 0));
+        buffer_write(_b, buffer_f32, coop_var(id, "penetration", 0));
+        buffer_write(_b, buffer_string, string(coop_var(id, "shooter_faction", "")));
+        buffer_write(_b, buffer_string, string(coop_var(id, "weapon_used", "no_item")));
+        buffer_write(_b, buffer_string, string(coop_var(id, "ammo_id_used", "no_item")));
+        buffer_write(_b, buffer_f32, coop_var(id, "fin_x", x));
+        buffer_write(_b, buffer_f32, coop_var(id, "fin_y", y));
         buffer_write(_b, buffer_u8, _kind);
         buffer_write(_b, buffer_u32, _ref);
         buffer_write(_b, buffer_string, variable_instance_exists(id, "npc_id") ? string(npc_id) : "");
         buffer_write(_b, buffer_string, variable_instance_exists(id, "shooter_npc_name") ? string(shooter_npc_name) : "");
         buffer_write(_b, buffer_u8, (variable_instance_exists(id, "scoped") && scoped) ? 1 : 0);
         buffer_write(_b, buffer_f32, variable_instance_exists(id, "skill_improvised_sniper_range_max_multiplier") ? skill_improvised_sniper_range_max_multiplier : 1);
+        var _tk = 0; // 0 none, 1 targets the sender's own player, 2 targets the receiver's player
+        if (variable_instance_exists(id, "target") && instance_exists(target))
+        {
+            if (target.object_index == obj_player) _tk = 1;
+            else if (target.object_index == obj_player_puppet) _tk = 2;
+        }
+        buffer_write(_b, buffer_u8, _tk);
     }
     coop_msg_send(true);
 }
@@ -83,6 +91,7 @@ function coop_bullet_on_message(_b)
     var _npc_name = buffer_read(_b, buffer_string);
     var _scoped = buffer_read(_b, buffer_u8);
     var _sniper = buffer_read(_b, buffer_f32);
+    var _tk = buffer_read(_b, buffer_u8);
     var _cc = coop();
     _cc.bullets_recv = (variable_struct_exists(_cc, "bullets_recv") ? _cc.bullets_recv : 0) + 1;
     if (!coop_in_raid() || !object_exists(_obj))
@@ -97,6 +106,12 @@ function coop_bullet_on_message(_b)
     else
     {
         _shooter = coop_npc_find(_ref);
+    }
+    if (_cc.test_mode && _kind == 0 && _cc.bullets_recv mod 6 == 1)
+    {
+        var _near = instance_nearest(_x + _hs * 15, _y + _vs * 15, obj_npc_parent);
+        coop_log("bullet dbg: from ", floor(_x), ",", floor(_y), " dir ", floor(_dir), " shooter_ok=", instance_exists(_shooter),
+            " nearest npc ", instance_exists(_near) ? (object_get_name(_near.object_index) + " at " + string(floor(_near.x)) + "," + string(floor(_near.y))) : "none");
     }
     var _bull = instance_create_depth(_x, _y, -_y, _obj);
     with (_bull)
@@ -125,10 +140,21 @@ function coop_bullet_on_message(_b)
             npc_id = _npc_id;
             shooter_npc_name = _npc_name;
         }
+        if (_tk == 1)
+        {
+            target = coop_partner(); // the sender's player is our puppet
+        }
+        else if (_tk == 2 && instance_exists(obj_player))
+        {
+            target = obj_player.id;
+        }
     }
     // Muzzle flash + gunshot at the remote shooter.
-    var _muzzle = instance_create_depth(_x, _y, -_y - 10, obj_muzzle_fire);
-    _muzzle.image_angle = _dir;
+    if (item_exists(_weapon))
+    {
+        var _muzzle = instance_create_depth(_x, _y, -_y - 10, obj_muzzle_fire);
+        _muzzle.image_angle = _dir;
+    }
     if (instance_exists(_shooter) && item_exists(_weapon))
     {
         with (_shooter)
@@ -143,7 +169,7 @@ function coop_bullet_on_message(_b)
 }
 
 // Hook: top of bullet_hit_npc(bullet, npc). Returns true when the hit was handled (guest replicas).
-function coop_bullet_hit_npc(_bull, _npc)
+function coop_bullet_hit_npc_inner(_bull, _npc)
 {
     if (!coop_guest_in_raid())
     {
@@ -163,4 +189,61 @@ function coop_bullet_hit_npc(_bull, _npc)
         instance_destroy();
     }
     return true;
+}
+
+function coop_var(_inst, _name, _default)
+{
+    return variable_instance_exists(_inst, _name) ? variable_instance_get(_inst, _name) : _default;
+}
+
+// Mutant projectiles (ghoul spit, wraith fire, violet crystal) are created directly in the NPC Step, not via
+// scr_shoot - pick them up here (host only; on the guest NPCs never shoot).
+function coop_bullets_scan_step()
+{
+    var _c = coop();
+    if (_c.role != "host" || !coop_shared_ready())
+    {
+        exit;
+    }
+    with (obj_bullet_parent)
+    {
+        if (!variable_instance_exists(id, "coop_sent") && !variable_instance_exists(id, "coop_remote"))
+        {
+            if (object_index == obj_bullet_ghoul || object_index == obj_bullet_wraith_fire || object_index == obj_bullet_crystal_violet)
+            {
+                coop_on_bullet_spawned(id);
+            }
+            else
+            {
+                coop_sent = true; // regular bullets were already handled in bullet_spawn_add_data
+            }
+        }
+    }
+}
+
+// Called from game code: never let a co-op error escape into it.
+function coop_on_bullet_spawned(_bull)
+{
+    try
+    {
+        coop_on_bullet_spawned_inner(_bull);
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+}
+
+// Called from game code: never let a co-op error escape into it.
+function coop_bullet_hit_npc(_bull, _npc)
+{
+    try
+    {
+        return coop_bullet_hit_npc_inner(_bull, _npc);
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    return false;
 }

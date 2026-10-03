@@ -1,1 +1,1 @@
-coop_draw_gui();
+coop_try(coop_draw_gui);

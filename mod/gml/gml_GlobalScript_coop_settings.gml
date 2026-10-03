@@ -52,7 +52,7 @@ function coop_is_world_setting(_key)
 function coop_difficulty_override(_key)
 {
     var _c = coop();
-    if (_c.role != "guest" || !_c.connected || !variable_struct_exists(_c, "host_settings") || !coop_is_world_setting(_key))
+    if (_c.role != "guest" || !_c.connected || room != room1 || !variable_struct_exists(_c, "host_settings") || !coop_is_world_setting(_key))
     {
         return undefined;
     }

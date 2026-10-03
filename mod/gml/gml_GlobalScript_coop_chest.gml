@@ -25,7 +25,7 @@ function coop_chest_seed()
 
 // Hook: top of obj_chest_general Alarm_0. A container spawned from the network already has its content:
 // write it instead of rolling loot. Returns true to skip the roll.
-function coop_chest_alarm_hook()
+function coop_chest_alarm_hook_inner()
 {
     if (variable_instance_exists(id, "coop_pending_items"))
     {
@@ -289,7 +289,7 @@ function coop_chest_on_request(_b)
 // ---- dynamic containers ----
 
 // Hook: top of obj_chest_general Create.
-function coop_chest_on_create()
+function coop_chest_on_create_inner()
 {
     if (variable_instance_exists(id, "coop_net_spawned") || !coop_raid_ready())
     {
@@ -321,9 +321,15 @@ function coop_chest_announce_pending()
         {
             continue;
         }
-        if (_inst.tipo != "discard")
+        // Dropped bags exist only on the dropper's side: both announce them. Corpses and air drops are created on
+        // both sides (or only on the host): the host's content is the truth.
+        if (_inst.tipo != "discard" && _c.role != "host")
         {
             continue;
+        }
+        if (_inst.alarm[0] > 0)
+        {
+            continue; // content not rolled yet
         }
         var _items = coop_chest_read(_inst);
         if (_items == undefined)
@@ -349,6 +355,7 @@ function coop_chest_send_spawn(_inst, _json)
     buffer_write(_c.send_buf, buffer_f32, _inst.y);
     buffer_write(_c.send_buf, buffer_string, string(_inst.tipo));
     buffer_write(_c.send_buf, buffer_string, is_string(_inst.name_chest) ? _inst.name_chest : "");
+    buffer_write(_c.send_buf, buffer_s32, sprite_exists(_inst.sprite_index) ? real(_inst.sprite_index) : -1);
     buffer_write(_c.send_buf, buffer_string, _json);
     coop_msg_send(true);
     coop_log("container spawn sent ", coop_chest_key(_inst), " tipo ", _inst.tipo);
@@ -361,6 +368,7 @@ function coop_chest_on_spawn(_b)
     var _y = buffer_read(_b, buffer_f32);
     var _tipo = buffer_read(_b, buffer_string);
     var _name = buffer_read(_b, buffer_string);
+    var _spr = buffer_read(_b, buffer_s32);
     var _json = buffer_read(_b, buffer_string);
     if (!coop_in_raid() || !object_exists(_obj))
     {
@@ -375,6 +383,15 @@ function coop_chest_on_spawn(_b)
         db_write("chest_" + string(_old.id), "items", coop_chest_items_from_json(_json));
         db_close();
         _old.coop_sig = json_stringify(coop_chest_read(_old));
+        if (_spr >= 0 && sprite_exists(_spr))
+        {
+            _old.chest_sprite = _spr;
+            _old.sprite_index = _spr;
+        }
+        if (coop_chest_open_target() == _old)
+        {
+            coop_chest_ui_refresh(_old);
+        }
         exit;
     }
     var _inst = instance_create_depth(_x, _y, -_y, _obj, { coop_net_spawned: true });
@@ -387,13 +404,17 @@ function coop_chest_on_spawn(_b)
         }
         coop_pending_items = _json;
         coop_announced = true;
+        if (_spr >= 0 && sprite_exists(_spr))
+        {
+            chest_sprite = _spr;
+        }
         alarm[0] = 1;
     }
     coop_log("container spawned from partner ", _key, " tipo ", _tipo);
 }
 
 // Hook: obj_chest_general Destroy (an emptied bag / container removed by the game).
-function coop_chest_on_destroy()
+function coop_chest_on_destroy_inner()
 {
     if (!coop_shared_ready() || variable_instance_exists(id, "coop_net_gone"))
     {
@@ -475,4 +496,44 @@ function coop_chest_reset_room()
     var _c = coop();
     _c.chest_dyn = [];
     ds_map_clear(coop_chest_registry());
+}
+
+// Called from game code: never let a co-op error escape into it.
+function coop_chest_alarm_hook()
+{
+    try
+    {
+        return coop_chest_alarm_hook_inner();
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    return false;
+}
+
+// Called from game code: never let a co-op error escape into it.
+function coop_chest_on_create()
+{
+    try
+    {
+        coop_chest_on_create_inner();
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+}
+
+// Called from game code: never let a co-op error escape into it.
+function coop_chest_on_destroy()
+{
+    try
+    {
+        coop_chest_on_destroy_inner();
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
 }

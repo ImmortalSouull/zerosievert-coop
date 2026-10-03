@@ -64,6 +64,10 @@ function coop_draw_gui()
     }
     if (coop_in_raid())
     {
+        if (instance_exists(obj_player))
+        {
+            coop_puppet_draw_tag_gui();
+        }
         coop_down_draw_gui();
     }
     else if (_c.role == "none" && (room == r_hub || room == r_menu) && !(variable_struct_exists(_c, "panel") && _c.panel))

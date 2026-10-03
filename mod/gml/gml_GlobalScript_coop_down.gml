@@ -68,7 +68,7 @@ function coop_down_can_happen()
 }
 
 // Hook: top of player_step_grim_reaper() (runs in obj_player). true = death intercepted.
-function coop_down_grim_reaper()
+function coop_down_grim_reaper_inner()
 {
     if (hp > 0 || player_state_is(mp_index, scr_player_state_dead))
     {
@@ -200,9 +200,15 @@ function coop_down_step()
     var _d = coop_down();
     if (_d.active)
     {
-        if (!instance_exists(obj_player) || !coop_in_raid())
+        if (!coop_in_raid())
         {
             _d.active = false;
+            exit;
+        }
+        if (!instance_exists(obj_player))
+        {
+            // paused (player deactivated): keep bleeding out, resolve after unpause
+            if (current_time - _d.ping_time > 400 && _d.timer > 0) _d.timer--;
             exit;
         }
         if (current_time - _d.ping_time > 400)
@@ -477,7 +483,7 @@ function coop_text_outlined(_x, _y, _s, _col)
 }
 
 // AI targeting (replaces player_nearest_instance): downed players are ignored.
-function coop_nearest_standing_player(_x, _y)
+function coop_nearest_standing_player_inner(_x, _y)
 {
     var _best = -4;
     var _bd = infinity;
@@ -524,4 +530,32 @@ function coop_down_force_death(_why)
         image_angle = 0;
         hp = 0;
     }
+}
+
+// Called from game code: never let a co-op error escape into it.
+function coop_down_grim_reaper()
+{
+    try
+    {
+        return coop_down_grim_reaper_inner();
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    return false;
+}
+
+// Called from game code: never let a co-op error escape into it.
+function coop_nearest_standing_player(_x, _y)
+{
+    try
+    {
+        return coop_nearest_standing_player_inner(_x, _y);
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    return instance_nearest(_x, _y, obj_player_parent);
 }

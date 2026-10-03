@@ -22,6 +22,7 @@
 #macro COOP_MSG_CHEST 50
 #macro COOP_MSG_CHEST_REQ 51
 #macro COOP_MSG_SETTINGS 60
+#macro COOP_MSG_FP 66
 
 function coop_net_start()
 {
@@ -173,6 +174,18 @@ function coop_net_poll_steam()
 
 function coop_handle_message(_b, _size)
 {
+    try
+    {
+        coop_handle_message_inner(_b, _size);
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+}
+
+function coop_handle_message_inner(_b, _size)
+{
     var _c = coop();
     _c.last_recv_time = current_time;
     _c.stats_recv++;
@@ -186,8 +199,11 @@ function coop_handle_message(_b, _size)
             {
                 if (_ver != COOP_VERSION)
                 {
-                    coop_log("guest has mod version ", _ver, ", host has ", COOP_VERSION);
-                    coop_notify("Partner has a different mod version!");
+                    coop_log("guest has mod version ", _ver, ", host has ", COOP_VERSION, " - refused");
+                    coop_notify(coop_t("Partner has a different co-op mod version - update both!", "У напарника другая версия кооп-мода - обновитесь оба!"));
+                    coop_msg_begin(COOP_MSG_BYE);
+                    coop_msg_send(true);
+                    break;
                 }
                 if (!_c.connected)
                 {
@@ -206,6 +222,12 @@ function coop_handle_message(_b, _size)
         case COOP_MSG_WELCOME:
             var _wver = buffer_read(_b, buffer_u16);
             var _wname = buffer_read(_b, buffer_string);
+            if (_c.role == "guest" && !_c.connected && _wver != COOP_VERSION)
+            {
+                coop_notify(coop_t("Host has a different co-op mod version - update both!", "У хоста другая версия кооп-мода - обновитесь оба!"));
+                coop_log("host version ", _wver, " != ", COOP_VERSION);
+                break;
+            }
             if (_c.role == "guest" && !_c.connected)
             {
                 _c.connected = true;
@@ -226,6 +248,12 @@ function coop_handle_message(_b, _size)
             _c.ping = current_time - _t2;
             break;
         case COOP_MSG_BYE:
+            if (!_c.connected)
+            {
+                coop_log("refused by peer (version?) - stopping");
+                coop_net_stop();
+                break;
+            }
             coop_log("peer left");
             coop_notify(_c.peer_name + " left");
             _c.connected = false;
@@ -323,6 +351,24 @@ function coop_handle_message(_b, _size)
         case COOP_MSG_CHEST_REQ:
             coop_chest_on_request(_b);
             break;
+        case COOP_MSG_WORLD_TIME:
+            coop_world_on_time(_b);
+            break;
+        case COOP_MSG_WEATHER:
+            coop_world_on_weather(_b);
+            break;
+        case COOP_MSG_EMISSION:
+            coop_world_on_emission(_b);
+            break;
+        case COOP_MSG_CREDIT:
+            coop_credit_on_message(_b);
+            break;
+        case COOP_MSG_DOOR:
+            coop_door_on_message(_b);
+            break;
+        case COOP_MSG_FP:
+            coop_diag_on_fp(_b);
+            break;
         case COOP_MSG_SETTINGS:
             coop_settings_on_message(_b);
             break;
@@ -382,7 +428,7 @@ function coop_send_raid_state()
 {
     var _c = coop();
     coop_msg_begin(COOP_MSG_RAID_STATE);
-    var _in = coop_in_raid() && instance_exists(obj_player);
+    var _in = coop_in_raid() && (instance_exists(obj_player) || _c.local_paused);
     var _loc = _in ? 2 : ((is_in_hub() && instance_exists(obj_player)) ? 1 : 0);
     buffer_write(_c.send_buf, buffer_u8, _loc);
     buffer_write(_c.send_buf, buffer_s8, _in ? obj_map_generator.area : -1);

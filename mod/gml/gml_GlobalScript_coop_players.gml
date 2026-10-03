@@ -356,3 +356,46 @@ function coop_spawn_sync(_hx, _hy)
         }
     }
 }
+
+// Draw GUI (480x270): partner name + hp over everything (night darkness, roofs). Off screen: an edge marker
+// pointing at them with the distance.
+function coop_puppet_draw_tag_gui()
+{
+    var _p = coop_partner();
+    if (!instance_exists(_p) || !variable_instance_exists(_p, "coop_hp") || !player_state_is(0, scr_player_state_move))
+    {
+        exit;
+    }
+    var _cam = view_camera[0];
+    var _vx = camera_get_view_x(_cam);
+    var _vy = camera_get_view_y(_cam);
+    var _vw = max(1, camera_get_view_width(_cam));
+    var _vh = max(1, camera_get_view_height(_cam));
+    var _gx = (_p.x - _vx) / _vw * 480;
+    var _gy = (_p.y - _vy) / _vh * 270;
+    var _name = variable_instance_exists(_p, "coop_name") ? _p.coop_name : "Partner";
+    var _down = (_p.coop_flags & 2) != 0;
+    var _col = _down ? c_red : c_lime;
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_bottom);
+    if (_gx >= 8 && _gx <= 472 && _gy >= 16 && _gy <= 262)
+    {
+        coop_text_outlined(_gx, _gy - 13, _name, c_white);
+        var _w = 18;
+        var _k = clamp(_p.coop_hp / max(1, _p.coop_hp_max), 0, 1);
+        draw_rectangle_colour(_gx - _w / 2, _gy - 12, _gx + _w / 2, _gy - 11, c_black, c_black, c_black, c_black, false);
+        draw_rectangle_colour(_gx - _w / 2, _gy - 12, _gx - _w / 2 + _w * _k, _gy - 11, _col, _col, _col, _col, false);
+    }
+    else
+    {
+        var _cx = clamp(_gx, 14, 466);
+        var _cy = clamp(_gy, 24, 252);
+        var _dir = point_direction(240, 135, _gx, _gy);
+        var _m = floor(point_distance(obj_player.x, obj_player.y, _p.x, _p.y) / 16);
+        draw_triangle_colour(_cx + lengthdir_x(6, _dir), _cy + lengthdir_y(6, _dir), _cx + lengthdir_x(4, _dir + 140), _cy + lengthdir_y(4, _dir + 140), _cx + lengthdir_x(4, _dir - 140), _cy + lengthdir_y(4, _dir - 140), _col, _col, _col, false);
+        draw_set_valign(fa_middle);
+        coop_text_outlined(clamp(_cx - lengthdir_x(14, _dir), 30, 450), _cy - lengthdir_y(10, _dir), _name + " " + string(_m) + coop_t("m", "м"), _col);
+    }
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+}

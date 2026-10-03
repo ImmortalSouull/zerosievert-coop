@@ -226,9 +226,6 @@ coop_npc_on_destroyed();
 coop_after_culling();
 <<<END
 
-### append gml_GlobalScript_game_pause
-coop_after_culling();
-<<<END
 
 ### findreplace gml_Object_obj_map_generator_Step_0
 <<<FIND
@@ -423,4 +420,103 @@ coop_grenade_on_create();
                         scr_autoclose_inventory();
                     }
                     other.hit = true;
+<<<END
+
+### prepend gml_Object_obj_decor_parent_Alarm_0
+coop_pos_reseed(1);
+<<<END
+
+### prepend gml_Object_obj_deserialize_parent_Alarm_0
+coop_pos_reseed(2);
+<<<END
+
+### prepend gml_Object_obj_anomaly_fire_parent_Alarm_0
+coop_pos_reseed(3);
+<<<END
+
+### prepend gml_Object_obj_anomaly_gas_parent_Alarm_0
+coop_pos_reseed(4);
+<<<END
+
+### prepend gml_Object_obj_anomaly_electric_generator_Alarm_0
+coop_pos_reseed(5);
+<<<END
+
+### findreplace gml_Object_obj_meteo_controller_Step_0
+<<<FIND
+if (_hour_now != global.weather.last_generated_hour)
+<<<REPLACE
+if (_hour_now != global.weather.last_generated_hour && !coop_world_slave())
+<<<END
+
+### prepend gml_Object_obj_meteo_controller_Alarm_1
+coop_world_on_emission_stage();
+<<<END
+
+### prepend gml_Object_obj_meteo_controller_Alarm_2
+if (coop_world_guest_skips_roll())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_controller_Alarm_3
+if (coop_world_guest_skips_roll())
+{
+    exit;
+}
+<<<END
+
+### findreplace gml_GlobalScript_bullet_hit_npc
+<<<FIND
+        var _shooter_id = shooter_id;
+        var _player = player_get_local();
+<<<REPLACE
+        coop_partner_hit_credit(self, arg1);
+        var _shooter_id = shooter_id;
+        var _player = player_get_local();
+<<<END
+
+### findreplace gml_Object_obj_extraction_point_Step_0
+<<<FIND
+    if (player_distance_local(x + 8, y + 8) < minimum_dis_exit && !player_local_state_is(scr_player_state_inventory))
+<<<REPLACE
+    if (player_distance_local(x + 8, y + 8) < minimum_dis_exit && !player_local_state_is(scr_player_state_inventory) && !coop_down_is_down())
+<<<END
+
+### findreplace gml_GlobalScript_game_pause
+<<<FIND
+                instance_deactivate_region(0, 0, room_width, room_height, true, false);
+<<<REPLACE
+                if (coop_shared_ready())
+                {
+                    // co-op raid: the world keeps running for the partner; only our player is set aside
+                    coop().local_paused = true;
+                    instance_deactivate_object(obj_player);
+                }
+                else
+                {
+                    instance_deactivate_region(0, 0, room_width, room_height, true, false);
+                }
+<<<END
+
+### findreplace gml_GlobalScript_game_pause
+<<<FIND
+    obj_cursor.cursor_before_pause_y = obj_cursor.y;
+}
+<<<REPLACE
+    obj_cursor.cursor_before_pause_y = obj_cursor.y;
+    coop_after_culling();
+}
+<<<END
+
+### findreplace gml_GlobalScript_game_unpause
+<<<FIND
+    move_cursor_room_with_reset(obj_cursor.cursor_before_pause_x, obj_cursor.cursor_before_pause_y);
+}
+<<<REPLACE
+    move_cursor_room_with_reset(obj_cursor.cursor_before_pause_x, obj_cursor.cursor_before_pause_y);
+    coop().local_paused = false;
+    instance_activate_object(obj_player);
+}
 <<<END

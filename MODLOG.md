@@ -142,3 +142,32 @@ map divergence (2 cars on host only), dropped items local only, grenades local o
   containers (corpses) + changed chests. Verified: guest joined 30 s late, identical map, 3 corpses synced.
 - Bug fixed: bullets/mutants hitting the partner's puppet closed YOUR inventory/PDA (scr_autoclose_inventory).
 - Test mode: game_in_focus() true (inventory UI closes when the window loses focus).
+
+## 2026-10-03 night 2: v0.3.0 (protocol 3) - time/XP + proactive bug hunt
+Requested: time-of-day/weather for late joiners, kill XP for the guest.
+- Time: each save has its own clock (obj_light_controller.game_time_played) -> host sends it every 5 s.
+  Weather: global.weather struct sent on each host hour change / peer ready; guest's hourly weather
+  generation is disabled while slaved (meteo Step hook). Emissions (blowouts, deadly): guest never rolls
+  (meteo Alarm_2 hook), host's start is mirrored (meteo Alarm_1 hook). Air drops: guest never rolls
+  (controller Alarm_3); host's drop/guards/containers are replicated.
+- Kill credit: bullet_hit_npc only credits shooter == local player, so guest kills credited nobody. Host now
+  reports partner hits/kills (CREDIT); guest applies rep + kill_check_quest (XP + quests) + kill_add_stat.
+  Verified: 4 kills credited.
+Found & fixed proactively:
+- More map divergence sources: obj_decor_parent Alarm_0 (jitter/variant/destroy - cars are decor),
+  obj_deserialize_parent Alarm_0 (random building templates!), anomaly Alarm_0 (hazard fields + crystal
+  artifacts) -> per-object reseed (seed, xstart, ystart, object). Verified identical with grass 1.0 vs 0.25 and
+  low spec on/off. Map fingerprint exchange: both compare and warn on mismatch.
+- Mutant projectiles (ghoul spit, wraith fire, violet crystal) bypass scr_shoot -> host scans and replicates
+  (homing target remapped).
+- Key doors (obj_door_parent) open on both; late joiners get all open doors.
+- Corpses/air drops: host content is authoritative (CHEST_SPAWN incl. sprite).
+- Pause in a shared raid no longer freezes the world (only our player deactivated); RAID_STATE and down
+  state survive pause (pause used to clear down = free revive).
+- Downed players cannot extract. Guest follows a raid only when not busy (pending raid used to work only
+  in test mode). Version mismatch refused. BYE on game end. Partner name/hp drawn in GUI (visible at
+  night/under roofs) + off-screen edge marker with distance.
+- My old bug: "append" hooks on GlobalScripts put code OUTSIDE the function (game_pause) - now findreplace.
+- Robustness: every obj_coop subsystem runs under coop_try; all mod functions called from game code are
+  try/catch wrapped; crash handler logs to coop_<tag>.log in normal play too.
+- Bug: bullets/mutants hitting the partner's puppet closed YOUR inventory - fixed.

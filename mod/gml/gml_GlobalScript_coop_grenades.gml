@@ -6,7 +6,7 @@
 
 // Hook: end of obj_grenade_parent Create. Faction / thrown_by_player are set right after creation, so the
 // throw is sent from the next obj_coop step.
-function coop_grenade_on_create()
+function coop_grenade_on_create_inner()
 {
     // Only real throws: map-placed mines (child objects, created by the generator on both sides) stay local.
     if (!variable_instance_exists(id, "coop_remote") && object_index == obj_grenade_parent && coop_raid_ready())
@@ -97,4 +97,17 @@ function coop_grenade_hurts_me(_g)
         return coop_setting("friendly_fire");
     }
     return true;
+}
+
+// Called from game code: never let a co-op error escape into it.
+function coop_grenade_on_create()
+{
+    try
+    {
+        coop_grenade_on_create_inner();
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
 }

@@ -378,6 +378,69 @@
       "started": "2026-10-03T16:57:30",
       "minutes": 1.07,
       "result": "all instances exited"
+    },
+    {
+      "start": 1791040659.5345051,
+      "deadline": 1791040899.5345051,
+      "end": 1791040719.825977,
+      "note": "v3: credit/emission/pause/fp",
+      "started": "2026-10-03T17:17:39",
+      "minutes": 1.0,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791040751.7745953,
+      "deadline": 1791040991.7745953,
+      "end": 1791040812.8756392,
+      "note": "v3 #2: credit",
+      "started": "2026-10-03T17:19:11",
+      "minutes": 1.02,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791040877.574056,
+      "deadline": 1791041117.574056,
+      "end": 1791040942.4726164,
+      "note": "v3 #3: credit debug",
+      "started": "2026-10-03T17:21:17",
+      "minutes": 1.08,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791040977.8811862,
+      "deadline": 1791041217.8811862,
+      "end": 1791041025.6735413,
+      "note": "v3 #4: credit debug",
+      "started": "2026-10-03T17:22:57",
+      "minutes": 0.8,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791041035.820624,
+      "deadline": 1791041275.820624,
+      "end": 1791041096.4013588,
+      "note": "join test v3",
+      "started": "2026-10-03T17:23:55",
+      "minutes": 1.01,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791041255.8495085,
+      "deadline": 1791041495.8495085,
+      "end": 1791041314.9910064,
+      "note": "regression: livechest v3 build",
+      "started": "2026-10-03T17:27:35",
+      "minutes": 0.99,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791041319.3043065,
+      "deadline": 1791041499.3043065,
+      "end": 1791041379.9860597,
+      "note": "regression: revive+both v3 build",
+      "started": "2026-10-03T17:28:39",
+      "minutes": 1.01,
+      "result": "all instances exited"
     }
   ],
   "note": "2026-10-03: user lifted the playtime limit (no refund planned)"

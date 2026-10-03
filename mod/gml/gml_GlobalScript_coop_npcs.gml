@@ -5,7 +5,7 @@
 // and footsteps come for free from the replicated position and state.
 
 #macro COOP_MSG_NPC_STATESTR 35
-#macro COOP_NPC_SPAWN_VARS ["npc_id", "faction", "npc_name", "arma_now", "armor_id", "backpack_now", "sprite_idle", "sprite_move", "hp", "hp_max", "ammo_id_now", "npc_speaker_id", "can_be_damaged", "image_xscale"]
+#macro COOP_NPC_SPAWN_VARS ["npc_id", "faction", "npc_name", "arma_now", "armor_id", "backpack_now", "sprite_idle", "sprite_move", "sprite_dead", "hp", "hp_max", "ammo_id_now", "npc_speaker_id", "can_be_damaged", "image_xscale"]
 
 function coop_npc_reset_room()
 {
@@ -45,7 +45,7 @@ function coop_npc_is_replica()
 }
 
 // Prepended to every NPC Step event. Replicas skip their AI; the replica update runs once per frame.
-function coop_npc_skip_step()
+function coop_npc_skip_step_inner()
 {
     if (!coop_npc_is_replica())
     {
@@ -186,7 +186,7 @@ function coop_npc_send_spawn(_inst)
                 {
                     variable_struct_set(_data, _vars[_i], _v);
                 }
-                else if (_vars[_i] == "sprite_idle" || _vars[_i] == "sprite_move")
+                else if (_vars[_i] == "sprite_idle" || _vars[_i] == "sprite_move" || _vars[_i] == "sprite_dead")
                 {
                     variable_struct_set(_data, _vars[_i], real(_v));
                 }
@@ -203,7 +203,7 @@ function coop_npc_send_spawn(_inst)
 }
 
 // Hook: top of obj_npc_parent Destroy.
-function coop_npc_on_destroyed()
+function coop_npc_on_destroyed_inner()
 {
     var _c = coop();
     if (_c.role != "host" || !_c.connected || !variable_instance_exists(id, "coop_nid"))
@@ -441,5 +441,32 @@ function coop_npc_list_forget(_inst)
             global.list_n_id[_i] = -4;
             global.list_n_hp[_i] = -10;
         }
+    }
+}
+
+// Called from game code: never let a co-op error escape into it.
+function coop_npc_skip_step()
+{
+    try
+    {
+        return coop_npc_skip_step_inner();
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    return true;
+}
+
+// Called from game code: never let a co-op error escape into it.
+function coop_npc_on_destroyed()
+{
+    try
+    {
+        coop_npc_on_destroyed_inner();
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
     }
 }

@@ -33,16 +33,14 @@ function coop_on_raid_start(_map, _seed)
         exit;
     }
     coop_log("host started raid map ", _map, " seed ", _seed);
-    if (is_in_hub() && instance_exists(obj_player))
+    _c.pending_raid = { map: _map, seed: _seed, time: current_time };
+    if (is_in_hub() && instance_exists(obj_player) && player_state_is(0, scr_player_state_move))
     {
-        _c.seed = _seed;
-        coop_notify("Following " + _c.peer_name + " into the raid");
-        go_to_map(_map);
+        coop_pending_raid_step();
     }
     else
     {
-        _c.pending_raid = { map: _map, seed: _seed, time: current_time };
-        coop_notify(_c.peer_name + " started a raid - go to the bunker to follow");
+        coop_notify(coop_t(_c.peer_name + " started a raid - you will follow when you close the menu", _c.peer_name + " начал рейд - вы поедете следом, когда закроете меню"));
     }
 }
 
@@ -57,6 +55,8 @@ function coop_on_room_start()
     {
         coop_down_reset();
         coop_chest_reset_room();
+        _c.my_fp = undefined;
+        _c.peer_fp = undefined;
     }
     if (_c.connected)
     {
@@ -102,17 +102,6 @@ function coop_autopilot_step()
             _c.autoraid_done = true;
             coop_log("autopilot: starting raid ", _c.autoraid);
             go_to_map(_c.autoraid);
-        }
-    }
-    // Pending raid for a guest that just arrived in the hub.
-    if (_c.role == "guest" && variable_struct_exists(_c, "pending_raid") && _c.pending_raid != undefined && is_in_hub() && instance_exists(obj_player) && _c.ap_timer > 60)
-    {
-        var _pr = _c.pending_raid;
-        _c.pending_raid = undefined;
-        if (current_time - _pr.time < 120000)
-        {
-            _c.seed = _pr.seed;
-            go_to_map(_pr.map);
         }
     }
     coop_test_press_space();
@@ -391,5 +380,32 @@ function coop_on_peer_ready()
         }
     }
     coop_chest_sync_late_joiner();
+    coop_doors_resend_all();
+    coop_world_sync_peer();
     coop_send_loadout();
+}
+
+// Guest: follow the host's raid as soon as we are in the bunker and not busy (dialog, trading, inventory).
+function coop_pending_raid_step()
+{
+    var _c = coop();
+    if (_c.role != "guest" || _c.pending_raid == undefined)
+    {
+        exit;
+    }
+    var _pr = _c.pending_raid;
+    if (current_time - _pr.time > 180000 || !_c.connected)
+    {
+        _c.pending_raid = undefined;
+        exit;
+    }
+    if (!is_in_hub() || !instance_exists(obj_player) || !player_state_is(0, scr_player_state_move) || instance_exists(obj_main_menu))
+    {
+        exit;
+    }
+    _c.pending_raid = undefined;
+    _c.seed = _pr.seed;
+    coop_notify(coop_t("Following " + _c.peer_name + " into the raid", "Едем за " + _c.peer_name + " в рейд"));
+    __uiGlobal().__defaultOnion.Clear();
+    go_to_map(_pr.map);
 }

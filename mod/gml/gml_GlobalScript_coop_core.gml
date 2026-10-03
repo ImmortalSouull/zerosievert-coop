@@ -1,6 +1,6 @@
 // ZERO Sievert co-op: core state, command line, logging, test-mode helpers.
 
-#macro COOP_VERSION 2
+#macro COOP_VERSION 3
 #macro COOP_PORT 47777
 
 function coop()
@@ -30,6 +30,7 @@ function coop_init_globals()
         peer_hub_ready: false,
         peer_ready: false,
         peer_loc: 0,
+        local_paused: false,
         pending_raid: undefined,
         peer_map: -1,
         peer_name: "Partner",
@@ -208,15 +209,17 @@ function coop_boot()
     {
         instance_create_depth(0, 0, -15000, obj_coop);
     }
-    if (_c.test_mode)
+    // Crashes always go to the co-op log (players can send it with a bug report). Tests run unattended,
+    // so they skip the dialog; normal players still see the message.
+    exception_unhandled_handler(function(_e)
     {
-        // Tests run unattended: log crashes instead of blocking on the error dialog.
-        exception_unhandled_handler(function(_e)
+        coop_log("CRASH: ", _e.longMessage, " | ", _e.stacktrace);
+        if (!coop().test_mode)
         {
-            coop_log("CRASH: ", _e.longMessage, " | ", _e.stacktrace);
-            return 0;
-        });
-    }
+            show_message("ZERO Sievert crashed." + chr(10) + "Co-op log: %LOCALAPPDATA%/ZERO_Sievert/coop_" + coop().tag + ".log" + chr(10) + chr(10) + string(_e.longMessage));
+        }
+        return 0;
+    });
     coop_log("boot, steam=", steam_initialised());
 }
 
@@ -295,4 +298,42 @@ function coop_gen_reseed_after_grass()
         exit;
     }
     random_set_seed((_c.gen_seed + _c.gen_step * 7919 + 4099) mod 2147483647);
+}
+
+// Per-object deterministic RNG for things the map generator creates and that roll their layout a frame later
+// (decor, building templates, anomaly fields, containers): same seed + same position = same result on both.
+function coop_pos_reseed(_salt)
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "gen_seed") || _c.gen_seed == undefined || room != room1)
+    {
+        exit;
+    }
+    var _h = (_c.gen_seed + floor(xstart) * 73856093 + floor(ystart) * 19349663 + real(object_index) * 83492791 + _salt * 2654435) mod 2147483647;
+    random_set_seed(abs(_h));
+}
+
+// Run one subsystem; a bug in it must never take the game down.
+function coop_try(_f)
+{
+    try
+    {
+        _f();
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+}
+
+function coop_report_error(_e)
+{
+    var _c = coop();
+    var _msg = is_struct(_e) ? (string(_e.message) + " @ " + string(_e.stacktrace)) : string(_e);
+    if (!variable_struct_exists(_c, "err_last")) _c.err_last = "";
+    if (_msg != _c.err_last || _c.frame mod 600 == 0)
+    {
+        _c.err_last = _msg;
+        coop_log("ERROR (recovered): ", _msg);
+    }
 }

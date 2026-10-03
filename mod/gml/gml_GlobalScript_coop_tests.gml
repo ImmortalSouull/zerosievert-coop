@@ -11,6 +11,7 @@ function coop_test_ext_step()
     {
         coop_test_join_step();
     }
+    coop_test_v3_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -148,5 +149,79 @@ function coop_test_join_step()
     {
         _c.join_sent = true;
         coop_request_join();
+    }
+}
+
+// v3 scenario: kill credit (guest shoots an NPC), forced emission (host), co-op pause (host).
+function coop_test_v3_step()
+{
+    var _c = coop();
+    if (_c.scenario != "v3" || !coop_shared_ready())
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "v3t")) _c.v3t = 0;
+    _c.v3t++;
+    var _t = _c.v3t;
+    if (_c.role == "guest" && instance_exists(obj_player) && _t >= 150 && _t <= 600)
+    {
+        if (!variable_struct_exists(_c, "v3_target") || !instance_exists(_c.v3_target))
+        {
+            var _best = -4;
+            var _bd = infinity;
+            instance_activate_object(obj_npc_parent);
+            with (obj_npc_parent)
+            {
+                if (coop_npc_is_replica() && hp > 0 && object_is_ancestor(object_index, obj_npc_human_parent))
+                {
+                    var _d = point_distance(x, y, obj_player.x, obj_player.y);
+                    if (_d < _bd) { _bd = _d; _best = id; }
+                }
+            }
+            _c.v3_target = _best;
+            if (instance_exists(_best))
+            {
+                obj_player.x = _best.x - 50;
+                obj_player.y = _best.y;
+                coop_log("v3: guest targets ", object_get_name(_best.object_index), " d=", _bd);
+            }
+        }
+        else if (_t mod 12 == 0)
+        {
+            var _tg = _c.v3_target;
+            obj_player.x = _tg.x - 50;
+            obj_player.y = _tg.y;
+            if (_t mod 48 == 0) coop_log("v3: replica at ", floor(_tg.x), ",", floor(_tg.y), " hp=", _tg.hp);
+            with (obj_player)
+            {
+                if (item_exists(arma_now) && item_get_category(arma_now) == "weapon")
+                {
+                    scr_shoot(point_direction(x, y, _tg.x, _tg.y), 1, item_weapon_get_damage(arma_now) * 3, 0);
+                }
+            }
+        }
+    }
+    if (_c.role == "host" && _t == 300)
+    {
+        with (obj_meteo_controller)
+        {
+            alarm[0] = 2;
+            alarm[1] = 1;
+        }
+        coop_log("v3: host forces an emission");
+    }
+    if (_c.role == "host" && _t == 480)
+    {
+        coop_log("v3: host pauses");
+        game_pause();
+    }
+    if (_c.role == "host" && _t == 600)
+    {
+        game_unpause();
+        coop_log("v3: host unpaused, player exists=", instance_exists(obj_player));
+    }
+    if (_t == 720)
+    {
+        coop_log("v3: done");
     }
 }
