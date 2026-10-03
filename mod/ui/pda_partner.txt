@@ -1,0 +1,11 @@
+			if (CoopPartnerOnMap()) {
+				build UiMinimapPlayerMarker {
+					xy = [CoopPartnerX(), CoopPartnerY()]
+					color = 65280
+
+					step = fn {
+						xy = [CoopPartnerX(), CoopPartnerY()]
+					}
+				}
+			}
+

@@ -1,6 +1,6 @@
 // ZERO Sievert co-op: core state, command line, logging, test-mode helpers.
 
-#macro COOP_VERSION 1
+#macro COOP_VERSION 2
 #macro COOP_PORT 47777
 
 function coop()
@@ -29,6 +29,7 @@ function coop_init_globals()
         peer_in_raid: false,
         peer_hub_ready: false,
         peer_ready: false,
+        peer_loc: 0,
         pending_raid: undefined,
         peer_map: -1,
         peer_name: "Partner",
@@ -282,4 +283,16 @@ function coop_ensure_alive()
     }
     coop_log("controller was missing - recreated in ", room_get_name(room));
     instance_create_depth(0, 0, -15000, obj_coop);
+}
+
+// Hook: end of obj_vertex_grass Create. Grass density follows each player's own graphics setting, so the
+// number of random() calls it makes differs between players; restore a deterministic RNG state after it.
+function coop_gen_reseed_after_grass()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "gen_seed") || _c.gen_seed == undefined || !instance_exists(obj_map_generator) || obj_map_generator.state == 21)
+    {
+        exit;
+    }
+    random_set_seed((_c.gen_seed + _c.gen_step * 7919 + 4099) mod 2147483647);
 }

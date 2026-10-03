@@ -315,6 +315,69 @@
       "started": "2026-10-03T14:09:13",
       "minutes": 1.07,
       "result": "all instances exited"
+    },
+    {
+      "start": 1791038951.100267,
+      "deadline": 1791039191.100267,
+      "end": 1791038986.4874318,
+      "note": "test: livechest/drop/grenade/pda + grass diff",
+      "started": "2026-10-03T16:49:11",
+      "minutes": 0.59,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791039020.189853,
+      "deadline": 1791039260.189853,
+      "end": 1791039067.2661448,
+      "note": "test: livechest #2",
+      "started": "2026-10-03T16:50:20",
+      "minutes": 0.78,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791039100.5805278,
+      "deadline": 1791039340.5805278,
+      "end": 1791039145.6382902,
+      "note": "test: livechest #3",
+      "started": "2026-10-03T16:51:40",
+      "minutes": 0.75,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791039171.6398282,
+      "deadline": 1791039411.6398282,
+      "end": 1791039207.9226873,
+      "note": "test: livechest #4",
+      "started": "2026-10-03T16:52:51",
+      "minutes": 0.6,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791039293.726113,
+      "deadline": 1791039533.726113,
+      "end": 1791039337.4288878,
+      "note": "test: livechest #5",
+      "started": "2026-10-03T16:54:53",
+      "minutes": 0.73,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791039357.6562874,
+      "deadline": 1791039597.6562874,
+      "end": 1791039422.237324,
+      "note": "test: livechest #6 debug guest",
+      "started": "2026-10-03T16:55:57",
+      "minutes": 1.08,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1791039450.4660518,
+      "deadline": 1791039690.4660518,
+      "end": 1791039514.7520938,
+      "note": "test: join raid in progress",
+      "started": "2026-10-03T16:57:30",
+      "minutes": 1.07,
+      "result": "all instances exited"
     }
   ],
   "note": "2026-10-03: user lifted the playtime limit (no refund planned)"

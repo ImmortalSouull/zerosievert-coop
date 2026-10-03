@@ -23,6 +23,7 @@ EOF
 cp $ROOT/mod/ui/enemies_entries.txt "$OUT/ui_enemies_entries.txt"
 cp $ROOT/mod/ui/coop_tab.txt "$OUT/ui_coop_tab.txt"
 cp $ROOT/mod/ui/lang_rows.tsv "$OUT/lang_rows.tsv"
+cp $ROOT/mod/ui/pda_partner.txt "$OUT/ui_pda_partner.txt"
 # PowerShell 5.1 needs a BOM to read UTF-8 (Cyrillic) scripts correctly
 printf '\xef\xbb\xbf' > "$OUT/installer.ps1"; cat $ROOT/dist_src/installer.ps1 >> "$OUT/installer.ps1"
 printf '@echo off\r\nchcp 65001 >nul\r\npowershell -NoProfile -ExecutionPolicy Bypass -File "%%~dp0installer.ps1" install\r\npause\r\n' > "$OUT/install.bat"

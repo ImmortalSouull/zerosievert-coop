@@ -12,6 +12,10 @@ function coop_panel_buttons()
     }
     else
     {
+        if (coop_can_join_host_raid())
+        {
+            array_push(_b, { id: "join_raid", label: coop_t("Join " + _c.peer_name + "'s raid", "Присоединиться к рейду " + _c.peer_name) });
+        }
         if (_c.role == "host" && _c.transport == "steam")
         {
             array_push(_b, { id: "steam_invite", label: coop_t("Invite friend again", "Пригласить друга ещё раз") });
@@ -121,6 +125,10 @@ function coop_panel_click(_id)
         case "ip_join":
             _c.ip_edit = true;
             keyboard_string = _c.last_ip;
+            break;
+        case "join_raid":
+            coop_request_join();
+            _c.panel = false;
             break;
         case "leave":
             coop_on_disconnected();

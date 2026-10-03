@@ -7,6 +7,7 @@
 #macro COOP_MSG_RAID_START 5
 #macro COOP_MSG_RAID_STATE 6
 #macro COOP_MSG_BYE 7
+#macro COOP_MSG_JOIN_REQ 8
 #macro COOP_MSG_PSTATE 10
 #macro COOP_MSG_PLOADOUT 11
 #macro COOP_MSG_BULLET 20
@@ -231,6 +232,9 @@ function coop_handle_message(_b, _size)
             _c.peer_in_raid = false;
             coop_on_disconnected();
             break;
+        case COOP_MSG_JOIN_REQ:
+            coop_on_join_request();
+            break;
         case COOP_MSG_RAID_START:
             var _map = buffer_read(_b, buffer_u8);
             var _seed = buffer_read(_b, buffer_f64);
@@ -248,11 +252,18 @@ function coop_handle_message(_b, _size)
                 coop_log("peer in raid = ", _in, " map ", _pmap);
             }
             _c.peer_in_raid = _in;
-            if (_in && _rdy && !_c.peer_ready)
+            var _became_ready = _in && _rdy && !_c.peer_ready;
+            _c.peer_ready = _in && _rdy;
+            if (_became_ready)
             {
                 coop_log("peer map ready");
+                coop_on_peer_ready();
             }
-            _c.peer_ready = _in && _rdy;
+            if (_c.peer_loc != _loc && _loc == 2 && _c.role == "guest" && is_in_hub())
+            {
+                coop_notify(coop_t(_c.peer_name + " is in a raid - F7 to join", _c.peer_name + " в рейде - F7, чтобы присоединиться"));
+            }
+            _c.peer_loc = _loc;
             _c.peer_hub_ready = (_loc == 1);
             _c.peer_map = _pmap;
             if (!_in)
@@ -273,6 +284,9 @@ function coop_handle_message(_b, _size)
             break;
         case COOP_MSG_BULLET:
             coop_bullet_on_message(_b);
+            break;
+        case COOP_MSG_GRENADE:
+            coop_grenade_on_message(_b);
             break;
         case COOP_MSG_NPC_SPAWN:
             coop_npc_on_spawn(_b);
@@ -299,6 +313,12 @@ function coop_handle_message(_b, _size)
             break;
         case COOP_MSG_CHEST:
             coop_chest_on_message(_b);
+            break;
+        case COOP_MSG_CHEST_SPAWN:
+            coop_chest_on_spawn(_b);
+            break;
+        case COOP_MSG_CHEST_GONE:
+            coop_chest_on_gone(_b);
             break;
         case COOP_MSG_CHEST_REQ:
             coop_chest_on_request(_b);

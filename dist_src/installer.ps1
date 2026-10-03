@@ -30,6 +30,7 @@ if (-not $game) { Say "ZERO Sievert folder not found." "Папка ZERO Sievert 
 if (Get-Process "ZERO Sievert" -ErrorAction SilentlyContinue) { Say "Close the game first." "Сначала закройте игру."; exit 1 }
 $data = Join-Path $game "data.win"
 $ui = Join-Path $game "ZS_vanilla\ui\mm_difficulty.ui"
+$pda = Join-Path $game "ZS_vanilla\ui\pda_map.ui"
 $langDir = Join-Path $game "ZS_vanilla\languages"
 $backup = Join-Path $game "coop_backup"
 
@@ -37,6 +38,7 @@ if ($Action -eq "uninstall") {
     if (-not (Test-Path $backup)) { Say "No backup found - use Steam > Verify integrity of game files." "Бэкап не найден - используйте Steam > Проверить целостность файлов."; exit 1 }
     Copy-Item (Join-Path $backup "data.win") $data -Force
     Copy-Item (Join-Path $backup "mm_difficulty.ui") $ui -Force
+    if (Test-Path (Join-Path $backup "pda_map.ui")) { Copy-Item (Join-Path $backup "pda_map.ui") $pda -Force }
     Get-ChildItem (Join-Path $backup "languages") -Filter *.csv | ForEach-Object {
         Copy-Item $_.FullName (Join-Path $langDir ($_.BaseName + "\" + $_.Name)) -Force
     }
@@ -63,6 +65,7 @@ if (-not (Test-Path $backup) -and $h -eq $cfg.vanilla_sha256) {
     New-Item -ItemType Directory -Force (Join-Path $backup "languages") | Out-Null
     Copy-Item $data (Join-Path $backup "data.win")
     Copy-Item $ui (Join-Path $backup "mm_difficulty.ui")
+    Copy-Item $pda (Join-Path $backup "pda_map.ui")
     Get-ChildItem $langDir -Directory | ForEach-Object {
         $csv = Join-Path $_.FullName ($_.Name + ".csv")
         if (Test-Path $csv) { Copy-Item $csv (Join-Path $backup "languages\") }
@@ -86,6 +89,19 @@ if ($u -notmatch "coop\.difficulty\.tab") {
     $u = [regex]::Replace($u, '(\t\tbuild UiBox \{\r?\n\t\t\tsize = \[50, 50\])', { param($m) $tab + $m.Value })
     if ($u -notmatch "coop\.difficulty\.tab" -or $u -notmatch "enemy_count_mult") { Say "Could not patch the difficulty menu (unexpected file)." "Не удалось изменить меню сложности (неожиданный файл)."; exit 1 }
     [IO.File]::WriteAllText($ui, $u, (New-Object Text.UTF8Encoding($false)))
+}
+
+# 2b. PDA map: partner marker (older installs have no pda_map.ui backup yet - take it now if untouched)
+if ((Test-Path $backup) -and -not (Test-Path (Join-Path $backup "pda_map.ui"))) {
+    $p0 = [IO.File]::ReadAllText($pda)
+    if ($p0 -notmatch "CoopPartnerOnMap") { Copy-Item $pda (Join-Path $backup "pda_map.ui") }
+}
+$pm = [IO.File]::ReadAllText($pda)
+if ($pm -notmatch "CoopPartnerOnMap") {
+    $marker = [IO.File]::ReadAllText((Join-Path $here "ui_pda_partner.txt"))
+    $pm = [regex]::Replace($pm, '(\t\t\t//Allow scrolling around the minimap)', { param($m) $marker + $m.Value })
+    if ($pm -notmatch "CoopPartnerOnMap") { Say "Could not patch the PDA map (unexpected file)." "Не удалось изменить карту КПК (неожиданный файл)."; exit 1 }
+    [IO.File]::WriteAllText($pda, $pm, (New-Object Text.UTF8Encoding($false)))
 }
 
 # 3. Language rows (Russian text for russian, English for every other language)

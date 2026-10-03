@@ -40,6 +40,29 @@ function coop_setting(_name)
     return difficulty_get(_key);
 }
 
+// Difficulty keys that shape the shared world (generation, loot rolls, enemy amounts): in a shared raid the
+// guest must use the host's values or the two maps/containers diverge.
+function coop_is_world_setting(_key)
+{
+    return string_pos("loot_", _key) == 1 || string_pos("armor_class_", _key) == 1 || _key == "enemy_count_mult"
+        || _key == "anomaly_mult" || _key == "enemy_human_hp" || _key == "enemy_mutant_hp";
+}
+
+// Hook: top of difficulty_get(). Returns the host's value for world keys while we are a connected guest.
+function coop_difficulty_override(_key)
+{
+    var _c = coop();
+    if (_c.role != "guest" || !_c.connected || !variable_struct_exists(_c, "host_settings") || !coop_is_world_setting(_key))
+    {
+        return undefined;
+    }
+    if (variable_struct_exists(_c.host_settings, _key))
+    {
+        return variable_struct_get(_c.host_settings, _key);
+    }
+    return undefined;
+}
+
 function coop_settings_send()
 {
     var _c = coop();
@@ -52,6 +75,14 @@ function coop_settings_send()
     for (var _i = 0; _i < array_length(_keys); _i++)
     {
         variable_struct_set(_data, _keys[_i], difficulty_get(_keys[_i]));
+    }
+    var _all = variable_struct_get_names(global.__difficulty_data);
+    for (var _i = 0; _i < array_length(_all); _i++)
+    {
+        if (coop_is_world_setting(_all[_i]))
+        {
+            variable_struct_set(_data, _all[_i], difficulty_get(_all[_i]));
+        }
     }
     coop_msg_begin(COOP_MSG_SETTINGS);
     buffer_write(_c.send_buf, buffer_string, json_stringify(_data));

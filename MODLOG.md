@@ -118,3 +118,27 @@ Test harness: tools/test2.sh, tools/wait.sh, tools/logs.sh, tools/shots.sh; test
 - Installer upgrades an older co-op install (restores vanilla from coop_backup first).
 - Protocol unchanged (COOP_VERSION 1): v0.1.0 and v0.1.1 can still play together.
 - Agent playtime 39/80 min after this session.
+
+## 2026-10-03 evening: v0.2.0 (protocol 2) - fixes from the first real session
+User report (OBS video 16-10-05): no join-in-progress, no partner on PDA map, chest loot not live,
+map divergence (2 cars on host only), dropped items local only, grenades local only.
+- Map divergence causes: obj_vertex_grass is created during generation and its density follows each
+  player's "amount grass" setting -> different number of random() calls; fixed by re-seeding right after
+  grass Create. Also world-shaping difficulty keys (loot_*, armor_class_*, enemy_count_mult, anomaly_mult,
+  enemy_*_hp) now come from the host on a connected guest (difficulty_get hook). Verified identical
+  fingerprints with grass 1.0 vs 0.25.
+- Chest UI keeps content in UI elements until close (ui_chest_close writes db). Live sync: read UI items
+  every 6 frames (uiFindAllType(... "class_ui_item") parent "other inventory"), send; on receive rebuild open
+  grid (Destroy items + ui_chest_populate). Verified both open same chest, host takes item -> guest UI 8->7.
+- Dropped items = obj_chest_general tipo "discard" created in ui_chest_close -> CHEST_SPAWN to partner;
+  emptied/destroyed containers -> CHEST_GONE. Spawned containers skip the loot roll (Alarm_0 hook).
+- Grenades: obj_grenade_parent Create -> next step send GRENADE (id, start, dir, detonation point, speed,
+  faction, by_player); explosion already hurts only the local player; partner grenades respect friendly fire.
+  Map-placed mines are not replicated.
+- PDA map: Catspeak functions CoopPartnerOnMap/X/Y registered; installer inserts a green
+  UiMinimapPlayerMarker into pda_map.ui (backed up). Verified screenshot.
+- Join in progress: F7 "Join host's raid" -> JOIN_REQ -> host resends settings + RAID_START(map, seed);
+  host always seeds its raids while hosting. On peer ready the host resends all NPC spawns and all dynamic
+  containers (corpses) + changed chests. Verified: guest joined 30 s late, identical map, 3 corpses synced.
+- Bug fixed: bullets/mutants hitting the partner's puppet closed YOUR inventory/PDA (scr_autoclose_inventory).
+- Test mode: game_in_focus() true (inventory UI closes when the window loses focus).

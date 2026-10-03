@@ -4,16 +4,23 @@
 function coop_hook_go_to_map(_map)
 {
     var _c = coop();
-    if (_c.role == "host" && _c.connected)
+    if (_c.role == "host")
     {
+        // Always a known seed while hosting, so a partner can still join this raid later.
         var _seed = irandom(2147483646);
         _c.seed = _seed;
+        if (!_c.connected)
+        {
+            coop_log("raid started without partner, seed ", _seed);
+            exit;
+        }
+        coop_settings_send(); // world settings must arrive before the guest generates the map
         coop_msg_begin(COOP_MSG_RAID_START);
         buffer_write(_c.send_buf, buffer_u8, _map);
         buffer_write(_c.send_buf, buffer_f64, _seed);
         coop_msg_send(true);
         coop_log("raid start sent: map ", _map, " seed ", _seed);
-        coop_settings_send();
+        _c.raid_map = _map;
     }
 }
 
@@ -49,6 +56,7 @@ function coop_on_room_start()
     if (room == room1)
     {
         coop_down_reset();
+        coop_chest_reset_room();
     }
     if (_c.connected)
     {
@@ -111,6 +119,7 @@ function coop_autopilot_step()
     coop_bot_step();
     coop_scenario_step();
     coop_scenario_hub_step();
+    coop_test_ext_step();
 }
 
 function coop_scenario_hub_step()
@@ -286,7 +295,7 @@ function coop_test_press_space()
     var _need = (room == r_logo_screen);
     if (coop_in_raid())
     {
-        _need = !instance_exists(obj_player) || !player_state_is(0, scr_player_state_move);
+        _need = !instance_exists(obj_player) || player_state_is(0, scr_player_state_start);
     }
     if (_need)
     {
@@ -328,4 +337,59 @@ function coop_bot_step()
         aim_point_x = x + lengthdir_x(40, _a + 90);
         aim_point_y = y + lengthdir_y(40, _a + 90);
     }
+}
+
+// ---- joining a raid in progress ----
+
+function coop_can_join_host_raid()
+{
+    var _c = coop();
+    return _c.role == "guest" && _c.connected && _c.peer_loc == 2 && is_in_hub() && instance_exists(obj_player);
+}
+
+// Guest (F7 panel): ask the host for its raid.
+function coop_request_join()
+{
+    var _c = coop();
+    coop_msg_begin(COOP_MSG_JOIN_REQ);
+    coop_msg_send(true);
+    coop_notify(coop_t("Asking " + _c.peer_name + " to join the raid...", "Запрос на вход в рейд " + _c.peer_name + "..."));
+    coop_log("join request sent");
+}
+
+// Host: send the running raid (settings + map + seed) to a guest standing in the bunker.
+function coop_on_join_request()
+{
+    var _c = coop();
+    if (_c.role != "host" || !coop_raid_ready() || _c.gen_seed == undefined)
+    {
+        coop_log("join request ignored (not in a raid)");
+        exit;
+    }
+    coop_settings_send();
+    coop_msg_begin(COOP_MSG_RAID_START);
+    buffer_write(_c.send_buf, buffer_u8, obj_map_generator.area);
+    buffer_write(_c.send_buf, buffer_f64, _c.gen_seed);
+    coop_msg_send(true);
+    coop_log("join request accepted: map ", obj_map_generator.area, " seed ", _c.gen_seed);
+}
+
+// Host: the guest's copy of our raid finished generating (fresh start or late join): stream everything.
+function coop_on_peer_ready()
+{
+    var _c = coop();
+    if (_c.role != "host" || !coop_raid_ready())
+    {
+        exit;
+    }
+    instance_activate_object(obj_npc_parent);
+    with (obj_npc_parent)
+    {
+        if (variable_instance_exists(id, "coop_spawn_sent"))
+        {
+            coop_spawn_sent = false;
+        }
+    }
+    coop_chest_sync_late_joiner();
+    coop_send_loadout();
 }

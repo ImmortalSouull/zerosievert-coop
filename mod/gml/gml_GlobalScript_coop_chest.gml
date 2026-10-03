@@ -1,10 +1,17 @@
 // ZERO Sievert co-op: shared containers.
-// 1. Contents are rolled from a seed derived from the raid seed + container position, so both players
-//    get the same loot in the same box (map containers and NPC corpses alike).
-// 2. Whenever a container near the local player changes (items taken/added), its full content is sent;
-//    the partner overwrites its copy. Containers are matched by object + position.
+// 1. Contents are rolled from a seed derived from the raid seed + container position, so both players get
+//    the same loot in the same box (map containers and NPC corpses alike).
+// 2. Live sync: while a container is open, its content is read from the UI every few frames (the game only
+//    writes it back to the database on close); changes are sent, and an open copy on the partner's side is
+//    rebuilt in place.
+// 3. Containers created during the raid by a player (dropped items = "discard" bags) are spawned on the
+//    partner's side; destroyed containers (emptied bags) disappear on both sides.
+// 4. For a guest joining a raid in progress the host sends every changed / dynamic container.
+// Containers are matched by object + position.
 
-// Hook: top of obj_chest_general Alarm_0 (content roll).
+#macro COOP_MSG_CHEST_SPAWN 52
+#macro COOP_MSG_CHEST_GONE 53
+
 function coop_chest_seed()
 {
     var _c = coop();
@@ -14,6 +21,29 @@ function coop_chest_seed()
     }
     var _h = (_c.gen_seed + floor(x) * 73856093 + floor(y) * 19349663 + real(object_index) * 83492791) mod 2147483647;
     random_set_seed(abs(_h));
+}
+
+// Hook: top of obj_chest_general Alarm_0. A container spawned from the network already has its content:
+// write it instead of rolling loot. Returns true to skip the roll.
+function coop_chest_alarm_hook()
+{
+    if (variable_instance_exists(id, "coop_pending_items"))
+    {
+        depth = -y + 6;
+        chest_sprite = chest_sprite ?? chest_get_sprite(tipo);
+        sprite_index = chest_sprite;
+        db_open("all loot");
+        db_write("chest_" + string(id), "chest_x", x);
+        db_write("chest_" + string(id), "chest_y", y);
+        db_write("chest_" + string(id), "items", coop_chest_items_from_json(coop_pending_items));
+        db_close();
+        coop_sig = json_stringify(coop_chest_read(id));
+        coop_pending_items = undefined;
+        variable_instance_set(id, "coop_pending_items", undefined);
+        return true;
+    }
+    coop_chest_seed();
+    return false;
 }
 
 function coop_chest_key(_inst)
@@ -29,52 +59,18 @@ function coop_chest_read(_inst)
     return _items;
 }
 
-function coop_chest_step()
+function coop_chest_items_from_json(_json)
 {
-    var _c = coop();
-    if (!coop_shared_ready() || !instance_exists(obj_player) || _c.frame mod 20 != 0)
+    var _items = is_string(_json) ? json_parse(_json) : _json;
+    for (var _i = 0; _i < array_length(_items); _i++)
     {
-        exit;
+        _items[_i] = coop_struct_to_loot(_items[_i]);
     }
-    var _px = obj_player.x;
-    var _py = obj_player.y;
-    with (obj_chest_general)
-    {
-        if (point_distance(x, y, _px, _py) > 72)
-        {
-            continue;
-        }
-        var _items = coop_chest_read(id);
-        if (_items == undefined)
-        {
-            continue;
-        }
-        var _json = json_stringify(_items);
-        if (!variable_instance_exists(id, "coop_sig"))
-        {
-            coop_sig = _json; // first sight: remember, nothing to send
-            continue;
-        }
-        if (coop_sig != _json)
-        {
-            coop_sig = _json;
-            coop_msg_begin(COOP_MSG_CHEST);
-            buffer_write(_c.send_buf, buffer_string, coop_chest_key(id));
-            buffer_write(_c.send_buf, buffer_string, _json);
-            coop_msg_send(true);
-            coop_log("chest changed, sent ", coop_chest_key(id));
-        }
-    }
+    return _items;
 }
 
-function coop_chest_on_message(_b)
+function coop_chest_find(_key)
 {
-    var _key = buffer_read(_b, buffer_string);
-    var _json = buffer_read(_b, buffer_string);
-    if (!coop_in_raid())
-    {
-        exit;
-    }
     var _parts = string_split(_key, "_");
     var _obj = real(_parts[0]);
     var _x = real(_parts[1]);
@@ -89,24 +85,394 @@ function coop_chest_on_message(_b)
             break;
         }
     }
+    return _found;
+}
+
+// Registry (host keeps it for late joiners): key -> latest content json.
+function coop_chest_registry()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "chest_reg"))
+    {
+        _c.chest_reg = ds_map_create();
+    }
+    return _c.chest_reg;
+}
+
+function coop_chest_send_content(_key, _json)
+{
+    var _c = coop();
+    ds_map_set(coop_chest_registry(), _key, _json);
+    if (!coop_shared_ready())
+    {
+        exit;
+    }
+    coop_msg_begin(COOP_MSG_CHEST);
+    buffer_write(_c.send_buf, buffer_string, _key);
+    buffer_write(_c.send_buf, buffer_string, _json);
+    coop_msg_send(true);
+}
+
+// ---- UI side ----
+
+// Content of the container currently open in the inventory UI, as plain data (or undefined).
+function coop_chest_ui_items()
+{
+    var _root = uiLayerGetRoot("inventory layer");
+    if (_root == undefined)
+    {
+        return undefined;
+    }
+    var _loot_ui_array = uiFindAllType(_root, "class_ui_item");
+    var _out = [];
+    for (var _i = 0; _i < array_length(_loot_ui_array); _i++)
+    {
+        var _loot_ui = _loot_ui_array[_i];
+        if (_loot_ui.Get("parent").identifier == "other inventory")
+        {
+            array_push(_out, coop_loot_to_struct(ui_convert_element_to_loot(_loot_ui)));
+        }
+    }
+    return _out;
+}
+
+function coop_chest_open_target()
+{
+    var _d = uiGetData();
+    if (!_d.chest_using || _d.chest_target == undefined || !instance_exists(_d.chest_target))
+    {
+        return -4;
+    }
+    return _d.chest_target;
+}
+
+// Partner changed a container we have open: rebuild the "other inventory" grid from the database.
+function coop_chest_ui_refresh(_target)
+{
+    if (instance_exists(obj_mouse) && variable_instance_exists(obj_mouse, "dragging") && obj_mouse.dragging)
+    {
+        _target.coop_refresh_pending = true; // never pull an item out from under the cursor
+        exit;
+    }
+    var _root = uiLayerGetRoot("inventory layer");
+    if (_root == undefined)
+    {
+        exit;
+    }
+    var _loot_ui_array = uiFindAllType(_root, "class_ui_item");
+    for (var _i = 0; _i < array_length(_loot_ui_array); _i++)
+    {
+        if (_loot_ui_array[_i].Get("parent").identifier == "other inventory")
+        {
+            _loot_ui_array[_i].Destroy();
+        }
+    }
+    ui_chest_populate(_target);
+    _target.coop_ui_sig = json_stringify(coop_chest_ui_items());
+    _target.coop_refresh_pending = false;
+}
+
+function coop_chest_step()
+{
+    var _c = coop();
+    if (!coop_raid_ready() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    // Live: the open container.
+    var _open = coop_chest_open_target();
+    if (instance_exists(_open) && _c.frame mod 6 == 0)
+    {
+        with (_open)
+        {
+            if (variable_instance_exists(id, "coop_refresh_pending") && coop_refresh_pending)
+            {
+                coop_chest_ui_refresh(id);
+            }
+            var _items = coop_chest_ui_items();
+            if (_items != undefined)
+            {
+                var _json = json_stringify(_items);
+                if (!variable_instance_exists(id, "coop_ui_sig") || coop_ui_sig == undefined)
+                {
+                    coop_ui_sig = _json;
+                }
+                else if (coop_ui_sig != _json)
+                {
+                    coop_ui_sig = _json;
+                    coop_sig = _json;
+                    db_open("all loot");
+                    db_write("chest_" + string(id), "items", coop_chest_items_from_json(_json));
+                    db_close();
+                    coop_chest_send_content(coop_chest_key(id), _json);
+                    coop_log("chest live change sent ", coop_chest_key(id));
+                }
+            }
+        }
+    }
+    if (variable_struct_exists(_c, "chest_last_open") && _c.chest_last_open != _open && instance_exists(_c.chest_last_open))
+    {
+        // closed: the next open starts from a fresh UI snapshot
+        variable_instance_set(_c.chest_last_open, "coop_ui_sig", undefined);
+    }
+    _c.chest_last_open = _open;
+    // Dynamic containers (dropped bags) waiting to be announced.
+    if (_c.frame mod 10 == 0)
+    {
+        coop_chest_announce_pending();
+    }
+    // Closed containers near us (writes made on close, scripted changes).
+    if (_c.frame mod 20 != 0)
+    {
+        exit;
+    }
+    var _px = obj_player.x;
+    var _py = obj_player.y;
+    with (obj_chest_general)
+    {
+        if (point_distance(x, y, _px, _py) > 72 || id == _open)
+        {
+            continue;
+        }
+        var _items = coop_chest_read(id);
+        if (_items == undefined)
+        {
+            continue;
+        }
+        var _json = json_stringify(_items);
+        if (!variable_instance_exists(id, "coop_sig") || coop_sig == undefined)
+        {
+            coop_sig = _json;
+            continue;
+        }
+        if (coop_sig != _json)
+        {
+            coop_sig = _json;
+            coop_chest_send_content(coop_chest_key(id), _json);
+            coop_log("chest changed, sent ", coop_chest_key(id));
+        }
+    }
+}
+
+function coop_chest_on_message(_b)
+{
+    var _key = buffer_read(_b, buffer_string);
+    var _json = buffer_read(_b, buffer_string);
+    if (!coop_in_raid())
+    {
+        exit;
+    }
+    ds_map_set(coop_chest_registry(), _key, _json);
+    var _found = coop_chest_find(_key);
     if (!instance_exists(_found))
     {
         coop_log("chest update for unknown container ", _key);
         exit;
     }
-    var _items = json_parse(_json);
-    // Rebuild class_loot structs so the inventory code gets the methods it expects.
-    for (var _i = 0; _i < array_length(_items); _i++)
-    {
-        _items[_i] = coop_struct_to_loot(_items[_i]);
-    }
     db_open("all loot");
-    db_write("chest_" + string(_found.id), "items", _items);
+    db_write("chest_" + string(_found.id), "chest_x", _found.x);
+    db_write("chest_" + string(_found.id), "chest_y", _found.y);
+    db_write("chest_" + string(_found.id), "items", coop_chest_items_from_json(_json));
     db_close();
     _found.coop_sig = json_stringify(coop_chest_read(_found));
+    if (coop_chest_open_target() == _found)
+    {
+        coop_chest_ui_refresh(_found);
+    }
     coop_log("chest updated from partner ", _key);
 }
 
 function coop_chest_on_request(_b)
 {
+}
+
+// ---- dynamic containers ----
+
+// Hook: top of obj_chest_general Create.
+function coop_chest_on_create()
+{
+    if (variable_instance_exists(id, "coop_net_spawned") || !coop_raid_ready())
+    {
+        exit;
+    }
+    // Created after the map was generated: a corpse, an air drop or a dropped bag.
+    coop_dynamic = true;
+    var _c = coop();
+    if (!variable_struct_exists(_c, "chest_dyn"))
+    {
+        _c.chest_dyn = [];
+    }
+    array_push(_c.chest_dyn, id);
+}
+
+// Dropped bags ("discard") are created only on the dropping player's machine: announce them once their
+// content has been written (ui_chest_close writes right after creating the bag).
+function coop_chest_announce_pending()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "chest_dyn"))
+    {
+        exit;
+    }
+    for (var _i = 0; _i < array_length(_c.chest_dyn); _i++)
+    {
+        var _inst = _c.chest_dyn[_i];
+        if (!instance_exists(_inst) || variable_instance_exists(_inst, "coop_announced"))
+        {
+            continue;
+        }
+        if (_inst.tipo != "discard")
+        {
+            continue;
+        }
+        var _items = coop_chest_read(_inst);
+        if (_items == undefined)
+        {
+            continue;
+        }
+        _inst.coop_announced = true;
+        coop_chest_send_spawn(_inst, json_stringify(_items));
+    }
+}
+
+function coop_chest_send_spawn(_inst, _json)
+{
+    var _c = coop();
+    ds_map_set(coop_chest_registry(), coop_chest_key(_inst), _json);
+    if (!coop_shared_ready())
+    {
+        exit;
+    }
+    coop_msg_begin(COOP_MSG_CHEST_SPAWN);
+    buffer_write(_c.send_buf, buffer_s32, real(_inst.object_index));
+    buffer_write(_c.send_buf, buffer_f32, _inst.x);
+    buffer_write(_c.send_buf, buffer_f32, _inst.y);
+    buffer_write(_c.send_buf, buffer_string, string(_inst.tipo));
+    buffer_write(_c.send_buf, buffer_string, is_string(_inst.name_chest) ? _inst.name_chest : "");
+    buffer_write(_c.send_buf, buffer_string, _json);
+    coop_msg_send(true);
+    coop_log("container spawn sent ", coop_chest_key(_inst), " tipo ", _inst.tipo);
+}
+
+function coop_chest_on_spawn(_b)
+{
+    var _obj = buffer_read(_b, buffer_s32);
+    var _x = buffer_read(_b, buffer_f32);
+    var _y = buffer_read(_b, buffer_f32);
+    var _tipo = buffer_read(_b, buffer_string);
+    var _name = buffer_read(_b, buffer_string);
+    var _json = buffer_read(_b, buffer_string);
+    if (!coop_in_raid() || !object_exists(_obj))
+    {
+        exit;
+    }
+    var _key = string(_obj) + "_" + string(floor(_x)) + "_" + string(floor(_y));
+    var _old = coop_chest_find(_key);
+    if (instance_exists(_old))
+    {
+        // Already there (e.g. both created the same corpse): just take the content.
+        db_open("all loot");
+        db_write("chest_" + string(_old.id), "items", coop_chest_items_from_json(_json));
+        db_close();
+        _old.coop_sig = json_stringify(coop_chest_read(_old));
+        exit;
+    }
+    var _inst = instance_create_depth(_x, _y, -_y, _obj, { coop_net_spawned: true });
+    with (_inst)
+    {
+        tipo = _tipo;
+        if (_name != "")
+        {
+            name_chest = _name;
+        }
+        coop_pending_items = _json;
+        coop_announced = true;
+        alarm[0] = 1;
+    }
+    coop_log("container spawned from partner ", _key, " tipo ", _tipo);
+}
+
+// Hook: obj_chest_general Destroy (an emptied bag / container removed by the game).
+function coop_chest_on_destroy()
+{
+    if (!coop_shared_ready() || variable_instance_exists(id, "coop_net_gone"))
+    {
+        exit;
+    }
+    var _c = coop();
+    var _key = coop_chest_key(id);
+    ds_map_delete(coop_chest_registry(), _key);
+    coop_msg_begin(COOP_MSG_CHEST_GONE);
+    buffer_write(_c.send_buf, buffer_string, _key);
+    coop_msg_send(true);
+}
+
+function coop_chest_on_gone(_b)
+{
+    var _key = buffer_read(_b, buffer_string);
+    if (!coop_in_raid())
+    {
+        exit;
+    }
+    ds_map_delete(coop_chest_registry(), _key);
+    var _found = coop_chest_find(_key);
+    if (instance_exists(_found))
+    {
+        if (coop_chest_open_target() == _found)
+        {
+            ui_chest_close();
+        }
+        _found.coop_net_gone = true;
+        db_open("all loot");
+        db_section_delete("chest_" + string(_found.id));
+        db_close();
+        with (_found)
+        {
+            instance_destroy();
+        }
+    }
+}
+
+// Host: a guest just finished loading into our raid - send every dynamic container and every change.
+function coop_chest_sync_late_joiner()
+{
+    var _c = coop();
+    var _sent = 0;
+    if (variable_struct_exists(_c, "chest_dyn"))
+    {
+        for (var _i = 0; _i < array_length(_c.chest_dyn); _i++)
+        {
+            var _inst = _c.chest_dyn[_i];
+            instance_activate_object(_inst);
+            if (!instance_exists(_inst))
+            {
+                continue;
+            }
+            var _items = coop_chest_read(_inst);
+            if (_items != undefined)
+            {
+                coop_chest_send_spawn(_inst, json_stringify(_items));
+                _sent++;
+            }
+        }
+    }
+    var _reg = coop_chest_registry();
+    var _k = ds_map_find_first(_reg);
+    while (_k != undefined)
+    {
+        coop_msg_begin(COOP_MSG_CHEST);
+        buffer_write(_c.send_buf, buffer_string, _k);
+        buffer_write(_c.send_buf, buffer_string, ds_map_find_value(_reg, _k));
+        coop_msg_send(true);
+        _sent++;
+        _k = ds_map_find_next(_reg, _k);
+    }
+    coop_log("late joiner: sent ", _sent, " container messages");
+}
+
+function coop_chest_reset_room()
+{
+    var _c = coop();
+    _c.chest_dyn = [];
+    ds_map_clear(coop_chest_registry());
 }

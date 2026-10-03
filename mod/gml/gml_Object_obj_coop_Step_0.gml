@@ -1,4 +1,5 @@
 coop_net_step();
+coop_ui_register();
 coop_steam_step();
 coop_panel_step();
 coop_autopilot_step();
@@ -6,4 +7,5 @@ coop_players_step();
 coop_down_step();
 coop_npc_host_step();
 coop_chest_step();
+coop_grenade_step();
 coop_diag_step();
