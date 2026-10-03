@@ -203,13 +203,14 @@ function coop_puppet_on_state(_b)
     var _c = coop();
     if (!_c.peer_in_raid)
     {
-        _c.peer_in_raid = true;
+        exit;
     }
     var _p = coop_puppet_ensure(_x, _y);
     if (!instance_exists(_p))
     {
         exit;
     }
+    coop_spawn_sync(_x, _y);
     with (_p)
     {
         coop_net_x = _x;
@@ -315,5 +316,43 @@ function coop_puppet_draw_tag()
         draw_set_alpha(1);
         draw_set_halign(fa_left);
         draw_set_valign(fa_top);
+    }
+}
+
+// Guest: start the raid next to the host (once, right after loading).
+function coop_spawn_sync(_hx, _hy)
+{
+    var _c = coop();
+    if (_c.role != "guest" || _c.spawn_synced || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (obj_map_generator.state != 21 || !player_state_is(0, scr_player_state_move) || (_hx == 0 && _hy == 0))
+    {
+        exit;
+    }
+    _c.spawn_synced = true;
+    if (point_distance(obj_player.x, obj_player.y, _hx, _hy) < 120)
+    {
+        exit;
+    }
+    // Nearest free spot around the host.
+    for (var _r = 16; _r <= 64; _r += 8)
+    {
+        for (var _a = 0; _a < 360; _a += 45)
+        {
+            var _nx = _hx + lengthdir_x(_r, _a);
+            var _ny = _hy + lengthdir_y(_r, _a);
+            with (obj_player)
+            {
+                if (!place_meeting(_nx, _ny, obj_solid))
+                {
+                    x = _nx;
+                    y = _ny;
+                    coop_log("spawn synced next to host at ", floor(_nx), ",", floor(_ny));
+                    return;
+                }
+            }
+        }
     }
 }

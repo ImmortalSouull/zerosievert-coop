@@ -3,12 +3,12 @@
 function coop_draw_gui()
 {
     var _c = coop();
+    display_set_gui_size(960, 540);
     draw_set_font(-1);
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
-    var _gw = display_get_gui_width();
     var _x = 8;
-    var _y = 8;
+    var _y = 58;
     if (_c.role != "none")
     {
         var _txt = "CO-OP " + string_upper(_c.role) + " [" + _c.transport + "] ";
@@ -48,4 +48,12 @@ function coop_draw_gui()
             _y += string_height(_c.log_lines[_j]);
         }
     }
+    if (coop_in_raid() && variable_global_exists("language_fonts") && is_array(global.language_fonts) && font_exists(global.language_fonts[1]))
+    {
+        display_set_gui_size(480, 270);
+        language_set_font(1);
+        coop_down_draw_gui();
+        draw_set_font(-1);
+    }
+    display_set_gui_size(1920, 1080);
 }

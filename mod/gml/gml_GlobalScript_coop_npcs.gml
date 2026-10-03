@@ -41,13 +41,13 @@ function coop_npc_find(_nid)
 
 function coop_npc_is_replica()
 {
-    return variable_instance_exists(id, "coop_replica");
+    return variable_instance_exists(id, "coop_replica") && coop_replica == true;
 }
 
 // Prepended to every NPC Step event. Replicas skip their AI; the replica update runs once per frame.
 function coop_npc_skip_step()
 {
-    if (!variable_instance_exists(id, "coop_replica"))
+    if (!coop_npc_is_replica())
     {
         return false;
     }
@@ -62,7 +62,7 @@ function coop_npc_skip_step()
 // Prepended to NPC alarms that move or re-target (3, 5, 6).
 function coop_npc_skip_alarm()
 {
-    return variable_instance_exists(id, "coop_replica");
+    return coop_npc_is_replica();
 }
 
 // ---- host side ----
@@ -241,9 +241,9 @@ function coop_npc_guest_release()
 {
     with (obj_npc_parent)
     {
-        if (variable_instance_exists(id, "coop_replica"))
+        if (coop_npc_is_replica())
         {
-            variable_instance_set(id, "coop_replica", undefined);
+            coop_replica = false; // AI takes over again, purge leaves it alone (variable still exists)
         }
     }
 }

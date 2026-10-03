@@ -238,7 +238,9 @@ function coop_handle_message(_b, _size)
         case COOP_MSG_RAID_STATE:
             var _loc = buffer_read(_b, buffer_u8);
             var _pmap = buffer_read(_b, buffer_s8);
-            var _in = (_loc == 2);
+            var _rid = buffer_read(_b, buffer_f64);
+            var _in = (_loc == 2) && _rid >= 0 && _c.gen_seed != undefined && _rid == _c.gen_seed && coop_in_raid();
+            var _was = _c.peer_in_raid;
             if (_c.peer_in_raid != _in)
             {
                 coop_log("peer in raid = ", _in, " map ", _pmap);
@@ -249,6 +251,11 @@ function coop_handle_message(_b, _size)
             if (!_in)
             {
                 coop_puppet_remove();
+                if (_was && _c.role == "guest")
+                {
+                    coop_npc_guest_release();
+                    coop_notify(coop_t(_c.peer_name + " left the raid", _c.peer_name + " покинул рейд"));
+                }
             }
             break;
         case COOP_MSG_PSTATE:
@@ -352,6 +359,7 @@ function coop_send_raid_state()
     var _loc = _in ? 2 : ((is_in_hub() && instance_exists(obj_player)) ? 1 : 0);
     buffer_write(_c.send_buf, buffer_u8, _loc);
     buffer_write(_c.send_buf, buffer_s8, _in ? obj_map_generator.area : -1);
+    buffer_write(_c.send_buf, buffer_f64, (_in && _c.gen_seed != undefined) ? _c.gen_seed : -1);
     coop_msg_send(true);
 }
 

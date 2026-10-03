@@ -39,6 +39,8 @@ function coop_init_globals()
         autoraid: -1,
         autoraid_done: false,
         bot: false,
+        scenario: "",
+        sc_t: 0,
         window: undefined,
         frame: 0,
         send_buf: buffer_create(256, buffer_grow, 1),
@@ -49,6 +51,9 @@ function coop_init_globals()
         npc_state_names: [],
         npc_state_next: 0,
         bullet_quiet: false,
+        spawn_synced: false,
+        gen_seed: undefined,
+        gen_step: 0,
         stats_sent: 0,
         stats_recv: 0,
         overlay: true,
@@ -92,6 +97,9 @@ function coop_parse_params()
                 break;
             case "-coop_bot":
                 _c.bot = true;
+                break;
+            case "-coop_scenario":
+                _c.scenario = _v;
                 break;
             case "-coop_window":
                 // x,y,w,h
@@ -141,7 +149,7 @@ function coop_active()
 function coop_guest_in_raid()
 {
     var _c = coop();
-    return _c.role == "guest" && _c.connected && coop_in_raid();
+    return _c.role == "guest" && _c.connected && _c.peer_in_raid && coop_in_raid();
 }
 
 function coop_in_raid()
@@ -199,6 +207,9 @@ function coop_take_seed()
     var _c = coop();
     var _s = _c.seed;
     _c.seed = undefined;
+    _c.gen_seed = _s;
+    _c.gen_step = 0;
+    _c.spawn_synced = false;
     if (_s != undefined)
     {
         coop_log("map generator uses coop seed ", _s);
@@ -221,4 +232,18 @@ function coop_after_culling()
             instance_activate_region(_p.x - 480, _p.y - 270, 960, 540, true);
         }
     }
+}
+
+// Hook: top of obj_map_generator Alarm_2 (one generation step per fire). Re-seeding every step makes
+// the shared map depend only on the seed and step number, not on random() calls made by other
+// objects between steps (weather, particles, sounds...), so host and guest build the same map.
+function coop_gen_reseed()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "gen_seed") || _c.gen_seed == undefined)
+    {
+        exit;
+    }
+    _c.gen_step++;
+    random_set_seed((_c.gen_seed + _c.gen_step * 7919) mod 2147483647);
 }

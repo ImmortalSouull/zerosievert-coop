@@ -250,3 +250,89 @@ if (obj_map_generator.area != UnknownEnum.Value_9 && (coop_test_mode() || keyboa
 <<<REPLACE
             else if (coop_test_mode() || keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any))
 <<<END
+
+### prepend gml_Object_obj_map_generator_Alarm_2
+coop_gen_reseed();
+<<<END
+
+### findreplace gml_GlobalScript___difficulty_init
+<<<FIND
+__difficulty_init_rookie();
+<<<REPLACE
+coop_difficulty_define();
+__difficulty_init_rookie();
+<<<END
+
+### findreplace gml_GlobalScript_scr_spawner_spawn
+<<<FIND
+        if (scr_chance(arg0))
+        {
+            instance_create_depth(x, y, 0, arg1);
+        }
+<<<REPLACE
+        repeat (coop_spawn_count(arg0, arg1, 1))
+        {
+            instance_create_depth(x, y, 0, arg1);
+        }
+<<<END
+
+### findreplace gml_GlobalScript_scr_spawner_spawn_group
+<<<FIND
+        if (scr_chance(arg0))
+        {
+            repeat (arg2)
+            {
+<<<REPLACE
+        repeat (coop_spawn_count(arg0, arg1, arg2))
+        {
+            repeat (1)
+            {
+<<<END
+
+### prepend gml_Object_obj_anomaly_fire_parent_Create_0
+if (coop_anomaly_scale())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_anomaly_gas_parent_Create_0
+if (coop_anomaly_scale())
+{
+    exit;
+}
+<<<END
+
+### prepend gml_Object_obj_anomaly_electric_generator_Create_0
+if (coop_anomaly_scale())
+{
+    exit;
+}
+<<<END
+
+### findreplace gml_GlobalScript_bullet_can_collide_with_player
+<<<FIND
+            if (arg0.shooter_faction != arg1.faction)
+<<<REPLACE
+            if (arg0.shooter_faction != arg1.faction || coop_friendly_fire_hit(arg0, arg1))
+<<<END
+
+### findreplace gml_GlobalScript_player_step_grim_reaper
+<<<FIND
+function player_step_grim_reaper()
+{
+<<<REPLACE
+function player_step_grim_reaper()
+{
+    if (coop_down_grim_reaper())
+    {
+        exit;
+    }
+<<<END
+
+### findreplace gml_GlobalScript_player_nearest_instance
+<<<FIND
+    return instance_nearest(arg0, arg1, obj_player_parent);
+<<<REPLACE
+    return coop_nearest_standing_player(arg0, arg1);
+<<<END

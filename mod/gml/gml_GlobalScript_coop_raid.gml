@@ -13,6 +13,7 @@ function coop_hook_go_to_map(_map)
         buffer_write(_c.send_buf, buffer_f64, _seed);
         coop_msg_send(true);
         coop_log("raid start sent: map ", _map, " seed ", _seed);
+        coop_settings_send();
     }
 }
 
@@ -45,6 +46,10 @@ function coop_on_room_start()
     coop_log("room start: ", room_get_name(room));
     coop_apply_test_window();
     coop_npc_reset_room();
+    if (room == room1)
+    {
+        coop_down_reset();
+    }
     if (_c.connected)
     {
         coop_send_raid_state();
@@ -104,6 +109,51 @@ function coop_autopilot_step()
     }
     coop_test_press_space();
     coop_bot_step();
+    coop_scenario_step();
+}
+
+// Scripted test scenarios (test mode only).
+function coop_scenario_step()
+{
+    var _c = coop();
+    if (_c.scenario == "" || !coop_in_raid() || !instance_exists(obj_player) || !player_state_is(0, scr_player_state_move) || !_c.peer_in_raid)
+    {
+        exit;
+    }
+    _c.sc_t++;
+    var _t = _c.sc_t;
+    if (_c.scenario == "revive")
+    {
+        if (_c.role == "guest" && _t == 240)
+        {
+            coop_log("scenario: taking lethal damage");
+            obj_player.hp = 0;
+        }
+        if (_c.role == "host")
+        {
+            var _p = coop_partner();
+            if (coop_partner_is_down() && instance_exists(_p))
+            {
+                if (!variable_struct_exists(_c, "sc_rev_t"))
+                {
+                    _c.sc_rev_t = _t;
+                    obj_player.x = _p.x + 12;
+                    obj_player.y = _p.y;
+                    coop_log("scenario: host moved next to downed partner");
+                }
+                var _k = _t - _c.sc_rev_t;
+                if (_k == 60 || _k == 100)
+                {
+                    _c.sim_e = true;
+                    coop_log("scenario: host presses E");
+                }
+                if (_k == 90)
+                {
+                    screen_save("coop_revive_menu.png");
+                }
+            }
+        }
+    }
 }
 
 // Test mode: tap Space through "failed to load", raid loading and train intro screens.
@@ -133,9 +183,18 @@ function coop_test_press_space()
 function coop_bot_step()
 {
     var _c = coop();
-    if (!_c.bot || !coop_in_raid() || !instance_exists(obj_player))
+    if (!_c.bot || !coop_in_raid() || !instance_exists(obj_player) || !player_state_is(0, scr_player_state_move))
     {
         exit;
+    }
+    if (!variable_struct_exists(_c, "bot_wait"))
+    {
+        _c.bot_wait = 0;
+    }
+    _c.bot_wait++;
+    if (_c.bot_wait < 120)
+    {
+        exit; // let the generator place the player at the spawn first
     }
     if (!variable_struct_exists(_c, "bot_t"))
     {

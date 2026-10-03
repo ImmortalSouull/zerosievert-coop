@@ -61,3 +61,25 @@ Owner must stay refund-eligible (< 2 h Steam playtime). Agent budget: 80 min tot
 `tools/game_guard.py` (ledger in `playtime_ledger.json`, auto-kill at deadline). EVERY game launch
 goes through the guard. Never launch the exe directly. Never try to hide time from Steam.
 Steam local playtime at start (2026-10-03 01:25): no Playtime recorded (~0 min).
+
+## Session log 2026-10-03 (night)
+Findings (verified in game):
+- Game has a dormant 2-player framework: obj_player_puppet, player_get(mp_index), player_get_local_index(),
+  bullet_hit_player damages only the local index, NPC AI targets player_nearest_instance (all players).
+- Launch: exe directly needs env SteamAppId/SteamGameId=1782120 (steam_appid.txt gets removed) and
+  `-no_gpu_pref` (else gpu_pref_boot relaunches the exe and drops our args).
+- UTMT CLI: close stdin (`< /dev/null`) or it hangs; `#macro` is not shared across code entries (build.csx
+  expands macros textually); `async_load[? k]` miscompiles -> use ds_map_find_value; `until` is reserved.
+- Instance depth must be within +-16000 or it is never drawn.
+- obj_controller Alarm_4 deactivates everything outside a 960x540 region around the camera (and pause
+  deactivates the room) -> coop_after_culling() re-activates obj_coop and, on the host, the partner's region.
+- Map generation runs one state per obj_map_generator Alarm_2; other objects consume random() between
+  steps. Re-seeding at every Alarm_2 (seed + step*7919) makes host and guest maps identical
+  (fingerprint solids/hash/chests equal).
+- Death goes through player_step_grim_reaper (single chokepoint) -> down/revive intercept there.
+- Difficulty: __difficulty_define_range/toggle; menu tabs are Catspeak .ui files in ZS_vanilla/ui.
+- screen_save("x.png") from GML = free in-game screenshot into %LOCALAPPDATA%/ZERO_Sievert.
+Working (2 local instances, UDP): connect, host-led raid start w/ shared seed, identical maps, puppets,
+  NPC replication (231 NPCs), bullets, down/revive end-to-end (Medikit T-000 -> 40 hp).
+Test harness: tools/test2.sh, tools/wait.sh, tools/logs.sh, tools/shots.sh; test-mode flags
+  -coop_root/-coop_slot/-coop_autoraid/-coop_bot/-coop_scenario revive.

@@ -63,6 +63,60 @@
       "started": "2026-10-03T02:04:21",
       "minutes": 0.98,
       "result": "all instances exited"
+    },
+    {
+      "start": 1790985974.1957686,
+      "deadline": 1790986154.1957686,
+      "end": 1790986031.7797604,
+      "note": "test #8: overlay + autoskip",
+      "started": "2026-10-03T02:06:14",
+      "minutes": 0.96,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790986058.531249,
+      "deadline": 1790986238.531249,
+      "end": 1790986109.5483463,
+      "note": "test #9: bot fix, diag",
+      "started": "2026-10-03T02:07:38",
+      "minutes": 0.85,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790986151.8785641,
+      "deadline": 1790986331.8785641,
+      "end": 1790986332.8471017,
+      "note": "test #10: deterministic gen + spawn sync",
+      "started": "2026-10-03T02:09:11",
+      "minutes": 3.02,
+      "result": "killed at deadline"
+    },
+    {
+      "start": 1790986765.6667612,
+      "deadline": 1790986945.6667612,
+      "end": 1790986777.4404907,
+      "note": "test #11: revive scenario",
+      "started": "2026-10-03T02:19:25",
+      "minutes": 0.2,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790986784.0168352,
+      "deadline": 1790986964.0168352,
+      "end": 1790986856.9605067,
+      "note": "test #12: revive scenario",
+      "started": "2026-10-03T02:19:44",
+      "minutes": 1.22,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790986886.9369175,
+      "deadline": 1790987066.9369175,
+      "end": 1790986931.2845001,
+      "note": "test #13: revive scenario sim E",
+      "started": "2026-10-03T02:21:26",
+      "minutes": 0.74,
+      "result": "all instances exited"
     }
   ]
 }
