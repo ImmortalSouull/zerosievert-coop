@@ -234,6 +234,24 @@
       "started": "2026-10-03T02:48:12",
       "minutes": 0.8,
       "result": "all instances exited"
+    },
+    {
+      "start": 1790988660.7674985,
+      "deadline": 1790988810.7674985,
+      "end": 1790988729.5614192,
+      "note": "showcase take A",
+      "started": "2026-10-03T02:51:00",
+      "minutes": 1.15,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790988807.676731,
+      "deadline": 1790988897.676731,
+      "end": 1790988848.6706624,
+      "note": "showcase take B: panel + difficulty",
+      "started": "2026-10-03T02:53:27",
+      "minutes": 0.68,
+      "result": "all instances exited"
     }
   ]
 }

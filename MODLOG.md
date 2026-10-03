@@ -92,3 +92,14 @@ Test harness: tools/test2.sh, tools/wait.sh, tools/logs.sh, tools/shots.sh; test
   revive race: partner flag lags ~1 frame packet -> 1.5 s grace after reviving).
 - Steam: lobby create + invite overlay verified (single account); P2P traffic untested (needs 2 accounts).
 - Installer verified (vanilla -> install -> uninstall -> install), difficulty tabs verified in game.
+- Showcase: tools/make_showcase.py -> ZS_Coop_TikTok.mp4 (1080x1920, 32 s, silent - add a sound in TikTok).
+  Takes recorded with `um win record --hwnd` (no audio with --hwnd); scenario -coop_scenario show / panel.
+- Final state 2026-10-03 ~03:00: dist v0.1.0 (ZS-Coop-v0.1.0.zip) installed into the game via installer.
+  Agent playtime used 29/80 min, Steam local playtime 26 min. Test save roots coopA/coopB (Russian UI)
+  remain in %LOCALAPPDATA%/ZERO_Sievert for future tests; the user's real saves were never touched.
+
+## Next steps
+1. First real playtest with the friend over Steam (P2P path untested with two accounts).
+2. Kill credit / XP / quest progress for guest kills (Destroy event on host decides).
+3. Joining a raid already in progress; host extraction rules; grenades/explosions replication check.
+4. Remove the 1-solid map drift risk entirely (seen once before per-step reseed; equal since).

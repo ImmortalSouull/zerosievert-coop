@@ -116,7 +116,7 @@ function coop_autopilot_step()
 function coop_scenario_hub_step()
 {
     var _c = coop();
-    if ((_c.scenario != "steamhost" && _c.scenario != "difficulty") || !is_in_hub() || !instance_exists(obj_player))
+    if ((_c.scenario != "steamhost" && _c.scenario != "difficulty" && _c.scenario != "show" && _c.scenario != "panel") || !is_in_hub() || !instance_exists(obj_player))
     {
         exit;
     }
@@ -126,6 +126,18 @@ function coop_scenario_hub_step()
     }
     _c.hub_t++;
     var _t = _c.hub_t;
+    if (_c.scenario == "show")
+    {
+        coop_show_hub_step(_t);
+        exit;
+    }
+    if (_c.scenario == "panel")
+    {
+        if (_t == 90) { _c.panel = true; _c.ip_edit = false; _c.last_ip = "127.0.0.1"; }
+        if (_t == 330) _c.panel = false;
+        if (_t == 3600) game_end();
+        exit;
+    }
     if (_c.scenario == "difficulty")
     {
         if (_t == 3600)
@@ -151,6 +163,11 @@ function coop_scenario_step()
     }
     _c.sc_t++;
     var _t = _c.sc_t;
+    if (_c.scenario == "show")
+    {
+        coop_show_raid_step(_t);
+        exit;
+    }
     if (_c.scenario == "chest")
     {
         if (_t == 199 || _t == 259 || _t == 299 || _t == 419)
