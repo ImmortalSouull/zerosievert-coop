@@ -1,0 +1,10 @@
+coop.difficulty.tab	Co-op	Кооператив
+coop.difficulty.revive_enabled	Down instead of death	Ранение вместо смерти
+coop.difficulty.down_seconds	Time until death when down (s)	Время до смерти раненого (с)
+coop.difficulty.second_down_hp	HP multiplier after 2nd down	Множитель HP после 2-го ранения
+coop.difficulty.revive_time_none	Revive without items (s)	Поднятие без предметов (с)
+coop.difficulty.revive_time_bandage	Revive with a bandage (s)	Поднятие с бинтом (с)
+coop.difficulty.revive_time_medkit	Revive with a medkit (s)	Поднятие с аптечкой (с)
+coop.difficulty.friendly_fire	Friendly fire	Огонь по союзнику
+coop.difficulty.enemy_count	Enemy amount	Количество врагов
+coop.difficulty.anomaly_amount	Anomaly amount	Количество аномалий

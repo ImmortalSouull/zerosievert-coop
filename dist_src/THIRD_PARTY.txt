@@ -1,0 +1,7 @@
+xdelta3.exe - xdelta 3.1.0 by Joshua MacDonald, GNU GPL v2.
+Unmodified binary from https://github.com/jmacd/xdelta-gpl/releases/tag/v3.1.0
+Source code: https://github.com/jmacd/xdelta-gpl
+
+The co-op patch (coop.xdelta) only contains the differences produced by this mod; it is applied to
+your own copy of ZERO Sievert. ZERO Sievert is (c) CABO Studio / Modern Wolf. This is an unofficial
+fan mod, not affiliated with or endorsed by the developers.

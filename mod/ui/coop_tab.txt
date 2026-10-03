@@ -1,0 +1,40 @@
+		build UiTextButton {
+			label = "Co-op"
+			captureClick = "action"
+			click = fn {
+				CallInherited()
+				data.difficulty_title = Translate("coop.difficulty.tab")
+				data.difficulty_content = [
+					{
+						name: Translate("coop.difficulty.revive_enabled"),
+						setting: "coop_revive_enabled",
+					},
+					{
+						name: Translate("coop.difficulty.down_seconds"),
+						setting: "coop_down_seconds",
+					},
+					{
+						name: Translate("coop.difficulty.second_down_hp"),
+						setting: "coop_second_down_hp",
+					},
+					{
+						name: Translate("coop.difficulty.revive_time_none"),
+						setting: "coop_revive_time_none",
+					},
+					{
+						name: Translate("coop.difficulty.revive_time_bandage"),
+						setting: "coop_revive_time_bandage",
+					},
+					{
+						name: Translate("coop.difficulty.revive_time_medkit"),
+						setting: "coop_revive_time_medkit",
+					},
+					{
+						name: Translate("coop.difficulty.friendly_fire"),
+						setting: "coop_friendly_fire",
+					},
+				]
+				UiReplace("slider frame", "ZS_vanilla/ui/mm_difficulty_settings.ui")
+			}
+		}
+

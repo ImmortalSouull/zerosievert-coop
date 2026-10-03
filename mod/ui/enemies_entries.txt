@@ -1,0 +1,8 @@
+					{
+						name: Translate("coop.difficulty.enemy_count"),
+						setting: "enemy_count_mult",
+					},
+					{
+						name: Translate("coop.difficulty.anomaly_amount"),
+						setting: "anomaly_mult",
+					},
