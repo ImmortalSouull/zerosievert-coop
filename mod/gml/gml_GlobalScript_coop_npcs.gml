@@ -157,7 +157,7 @@ function coop_npc_state_id(_state)
     _c.npc_state_next++;
     variable_struct_set(_c.npc_state_ids, _key, _id);
     // Announce the new string on its own reliable message, then resume the caller's buffer.
-    var _save = buffer_create(buffer_tell(_c.send_buf), buffer_fixed, 1);
+    var _save = buffer_create(max(1, buffer_tell(_c.send_buf)), buffer_fixed, 1);
     var _len = buffer_tell(_c.send_buf);
     buffer_copy(_c.send_buf, 0, _len, _save, 0);
     coop_msg_begin(COOP_MSG_NPC_STATESTR);

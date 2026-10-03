@@ -1,0 +1,50 @@
+{
+  "cap_minutes": 80,
+  "sessions": [
+    {
+      "start": 1790984996.823544,
+      "deadline": 1790985236.823544,
+      "end": 1790985002.1236331,
+      "note": "first 2-instance test: boot, autoslot, connect, raid",
+      "started": "2026-10-03T01:49:56",
+      "minutes": 0.09,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790985133.0153034,
+      "deadline": 1790985373.0153034,
+      "end": 1790985144.7209017,
+      "note": "2-instance test #2 (-no_gpu_pref)",
+      "started": "2026-10-03T01:52:13",
+      "minutes": 0.2,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790985166.721968,
+      "deadline": 1790985406.721968,
+      "end": 1790985329.2807271,
+      "note": "2-instance test #3 (SteamAppId env)",
+      "started": "2026-10-03T01:52:46",
+      "minutes": 2.71,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790985389.1774101,
+      "deadline": 1790985629.1774101,
+      "end": 1790985419.488329,
+      "note": "2-instance test #4 (macros fixed)",
+      "started": "2026-10-03T01:56:29",
+      "minutes": 0.51,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790985429.153617,
+      "deadline": 1790985669.153617,
+      "end": 1790985670.544423,
+      "note": "2-instance test #5 (async fix)",
+      "started": "2026-10-03T01:57:09",
+      "minutes": 4.02,
+      "result": "killed at deadline"
+    }
+  ]
+}

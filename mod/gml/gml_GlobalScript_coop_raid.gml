@@ -102,7 +102,31 @@ function coop_autopilot_step()
             go_to_map(_pr.map);
         }
     }
+    coop_test_press_space();
     coop_bot_step();
+}
+
+// Test mode: tap Space through "failed to load", raid loading and train intro screens.
+function coop_test_press_space()
+{
+    var _c = coop();
+    if (_c.frame mod 40 == 1)
+    {
+        keyboard_key_release(vk_space);
+    }
+    if (_c.frame mod 40 != 0)
+    {
+        exit;
+    }
+    var _need = (room == r_logo_screen);
+    if (coop_in_raid())
+    {
+        _need = !instance_exists(obj_player) || !player_state_is(0, scr_player_state_move);
+    }
+    if (_need)
+    {
+        keyboard_key_press(vk_space);
+    }
 }
 
 // Guest bot: walks a small square so the host can see the puppet move.

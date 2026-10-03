@@ -17,10 +17,26 @@ var group = new UndertaleModLib.Compiler.CodeImportGroup(Data)
     ThrowOnNoOpFindReplace = true
 };
 
-int files = 0;
+// UTMT's compiler does not share #macro across code entries: expand them textually here.
+var sources = new Dictionary<string, string>();
+var macros = new Dictionary<string, string>();
+var macroRx = new System.Text.RegularExpressions.Regex(@"^#macro\s+(\w+)\s+(.+)$", System.Text.RegularExpressions.RegexOptions.Multiline);
 foreach (string file in Directory.GetFiles(gmlDir, "*.gml").OrderBy(f => f))
 {
-    group.QueueReplace(Path.GetFileNameWithoutExtension(file), File.ReadAllText(file).Replace("\r\n", "\n"));
+    string text = File.ReadAllText(file).Replace("\r\n", "\n");
+    foreach (System.Text.RegularExpressions.Match m in macroRx.Matches(text)) macros[m.Groups[1].Value] = m.Groups[2].Value.Trim();
+    sources[Path.GetFileNameWithoutExtension(file)] = macroRx.Replace(text, "");
+}
+int files = 0;
+foreach (var kv in sources)
+{
+    string text = kv.Value;
+    for (int pass = 0; pass < 3; pass++)
+        foreach (var m in macros)
+            text = System.Text.RegularExpressions.Regex.Replace(text, @"\b" + m.Key + @"\b", m.Value);
+    var left = System.Text.RegularExpressions.Regex.Match(text, @"\bCOOP_[A-Z0-9_]+\b");
+    if (left.Success) throw new Exception($"unexpanded macro {left.Value} in {kv.Key}");
+    group.QueueReplace(kv.Key, text);
     files++;
 }
 

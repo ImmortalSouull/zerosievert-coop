@@ -116,21 +116,21 @@ function coop_net_on_async()
     {
         exit;
     }
-    if (async_load[? "id"] != _c.sock)
+    if (ds_map_find_value(async_load, "id") != _c.sock)
     {
         exit;
     }
-    if (async_load[? "type"] != network_type_data)
+    if (ds_map_find_value(async_load, "type") != network_type_data)
     {
         exit;
     }
-    var _buf = async_load[? "buffer"];
-    var _size = async_load[? "size"];
+    var _buf = ds_map_find_value(async_load, "buffer");
+    var _size = ds_map_find_value(async_load, "size");
     if (_c.role == "host")
     {
         // Host learns the guest's address from its packets.
-        _c.peer_ip = async_load[? "ip"];
-        _c.peer_port = async_load[? "port"];
+        _c.peer_ip = ds_map_find_value(async_load, "ip");
+        _c.peer_port = ds_map_find_value(async_load, "port");
     }
     buffer_seek(_buf, buffer_seek_start, 0);
     coop_handle_message(_buf, _size);

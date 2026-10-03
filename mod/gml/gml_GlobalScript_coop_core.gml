@@ -45,6 +45,9 @@ function coop_init_globals()
         recv_buf: buffer_create(256, buffer_grow, 1),
         npc_next_nid: 1,
         npc_by_nid: ds_map_create(),
+        npc_state_ids: {},
+        npc_state_names: [],
+        npc_state_next: 0,
         bullet_quiet: false,
         stats_sent: 0,
         stats_recv: 0,
@@ -177,6 +180,15 @@ function coop_boot()
     if (!instance_exists(obj_coop))
     {
         instance_create_depth(0, 0, -100000, obj_coop);
+    }
+    if (_c.test_mode)
+    {
+        // Tests run unattended: log crashes instead of blocking on the error dialog.
+        exception_unhandled_handler(function(_e)
+        {
+            coop_log("CRASH: ", _e.longMessage, " | ", _e.stacktrace);
+            return 0;
+        });
     }
     coop_log("boot, steam=", steam_initialised());
 }

@@ -159,6 +159,8 @@ function coop_puppet_ensure(_x, _y)
         coop_net_y = _y;
         coop_hp = 100;
         coop_hp_max = 100;
+        hp = 100;
+        hp_max = 100;
         coop_flags = 0;
         coop_name = coop().peer_name;
         state = scr_player_state_move;

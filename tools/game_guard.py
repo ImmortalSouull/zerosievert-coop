@@ -12,6 +12,7 @@ import argparse
 import datetime as dt
 import json
 import math
+import os
 import re
 import shlex
 import subprocess
@@ -105,18 +106,24 @@ def cmd_run(a):
     led["sessions"].append(session)
     save(led)  # recorded before launch: a crash of this script still counts the time
     for i, args in enumerate(a.launch or [""]):
-        subprocess.Popen([GAME_EXE] + shlex.split(args, posix=False), cwd=str(Path(GAME_EXE).parent))
+        env = dict(os.environ, SteamAppId=APP_ID, SteamGameId=APP_ID)  # start directly, keep our args
+        subprocess.Popen([GAME_EXE] + shlex.split(args, posix=False), cwd=str(Path(GAME_EXE).parent), env=env)
         print(f"launched instance {i}: {args}", flush=True)
         if i + 1 < len(a.launch or [""]):
             time.sleep(a.stagger)
     seen = False
+    gone_since = None
     reason = "all instances exited"
     while True:
         pids = running_game_pids()
         if pids:
             seen = True
-        elif seen or time.time() - start > 60:
-            break
+            gone_since = None
+        else:
+            gone_since = gone_since or time.time()
+            # tolerate a relaunch gap (GPU-preference / Steam restart) before calling it over
+            if (seen and time.time() - gone_since > 6) or time.time() - start > 60:
+                break
         if time.time() >= session["deadline"]:
             kill_all_game()
             reason = "killed at deadline"
