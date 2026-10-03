@@ -135,6 +135,24 @@
       "started": "2026-10-03T02:25:26",
       "minutes": 0.38,
       "result": "all instances exited"
+    },
+    {
+      "start": 1790987382.2672875,
+      "deadline": 1790987472.2672875,
+      "end": 1790987395.4906113,
+      "note": "test #16: difficulty co-op tab",
+      "started": "2026-10-03T02:29:42",
+      "minutes": 0.22,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790987715.3949142,
+      "deadline": 1790987835.3949142,
+      "end": 1790987783.6335816,
+      "note": "test #17: difficulty tab via real clicks",
+      "started": "2026-10-03T02:35:15",
+      "minutes": 1.14,
+      "result": "all instances exited"
     }
   ]
 }

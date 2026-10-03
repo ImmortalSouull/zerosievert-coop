@@ -116,7 +116,7 @@ function coop_autopilot_step()
 function coop_scenario_hub_step()
 {
     var _c = coop();
-    if (_c.scenario != "steamhost" || !is_in_hub() || !instance_exists(obj_player))
+    if ((_c.scenario != "steamhost" && _c.scenario != "difficulty") || !is_in_hub() || !instance_exists(obj_player))
     {
         exit;
     }
@@ -126,6 +126,14 @@ function coop_scenario_hub_step()
     }
     _c.hub_t++;
     var _t = _c.hub_t;
+    if (_c.scenario == "difficulty")
+    {
+        if (_t == 3600)
+        {
+            game_end();
+        }
+        exit;
+    }
     if (_t == 90) { _c.panel = true; _c.ip_edit = false; _c.last_ip = "127.0.0.1"; }
     if (_t == 120) screen_save("coop_panel.png");
     if (_t == 130) coop_panel_click("steam_host");
