@@ -179,7 +179,7 @@ function coop_boot()
     var _c = coop();
     if (!instance_exists(obj_coop))
     {
-        instance_create_depth(0, 0, -100000, obj_coop);
+        instance_create_depth(0, 0, -15000, obj_coop);
     }
     if (_c.test_mode)
     {
@@ -204,4 +204,21 @@ function coop_take_seed()
         coop_log("map generator uses coop seed ", _s);
     }
     return _s;
+}
+
+// The game deactivates everything outside the camera region (and everything when paused).
+// Keep the co-op controller alive, and on the host keep the area around the partner simulated.
+function coop_after_culling()
+{
+    instance_activate_object(obj_coop);
+    var _c = coop();
+    if (_c.connected)
+    {
+        instance_activate_object(obj_player_parent);
+        var _p = coop_partner();
+        if (instance_exists(_p) && _c.role == "host")
+        {
+            instance_activate_region(_p.x - 480, _p.y - 270, 960, 540, true);
+        }
+    }
 }

@@ -45,6 +45,24 @@
       "started": "2026-10-03T01:57:09",
       "minutes": 4.02,
       "result": "killed at deadline"
+    },
+    {
+      "start": 1790985750.1357152,
+      "deadline": 1790985990.1357152,
+      "end": 1790985843.4876194,
+      "note": "test #6: raid sync, puppets, npc",
+      "started": "2026-10-03T02:02:30",
+      "minutes": 1.56,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790985861.4098506,
+      "deadline": 1790986101.4098506,
+      "end": 1790985920.1561484,
+      "note": "test #7: culling fix",
+      "started": "2026-10-03T02:04:21",
+      "minutes": 0.98,
+      "result": "all instances exited"
     }
   ]
 }

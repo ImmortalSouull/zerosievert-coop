@@ -259,10 +259,9 @@ function coop_npc_on_spawn(_b)
     {
         exit;
     }
-    var _old = coop_npc_find(_nid);
-    if (instance_exists(_old))
+    if (ds_map_exists(coop().npc_by_nid, _nid))
     {
-        exit;
+        exit; // known (possibly deactivated by camera culling)
     }
     var _data = json_parse(_json);
     var _inst = instance_create_depth(_x, _y, -_y, _obj, { coop_replica: true, coop_nid: _nid, coop_replica_frame: -1 });
@@ -365,8 +364,13 @@ function coop_npc_on_die(_b)
     var _nid = buffer_read(_b, buffer_u32);
     var _x = buffer_read(_b, buffer_f32);
     var _y = buffer_read(_b, buffer_f32);
-    var _inst = coop_npc_find(_nid);
+    var _inst = ds_map_find_value(coop().npc_by_nid, _nid);
     ds_map_delete(coop().npc_by_nid, _nid);
+    if (_inst == undefined)
+    {
+        exit;
+    }
+    instance_activate_object(_inst);
     if (!instance_exists(_inst))
     {
         exit;
@@ -400,9 +404,13 @@ function coop_npc_on_gone(_b)
     var _nid = buffer_read(_b, buffer_u32);
     var _x = buffer_read(_b, buffer_f32);
     var _y = buffer_read(_b, buffer_f32);
-    var _inst = coop_npc_find(_nid);
+    var _inst = ds_map_find_value(coop().npc_by_nid, _nid);
     ds_map_delete(coop().npc_by_nid, _nid);
-    if (instance_exists(_inst))
+    if (_inst != undefined)
+    {
+        instance_activate_object(_inst);
+    }
+    if (_inst != undefined && instance_exists(_inst))
     {
         with (_inst)
         {

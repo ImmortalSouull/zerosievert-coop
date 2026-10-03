@@ -221,3 +221,32 @@ if (coop_npc_skip_alarm())
 ### prepend gml_Object_obj_npc_parent_Destroy_0
 coop_npc_on_destroyed();
 <<<END
+
+### append gml_Object_obj_controller_Alarm_4
+coop_after_culling();
+<<<END
+
+### append gml_GlobalScript_game_pause
+coop_after_culling();
+<<<END
+
+### findreplace gml_Object_obj_map_generator_Step_0
+<<<FIND
+if (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) || obj_gamepad.input_released[UnknownEnum.Value_29] || area == UnknownEnum.Value_10)
+<<<REPLACE
+if (coop_test_mode() || keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) || obj_gamepad.input_released[UnknownEnum.Value_29] || area == UnknownEnum.Value_10)
+<<<END
+
+### findreplace gml_Object_obj_train_Step_0
+<<<FIND
+if (obj_map_generator.area != UnknownEnum.Value_9 && (keyboard_check_pressed(vk_space) ||
+<<<REPLACE
+if (obj_map_generator.area != UnknownEnum.Value_9 && (coop_test_mode() || keyboard_check_pressed(vk_space) ||
+<<<END
+
+### findreplace gml_Object_obj_logo_screen_Step_0
+<<<FIND
+            else if (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any))
+<<<REPLACE
+            else if (coop_test_mode() || keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any))
+<<<END
