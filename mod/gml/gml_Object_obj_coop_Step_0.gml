@@ -1,4 +1,6 @@
 coop_net_step();
+coop_steam_step();
+coop_panel_step();
 coop_autopilot_step();
 coop_players_step();
 coop_down_step();

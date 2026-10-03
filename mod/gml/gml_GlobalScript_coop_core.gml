@@ -98,6 +98,9 @@ function coop_parse_params()
             case "-coop_bot":
                 _c.bot = true;
                 break;
+            case "-coop_quiet":
+                _c.overlay = false;
+                break;
             case "-coop_scenario":
                 _c.scenario = _v;
                 break;
@@ -111,6 +114,7 @@ function coop_parse_params()
                 break;
         }
     }
+    coop_steam_check_launch_invite();
     coop_log("coop init: role=", _c.role, " transport=", _c.transport, " test=", _c.test_mode, " tag=", _c.tag, " params=", parameter_string(1), " ", parameter_string(2));
 }
 

@@ -11,6 +11,23 @@ string root = Environment.GetEnvironmentVariable("COOP_ROOT") ?? @"C:\Users\pash
 string gmlDir = Path.Combine(root, "mod", "gml");
 string hooksFile = Path.Combine(root, "mod", "hooks.txt");
 
+// Extension functions the game never calls itself (e.g. Steam lobby/P2P) have no FUNC entry, so the
+// compiler would treat calls to them as variable calls. Declare every one our code uses.
+var modText = string.Join("\n", Directory.GetFiles(gmlDir, "*.gml").Select(File.ReadAllText));
+int declared = 0;
+foreach (var ext in Data.Extensions)
+    foreach (var file in ext.Files)
+        foreach (var fn in file.Functions)
+        {
+            string name = fn.Name.Content;
+            if (System.Text.RegularExpressions.Regex.IsMatch(modText, @"\b" + name + @"\s*\(") && Data.Functions.ByName(name) == null)
+            {
+                Data.Functions.EnsureDefined(name, Data.Strings);
+                declared++;
+            }
+        }
+Console.WriteLine($"declared {declared} extension functions");
+
 var group = new UndertaleModLib.Compiler.CodeImportGroup(Data)
 {
     AutoCreateAssets = true,

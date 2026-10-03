@@ -117,6 +117,24 @@
       "started": "2026-10-03T02:21:26",
       "minutes": 0.74,
       "result": "all instances exited"
+    },
+    {
+      "start": 1790987051.759289,
+      "deadline": 1790987171.759289,
+      "end": 1790987068.124428,
+      "note": "test #14: steam lobby + panel (single)",
+      "started": "2026-10-03T02:24:11",
+      "minutes": 0.27,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1790987126.71061,
+      "deadline": 1790987246.71061,
+      "end": 1790987149.7495277,
+      "note": "test #15: steam lobby + panel (single)",
+      "started": "2026-10-03T02:25:26",
+      "minutes": 0.38,
+      "result": "all instances exited"
     }
   ]
 }

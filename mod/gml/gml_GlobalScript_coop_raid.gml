@@ -110,6 +110,27 @@ function coop_autopilot_step()
     coop_test_press_space();
     coop_bot_step();
     coop_scenario_step();
+    coop_scenario_hub_step();
+}
+
+function coop_scenario_hub_step()
+{
+    var _c = coop();
+    if (_c.scenario != "steamhost" || !is_in_hub() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "hub_t"))
+    {
+        _c.hub_t = 0;
+    }
+    _c.hub_t++;
+    var _t = _c.hub_t;
+    if (_t == 90) { _c.panel = true; _c.ip_edit = false; _c.last_ip = "127.0.0.1"; }
+    if (_t == 120) screen_save("coop_panel.png");
+    if (_t == 130) coop_panel_click("steam_host");
+    if (_t == 420) screen_save("coop_lobby.png");
+    if (_t == 480) { coop_log("scenario steamhost done"); game_end(); }
 }
 
 // Scripted test scenarios (test mode only).
