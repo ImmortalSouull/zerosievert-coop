@@ -1191,6 +1191,10 @@ function coop_net_on_raid_state(_from, _b)
 
 function coop_my_name()
 {
+    if (variable_struct_exists(coop(), "name_override"))
+    {
+        return coop().name_override;
+    }
     if (steam_initialised())
     {
         return steam_get_persona_name();

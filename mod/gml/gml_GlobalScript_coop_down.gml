@@ -266,10 +266,17 @@ function coop_down_step()
         {
             _d.timer--;
         }
+        // the last ones went down at the same moment (each saw the other standing): nobody is left
+        _d.alone_t = (coop_others_standing() == 0) ? (variable_struct_exists(_d, "alone_t") ? _d.alone_t + 1 : 1) : 0;
         if (_d.timer <= 0)
         {
             coop_down_send(COOP_MSG_DEAD, 0);
             coop_down_force_death("down timer expired");
+        }
+        else if (_d.alone_t >= 90 && instance_exists(obj_player_puppet))
+        {
+            coop_down_send(COOP_MSG_DEAD, 1);
+            coop_down_force_death("everyone down");
         }
         else if (!coop().connected || !instance_exists(obj_player_puppet))
         {

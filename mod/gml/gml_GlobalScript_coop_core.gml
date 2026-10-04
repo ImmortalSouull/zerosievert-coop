@@ -100,6 +100,9 @@ function coop_parse_params()
             case "-coop_autoraid":
                 _c.autoraid = real(_v);
                 break;
+            case "-coop_name":
+                _c.name_override = string_replace_all(_v, "_", " "); // test: a (long) player name
+                break;
             case "-coop_delay_join":
                 _c.delay_join = real(_v) * 1000; // test: the guest says hello only after this many seconds
                 break;

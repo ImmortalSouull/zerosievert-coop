@@ -1003,7 +1003,32 @@ function coop_test_lobby2_step(_t)
 function coop_test_ownerjoin_step()
 {
     var _c = coop();
-    if (_c.scenario != "ownerjoin" || _c.slot != 2)
+    if (_c.scenario != "ownerjoin")
+    {
+        exit;
+    }
+    // the raid owner after the handoff (slot 1) pauses while slot 2 plays in its raid
+    if (_c.slot == 1)
+    {
+        var _p2 = coop_peer(2);
+        if (coop_shared_ready() && is_struct(_p2) && _p2.ready)
+        {
+            if (!variable_struct_exists(_c, "oj_pt")) _c.oj_pt = 0;
+            _c.oj_pt++;
+            if (_c.oj_pt == 240)
+            {
+                game_pause();
+                coop_log("ownerjoin: owner paused, local_paused=", _c.local_paused);
+            }
+            if (_c.oj_pt == 480)
+            {
+                game_unpause();
+                coop_log("ownerjoin: owner unpaused, owner=", coop_raid_owner(), " player=", instance_exists(obj_player));
+            }
+        }
+        exit;
+    }
+    if (_c.slot != 2)
     {
         exit;
     }

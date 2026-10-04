@@ -29,6 +29,15 @@ def chest_md5_equal(logs):
     return None if a[0] == b[0] else f"chest differs A={a[0]} B={b[0]}"
 
 
+def chest3_equal(logs):
+    """Three players read identical content for the container the host took an item from."""
+    got = {k: re.findall(r"scenario chest t=420 (\S+) len=\d+ md5=(\w+)", logs[k]) for k in "ABC"}
+    if any(not v for v in got.values()):
+        return "missing t=420 chest reads: " + ",".join(k for k, v in got.items() if not v)
+    vals = {k: v[0] for k, v in got.items()}
+    return None if len(set(vals.values())) == 1 else f"chest differs {vals}"
+
+
 def ownerjoin_ok(logs):
     """Slot 2 (whichever instance got it) stayed in the hub, then joined the raid slot 1 owns."""
     j = [k for k in "BC" if "ownerjoin: stays in the hub" in logs[k]]
@@ -37,7 +46,8 @@ def ownerjoin_ok(logs):
     j = j[0]
     o = "C" if j == "B" else "B"
     need = [(j, r"join request sent to slot 1"), (o, r"join request of slot 2 accepted"),
-            (j, r"maps identical with partner"), (j, r"ownerjoin: done owner=1 puppets=1")]
+            (j, r"maps identical with partner"), (j, r"ownerjoin: done owner=1 puppets=1"),
+            (o, r"ownerjoin: owner paused, local_paused=1"), (o, r"ownerjoin: owner unpaused, owner=1 player=1")]
     miss = [f"{k}: /{rx}/" for k, rx in need if not re.search(rx, logs[k])]
     return ("missing " + ", ".join(miss)) if miss else None
 
@@ -143,6 +153,16 @@ SCENARIOS = [
       done=[(k, r"handoff: done") for k in "BC"],
       checks=[(k, r"raid owner: slot 1", 1) for k in "BC"] + [("A", r"handoff: host leaves", 1)], custom=handoff_ok,
       timeout=480, minutes=8, players=3),
+    # the host takes an item from a container next to two guests: all three see the same content
+    S("chest3", "-coop_autoraid 1 -coop_scenario chest -coop_fps 60", "-coop_scenario chest -coop_fps 60",
+      done=[("A", r"scenario chest t=420"), ("B", r"scenario chest t=420"), ("C", r"scenario chest t=420")],
+      checks=[("A", r"scenario: host took first item", 1)], custom=chest3_equal,
+      need_identical=False, timeout=420, minutes=7, players=3),
+    # three players: both guests go down, then the host - everybody dies
+    S("both3", "-coop_autoraid 1 -coop_scenario both -coop_fps 60", "-coop_scenario both -coop_fps 60",
+      done=[(k, r"forced death: everyone down|both down: death for both") for k in "ABC"],
+      checks=[(k, r"forced death: everyone down|both down: death for both", 1) for k in "ABC"],
+      need_identical=False, timeout=420, minutes=7, players=3),
     # slot 2 joins the raid slot 1 owns after the host extracted (join request goes to the raid owner)
     S("ownerjoin", "-coop_autoraid 1 -coop_scenario ownerjoin -coop_fps 60", "-coop_scenario ownerjoin -coop_fps 60",
       done=[("BC", r"ownerjoin: done")], checks=[], custom=ownerjoin_ok,

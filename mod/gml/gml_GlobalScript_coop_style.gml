@@ -178,3 +178,18 @@ function coop_ui_item_icon(_item, _cx, _cy, _box)
     draw_sprite_ext(_spr, 0, _cx - (_w / 2 - _ox) * _s, _cy - (_h / 2 - _oy) * _s, _s, _s, 0, c_white, 1);
     return true;
 }
+
+// _s shortened with ".." to fit _w pixels in the current font.
+function coop_ui_fit(_s, _w)
+{
+    if (string_width(_s) <= _w)
+    {
+        return _s;
+    }
+    var _n = string_length(_s);
+    while (_n > 1 && string_width(string_copy(_s, 1, _n) + "..") > _w)
+    {
+        _n--;
+    }
+    return string_copy(_s, 1, _n) + "..";
+}

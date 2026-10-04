@@ -227,7 +227,7 @@ function coop_panel_draw()
             {
                 continue;
             }
-            var _nm = _me ? (coop_my_name() + coop_t(" (you)", " (вы)")) : _pp.name;
+            var _nm = coop_ui_fit(_me ? coop_my_name() : _pp.name, 300) + (_me ? coop_t(" (you)", " (вы)") : "");
             if (_k == 0)
             {
                 _nm += coop_t("  - host", "  - хост");
@@ -283,7 +283,7 @@ function coop_panel_draw()
         var _by = _l.btn_y0 + _i * (_l.btn_h + 8);
         var _sel = variable_struct_exists(_c, "panel_sel") && _c.panel_sel == _i;
         coop_ui_slot(_l.x1 + 24, _by, _l.x2 - 24, _by + _l.btn_h, _sel);
-        coop_ui_text(_cx, _by + _l.btn_h / 2, _btn[_i].label, _sel ? COOP_C_KEY : COOP_C_TEXT);
+        coop_ui_text(_cx, _by + _l.btn_h / 2, coop_ui_fit(_btn[_i].label, _l.x2 - _l.x1 - 80), _sel ? COOP_C_KEY : COOP_C_TEXT);
     }
     draw_set_valign(fa_top);
     var _upd = coop_update_text();
