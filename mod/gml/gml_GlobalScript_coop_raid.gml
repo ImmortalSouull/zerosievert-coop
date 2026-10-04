@@ -57,6 +57,7 @@ function coop_on_room_start()
     coop_log("room start: ", room_get_name(room));
     coop_apply_test_window();
     coop_npc_reset_room();
+    coop_puppets_prune(); // characters carried over from the hub lobby, if any
     if (room == room1)
     {
         // what this raid is generated with, for players joining it from us later (coop_on_join_request)

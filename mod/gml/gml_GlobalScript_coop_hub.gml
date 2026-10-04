@@ -397,8 +397,5 @@ function coop_hub_leave()
     _c.hub_leaving = true;
     _c.hub_frames = 0;
     coop_visit_end("raid");
-    if (is_in_hub())
-    {
-        coop_puppet_remove_all();
-    }
+    // (puppets are not destroyed here: go_to_map still runs the game's save code over the players)
 }
