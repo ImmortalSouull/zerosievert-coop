@@ -23,6 +23,15 @@ function coop_difficulty_define()
 
 // Group size scaling (enemies, enemy health), fixed by the host when it sends the settings at raid start, so
 // every machine generates the raid with the same numbers.
+// Host, when a raid starts (and in the bunker): the group scaling for the players present now.
+function coop_group_fix()
+{
+    var _c = coop();
+    var _extra = coop_player_count() - 1;
+    _c.coop_group_enemy_mult = 1 + difficulty_get("coop_group_enemies") * _extra;
+    _c.coop_group_hp_mult = 1 + difficulty_get("coop_group_hp") * _extra;
+}
+
 function coop_group_factor(_what)
 {
     var _c = coop();
@@ -110,10 +119,12 @@ function coop_settings_send()
         exit;
     }
     var _data = {};
-    // group scaling for this raid: fixed now, while the host knows who is coming
-    var _extra = coop_player_count() - 1;
-    _c.coop_group_enemy_mult = 1 + difficulty_get("coop_group_enemies") * _extra;
-    _c.coop_group_hp_mult = 1 + difficulty_get("coop_group_hp") * _extra;
+    // group scaling is fixed when the raid starts (coop_group_fix): a player joining later must generate the
+    // same raid, so it gets the numbers the raid was made with
+    if (!variable_struct_exists(_c, "coop_group_enemy_mult") || !coop_in_raid())
+    {
+        coop_group_fix();
+    }
     variable_struct_set(_data, "coop_group_enemy_mult", _c.coop_group_enemy_mult);
     variable_struct_set(_data, "coop_group_hp_mult", _c.coop_group_hp_mult);
     var _keys = COOP_SHARED_SETTINGS;

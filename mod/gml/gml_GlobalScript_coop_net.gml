@@ -1205,7 +1205,7 @@ function coop_net_step()
         _c.ready_time = current_time;
     }
     // Guest keeps saying hello until welcomed.
-    if (_c.role == "guest" && !_c.connected && current_time - _c.last_hello_time > 1000)
+    if (_c.role == "guest" && !_c.connected && current_time - _c.last_hello_time > 1000 && (!variable_struct_exists(_c, "delay_join") || current_time > _c.delay_join))
     {
         _c.last_hello_time = current_time;
         coop_msg_begin(COOP_MSG_HELLO);

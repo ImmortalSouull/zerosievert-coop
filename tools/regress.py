@@ -47,7 +47,7 @@ def handoff_ok(logs):
     """Whoever got slot 2 killed NPCs after the host left and got the credit from the new owner (slot 1)."""
     by_slot = {}
     for k in "ABCD":
-        m = re.search(r"handoff: t=\d+ slot (\d)", logs[k])
+        m = re.search(r"handoff: t=\d+ slot (\d)", logs.get(k, ""))
         if m:
             by_slot[int(m.group(1))] = k
     if 1 not in by_slot or 2 not in by_slot:
@@ -98,6 +98,10 @@ SCENARIOS = [
     S("join", "-coop_scenario join", "-coop_scenario join",
       done=[("B", r"maps identical")],
       checks=[("A", r"join test: host goes into the raid alone", 1)]),
+    # the host starts its raid alone, the guest connects later and joins it (group scaling must not change)
+    S("latejoin", "-coop_scenario join", "-coop_scenario join -coop_delay_join 25",
+      done=[("B", r"maps identical")],
+      checks=[("A", r"raid started without partner", 1), ("A", r"join request of slot 1 accepted", 1)]),
     S("leave", "-coop_autoraid 1 -coop_scenario leave", "-coop_scenario leave",
       done=[("B", r"peer_in_raid=0(.|\n)*peer_in_raid=0")],
       checks=[("A", r"host leaves the extraction screen", 1)], timeout=320, minutes=6),
@@ -115,6 +119,17 @@ SCENARIOS = [
       done=[(k, r"handoff: done") for k in "BCD"],
       checks=[(k, r"raid owner: slot 1", 1) for k in "BCD"] + [("A", r"handoff: host leaves", 1)], custom=handoff_ok,
       timeout=480, minutes=8, players=4),
+    # three instances (lighter on RAM): the same group logic as quad/handoff
+    S("trio", "-coop_autoraid 1 -coop_scenario quad -coop_fps 60", "-coop_scenario quad -coop_fps 60",
+      done=[(k, r"quad: done") for k in "ABC"],
+      checks=[(k, r"players=3 puppets=2", 1) for k in "ABC"] + [("A", r"maps identical with partner", 2),
+              ("A", r"revived partner .* slot 2", 1), ("A", r"received .* from slot 2", 1)]
+              + [(k, r"ping mark from slot", 2) for k in "ABC"],
+      timeout=420, minutes=7, players=3),
+    S("handoff3", "-coop_autoraid 1 -coop_scenario handoff -coop_fps 60", "-coop_scenario handoff -coop_fps 60",
+      done=[(k, r"handoff: done") for k in "BC"],
+      checks=[(k, r"raid owner: slot 1", 1) for k in "BC"] + [("A", r"handoff: host leaves", 1)], custom=handoff_ok,
+      timeout=480, minutes=8, players=3),
     S("tele", "-coop_autoraid 1", "-coop_scenario tele",
       done=[("B", r"tele #20 ")], checks=[], timeout=200),
 ]
@@ -145,10 +160,11 @@ def run(sc, outdir, extra):
     for p in LOGS.values():
         if os.path.exists(p):
             os.remove(p)
-    script = "tools/test4.sh" if sc["players"] == 4 else "tools/test2.sh"
+    script = "tools/test4.sh" if sc["players"] >= 3 else "tools/test2.sh"
     # the scenario's own arguments come last, so they win over the shared extra ones
     cmd = f'bash {script} {sc["minutes"]} "regress {sc["name"]}" "{extra} {sc["host"]}" "{extra} {sc["guest"]}"'
-    proc = subprocess.Popen([BASH, "-c", cmd], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    env = dict(os.environ, COOP_PLAYERS=str(sc["players"]))
+    proc = subprocess.Popen([BASH, "-c", cmd], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
     t0 = time.time()
     status = "timeout"
     while time.time() - t0 < sc["timeout"]:

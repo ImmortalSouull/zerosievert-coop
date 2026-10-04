@@ -9,6 +9,7 @@ function coop_hook_go_to_map(_map)
         // Always a known seed while hosting, so a partner can still join this raid later.
         var _seed = irandom(2147483646);
         _c.seed = _seed;
+        coop_group_fix(); // the raid is generated with the group size of this moment
         if (!_c.connected)
         {
             coop_log("raid started without partner, seed ", _seed);

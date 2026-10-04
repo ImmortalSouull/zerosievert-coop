@@ -19,6 +19,7 @@ function coop_test_ext_step()
     coop_test_quad_step();
     coop_test_handoff_step();
     coop_test_soak_step();
+    coop_test_menus_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -27,11 +28,11 @@ function coop_test_ext_step()
     _c.lt++;
     var _t = _c.lt;
     var _tag = _c.tag;
-    if (_t == 110)
+    if (_t >= 110 && _t <= 138 && !variable_struct_exists(_c, "lc_chest"))
     {
-        instance_activate_object(obj_chest_general);
+        instance_activate_object(obj_chest_general); // effective from the next step; culling may undo it
     }
-    if (_t == 115)
+    if (_t >= 111 && _t <= 139 && !variable_struct_exists(_c, "lc_chest") && (instance_number(obj_chest_general) > 20 || _t == 139))
     {
         // nearest container to the shared spawn (same on both machines)
         var _best = -4;
@@ -557,8 +558,8 @@ function coop_test_quad_step()
     {
         _c.sim_ping = true;
     }
-    // slot 3 hands the host an item
-    if (_c.slot == 3 && (_t == 740 || _t == 741 || _t == 742))
+    // the last slot hands the host an item
+    if (_c.slot == coop_player_count() - 1 && _c.slot >= 2 && (_t == 740 || _t == 741 || _t == 742))
     {
         var _h = coop_puppet_of(0);
         if (instance_exists(_h))
@@ -756,6 +757,51 @@ function coop_test_soak_step()
             {
                 scr_shoot(point_direction(x, y, _tg.x, _tg.y), 1, item_weapon_get_damage(arma_now) * 2, 0);
             }
+        }
+    }
+}
+
+// -coop_scenario menus: screenshots of the main menu (Co-op button, the harness clicks it), the panel it opens,
+// then the pause menu in the bunker.
+function coop_test_menus_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "menus")
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "mt")) { _c.mt = 0; _c.mh = 0; }
+    if (room == r_menu)
+    {
+        _c.mt++;
+        if (_c.mt == 240)
+        {
+            screen_save("menu_main.png");
+            coop_log("menus: main menu shot");
+        }
+        if (_c.mt > 240 && _c.panel && !variable_struct_exists(_c, "m_panel"))
+        {
+            _c.m_panel = _c.mt;
+            coop_log("menus: panel opened from the menu button");
+        }
+        if (variable_struct_exists(_c, "m_panel") && _c.mt == _c.m_panel + 30)
+        {
+            screen_save("menu_panel.png");
+            _c.panel = false;
+            saveslot_load(1);
+        }
+    }
+    if (is_in_hub() && instance_exists(obj_player))
+    {
+        _c.mh++;
+        if (_c.mh == 120)
+        {
+            game_pause();
+        }
+        if (_c.mh == 200)
+        {
+            screen_save("menu_pause.png");
+            coop_log("menus: pause menu shot");
         }
     }
 }
