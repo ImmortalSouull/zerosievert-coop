@@ -27,6 +27,13 @@ English version: see the ENGLISH section below.
 - У каждого свой инвентарь, бункер и прогресс.
 - Панель: мышь, стрелки + Enter, геймпад (крестовина + A, B — закрыть).
 
+БУНКЕР КАК ЛОББИ И "В ГОСТИ"
+- Пока вы в хабе, вы видите напарников, которые тоже в своём хабе: они ходят рядом с вами, видны
+  ники. Торговцы, схрон и квесты у каждого свои.
+- Панель кооператива > "В гости к <ник>": вы окажетесь в комнате бункера друга - его модули,
+  кровать, кухня, станки. Схрон, вещи и сохранение остаются вашими; ставить или улучшать модули
+  друга нельзя. Вернуться: панель > "Вернуться в свой бункер" или просто выйти из бункера.
+
 В РЕЙДЕ
 - Метка: средняя кнопка мыши (на геймпаде — нажатие правого стика) ставит метку под прицелом,
   её видят все с ником и расстоянием 10 секунд.
@@ -43,7 +50,8 @@ English version: see the ENGLISH section below.
 - 2-е ранение: таймер N/2, стрелять нельзя, HP после поднятия x0.6.
 - 3-е ранение — смерть. Счётчик сбрасывается в начале каждого рейда.
 - Поднять: подойдите к раненому, нажмите E (на геймпаде — кнопка взаимодействия), выберите
-  "без предметов" / бинт / аптечку и снова E. Время зависит от категории (10 / 7 / 5 с по
+  иконку предмета (крестик - без предметов, бинт, аптечка; под иконкой - сколько HP и секунд)
+  колесом мыши или стрелками и снова E. Время зависит от категории (10 / 7 / 5 с по
   умолчанию), количество HP — от конкретного предмета. Пока вас поднимают, таймер стоит.
 - Если ранены все — все погибают. Если погиб один, остальных раненых ещё могут поднять.
 - Лежащего не добивают: пока вы ранены, урон не проходит, а враги переключаются на других.
@@ -68,7 +76,8 @@ English version: see the ENGLISH section below.
 ВХОД В ИДУЩИЙ РЕЙД, ВЫХОД И ПОТЕРЯ СВЯЗИ
 - Если хост уже в рейде, игрок в бункере выбирает в панели "Присоединиться к рейду".
 - Если хост эвакуировался, а остальные остались, мир рейда продолжает жить общим: его
-  подхватывает следующий игрок.
+  подхватывает следующий игрок. К такому рейду тоже можно присоединиться из бункера
+  (игроку, который подключился к сессии позже того, кто держит рейд).
 - Если связь пропала, мод сам переподключится и вернёт вас в тот же рейд.
 
 ЧАСТОТА КАДРОВ
@@ -114,6 +123,13 @@ HOW TO PLAY
 - Everyone keeps their own inventory, bunker and progress.
 - Panel: mouse, arrows + Enter, gamepad (d-pad + A, B closes).
 
+THE BUNKER AS A LOBBY AND VISITS
+- While you are in the hub you see the teammates who are in their hub too: they walk around next to
+  you with their names shown. Traders, stash and quests stay your own.
+- Co-op panel > "Visit <name>'s bunker": you are taken to your friend's bunker room - their modules,
+  bed, kitchen, benches. Your stash, items and save stay yours; you can't install or upgrade the
+  friend's modules. Go back: panel > "Go back to your bunker", or just leave the bunker.
+
 IN A RAID
 - Ping: the middle mouse button (gamepad: right stick click) marks the spot under your aim for
   everybody for 10 seconds, with your name and the distance.
@@ -129,8 +145,9 @@ DOWN AND REVIVE
 - 1st down: N-second timer, you can shoot a pistol and crawl slowly.
 - 2nd down: N/2 timer, no shooting, HP after revive x0.6.
 - 3rd down - death. The counter resets at the start of every raid.
-- Revive: walk up to a downed teammate, press E (gamepad: interact), pick "no items" / bandage /
-  medkit and press E again. The time depends on the category (10 / 7 / 5 s by default), the HP on the
+- Revive: walk up to a downed teammate, press E (gamepad: interact), pick an item icon (a cross for
+  "no items", bandage, medkit; the HP and seconds are shown under each) with the mouse wheel or the
+  arrows and press E again. The time depends on the category (10 / 7 / 5 s by default), the HP on the
   exact item. The timer stops while you are being revived.
 - If everybody is down, everybody dies. If one player dies, the others can still revive each other.
 - A downed player is not finished off: damage doesn't go through and enemies switch to the others.
@@ -155,7 +172,8 @@ WHAT IS SYNCHRONIZED
 JOINING, LEAVING, LOST CONNECTION
 - If the host is already in a raid, a player in the bunker picks "Join raid" in the panel.
 - If the host extracts while the others stay, the raid keeps one shared world: the next player
-  takes it over.
+  takes it over. Such a raid can be joined from the bunker too (by a player who joined the session
+  later than the one holding the raid).
 - If the connection drops, the mod reconnects by itself and puts you back into the same raid.
 
 FRAME RATE
