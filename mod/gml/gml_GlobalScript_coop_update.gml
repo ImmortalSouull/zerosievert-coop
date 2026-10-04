@@ -1,7 +1,7 @@
 // ZERO Sievert co-op: one check per game launch for a newer mod release on GitHub (shown in the main menu,
 // the bunker and the F7 panel). Silent on any error.
 
-#macro COOP_MOD_VERSION "0.9.0"
+#macro COOP_MOD_VERSION "1.0.0"
 #macro COOP_RELEASES_API "https://api.github.com/repos/ImmortalSouull/zerosievert-coop/releases/latest"
 #macro COOP_RELEASES_PAGE "github.com/ImmortalSouull/zerosievert-coop/releases"
 

@@ -7,7 +7,10 @@
 // 3. Containers created during the raid by a player (dropped items = "discard" bags) are spawned on the
 //    partner's side; destroyed containers (emptied bags) disappear on both sides.
 // 4. For a guest joining a raid in progress the host sends every changed / dynamic container.
-// Containers are matched by object + position.
+// Containers are matched by object + position. Every content message carries a revision: a machine applies
+// only a newer one (equal: the lower slot wins), so a late echo of an older state can never bring back an
+// item somebody already took. Changes are detected on the normalized content (item, amount, durability),
+// not on the grid layout, which differs between machines.
 
 #macro COOP_MSG_CHEST_SPAWN 52
 #macro COOP_MSG_CHEST_GONE 53
@@ -37,7 +40,7 @@ function coop_chest_alarm_hook_inner()
         db_write("chest_" + string(id), "chest_y", y);
         db_write("chest_" + string(id), "items", coop_chest_items_from_json(coop_pending_items));
         db_close();
-        coop_sig = json_stringify(coop_chest_read(id));
+        coop_sig = coop_chest_norm(coop_chest_read(id));
         coop_pending_items = undefined;
         variable_instance_set(id, "coop_pending_items", undefined);
         return true;
@@ -88,7 +91,32 @@ function coop_chest_find(_key)
     return _found;
 }
 
-// Registry (host keeps it for late joiners): key -> latest content json.
+// What counts as a change: items with amounts and durability, in any grid order.
+function coop_chest_norm(_items)
+{
+    if (!is_array(_items))
+    {
+        return "";
+    }
+    var _out = [];
+    for (var _i = 0; _i < array_length(_items); _i++)
+    {
+        var _l = _items[_i];
+        if (is_struct(_l))
+        {
+            array_push(_out, string(_l.item) + "*" + string(variable_struct_exists(_l, "quantity") ? _l.quantity : 1) + "@" + string(floor(variable_struct_exists(_l, "durability") ? _l.durability : 100)));
+        }
+    }
+    array_sort(_out, true);
+    return string_join_ext(",", _out);
+}
+
+function coop_chest_rev(_inst)
+{
+    return variable_instance_exists(_inst, "coop_rev") ? _inst.coop_rev : 0;
+}
+
+// Registry (the owner keeps it for late joiners): key -> latest content json; key + "#rev" -> its revision.
 function coop_chest_registry()
 {
     var _c = coop();
@@ -99,16 +127,26 @@ function coop_chest_registry()
     return _c.chest_reg;
 }
 
-function coop_chest_send_content(_key, _json)
+// A local change of container _inst: next revision, remember, send.
+function coop_chest_send_content(_key, _json, _inst = -4)
 {
     var _c = coop();
-    ds_map_set(coop_chest_registry(), _key, _json);
+    var _rev = 1;
+    if (instance_exists(_inst))
+    {
+        _rev = coop_chest_rev(_inst) + 1;
+        _inst.coop_rev = _rev;
+    }
+    var _reg = coop_chest_registry();
+    ds_map_set(_reg, _key, _json);
+    ds_map_set(_reg, _key + "#rev", _rev);
     if (!coop_shared_ready())
     {
         exit;
     }
     coop_msg_begin(COOP_MSG_CHEST);
     buffer_write(_c.send_buf, buffer_string, _key);
+    buffer_write(_c.send_buf, buffer_u32, _rev);
     buffer_write(_c.send_buf, buffer_string, _json);
     coop_msg_send(true);
 }
@@ -168,7 +206,7 @@ function coop_chest_ui_refresh(_target)
         }
     }
     ui_chest_populate(_target);
-    _target.coop_ui_sig = json_stringify(coop_chest_ui_items());
+    _target.coop_ui_sig = coop_chest_norm(coop_chest_ui_items());
     _target.coop_refresh_pending = false;
 }
 
@@ -193,19 +231,20 @@ function coop_chest_step()
             if (_items != undefined)
             {
                 var _json = json_stringify(_items);
+                var _norm = coop_chest_norm(_items);
                 if (!variable_instance_exists(id, "coop_ui_sig") || coop_ui_sig == undefined)
                 {
-                    coop_ui_sig = _json;
+                    coop_ui_sig = _norm;
                 }
-                else if (coop_ui_sig != _json)
+                else if (coop_ui_sig != _norm)
                 {
-                    coop_ui_sig = _json;
-                    coop_sig = _json;
+                    coop_ui_sig = _norm;
+                    coop_sig = _norm;
                     db_open("all loot");
                     db_write("chest_" + string(id), "items", coop_chest_items_from_json(_json));
                     db_close();
-                    coop_chest_send_content(coop_chest_key(id), _json);
-                    coop_log("chest live change sent ", coop_chest_key(id));
+                    coop_chest_send_content(coop_chest_key(id), _json, id);
+                    coop_log("chest live change sent ", coop_chest_key(id), " rev ", coop_rev);
                 }
             }
         }
@@ -239,17 +278,17 @@ function coop_chest_step()
         {
             continue;
         }
-        var _json = json_stringify(_items);
+        var _norm = coop_chest_norm(_items);
         if (!variable_instance_exists(id, "coop_sig") || coop_sig == undefined)
         {
-            coop_sig = _json;
+            coop_sig = _norm;
             continue;
         }
-        if (coop_sig != _json)
+        if (coop_sig != _norm)
         {
-            coop_sig = _json;
-            coop_chest_send_content(coop_chest_key(id), _json);
-            coop_log("chest changed, sent ", coop_chest_key(id));
+            coop_sig = _norm;
+            coop_chest_send_content(coop_chest_key(id), json_stringify(_items), id);
+            coop_log("chest changed, sent ", coop_chest_key(id), " rev ", coop_rev);
         }
     }
 }
@@ -257,24 +296,39 @@ function coop_chest_step()
 function coop_chest_on_message(_b)
 {
     var _key = buffer_read(_b, buffer_string);
+    var _rev = buffer_read(_b, buffer_u32);
     var _json = buffer_read(_b, buffer_string);
+    var _c = coop();
     if (!coop_in_raid())
     {
         exit;
     }
-    ds_map_set(coop_chest_registry(), _key, _json);
+    var _reg = coop_chest_registry();
     var _found = coop_chest_find(_key);
+    var _local = instance_exists(_found) ? coop_chest_rev(_found) : (ds_map_exists(_reg, _key + "#rev") ? ds_map_find_value(_reg, _key + "#rev") : 0);
+    // only newer content wins (same revision: the lower slot's)
+    if (_rev < _local || (_rev == _local && _c.msg_from > max(0, _c.slot)))
+    {
+        if (_c.test_mode)
+        {
+            coop_log("chest update ignored (old rev ", _rev, " < ", _local, ") ", _key);
+        }
+        exit;
+    }
+    ds_map_set(_reg, _key, _json);
+    ds_map_set(_reg, _key + "#rev", _rev);
     if (!instance_exists(_found))
     {
         coop_log("chest update for unknown container ", _key);
         exit;
     }
+    _found.coop_rev = _rev;
     db_open("all loot");
     db_write("chest_" + string(_found.id), "chest_x", _found.x);
     db_write("chest_" + string(_found.id), "chest_y", _found.y);
     db_write("chest_" + string(_found.id), "items", coop_chest_items_from_json(_json));
     db_close();
-    _found.coop_sig = json_stringify(coop_chest_read(_found));
+    _found.coop_sig = coop_chest_norm(coop_chest_read(_found));
     if (coop_chest_open_target() == _found)
     {
         coop_chest_ui_refresh(_found);
@@ -382,7 +436,7 @@ function coop_chest_on_spawn(_b)
         db_open("all loot");
         db_write("chest_" + string(_old.id), "items", coop_chest_items_from_json(_json));
         db_close();
-        _old.coop_sig = json_stringify(coop_chest_read(_old));
+        _old.coop_sig = coop_chest_norm(coop_chest_read(_old));
         if (_spr >= 0 && sprite_exists(_spr))
         {
             _old.chest_sprite = _spr;
@@ -481,11 +535,15 @@ function coop_chest_sync_late_joiner()
     var _k = ds_map_find_first(_reg);
     while (_k != undefined)
     {
-        coop_msg_begin(COOP_MSG_CHEST);
-        buffer_write(_c.send_buf, buffer_string, _k);
-        buffer_write(_c.send_buf, buffer_string, ds_map_find_value(_reg, _k));
-        coop_msg_send(true);
-        _sent++;
+        if (string_pos("#rev", _k) == 0)
+        {
+            coop_msg_begin(COOP_MSG_CHEST);
+            buffer_write(_c.send_buf, buffer_string, _k);
+            buffer_write(_c.send_buf, buffer_u32, ds_map_exists(_reg, _k + "#rev") ? ds_map_find_value(_reg, _k + "#rev") : 1);
+            buffer_write(_c.send_buf, buffer_string, ds_map_find_value(_reg, _k));
+            coop_msg_send(true);
+            _sent++;
+        }
         _k = ds_map_find_next(_reg, _k);
     }
     coop_log("late joiner: sent ", _sent, " container messages");

@@ -146,7 +146,8 @@ def run(sc, outdir, extra):
         if os.path.exists(p):
             os.remove(p)
     script = "tools/test4.sh" if sc["players"] == 4 else "tools/test2.sh"
-    cmd = f'bash {script} {sc["minutes"]} "regress {sc["name"]}" "{sc["host"]} {extra}" "{sc["guest"]} {extra}"'
+    # the scenario's own arguments come last, so they win over the shared extra ones
+    cmd = f'bash {script} {sc["minutes"]} "regress {sc["name"]}" "{extra} {sc["host"]}" "{extra} {sc["guest"]}"'
     proc = subprocess.Popen([BASH, "-c", cmd], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     t0 = time.time()
     status = "timeout"

@@ -232,6 +232,7 @@ function coop_puppet_ensure(_slot, _x, _y)
     with (_p)
     {
         coop_slot = _slot;
+        weapon_holder.is_visible = false; // until the loadout and the first pose arrive
         coop_net_x = _x;
         coop_net_y = _y;
         coop_hp = 100;
@@ -471,6 +472,8 @@ function coop_weapon_net_end_step(_w)
         return false;
     }
     var _n = _p.coop_w;
+    // the loadout may arrive after the first state (latency): no weapon drawn until it is a real weapon
+    _w.is_visible = item_exists(_p.arma_now) && item_get_category(_p.arma_now) == "weapon" && sprite_exists(item_get_sprite_ingame(_p.arma_now) ?? -1);
     _w.x = _p.x + _n[0];
     _w.y = _p.y + _n[1];
     _w.image_angle = _n[2];
