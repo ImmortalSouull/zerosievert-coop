@@ -266,3 +266,41 @@ Later the same evening (v1.0 hardening):
   variants (trio, handoff3) cover the same group logic.
 - v1.0.0 released 2026-10-04 (protocol 5): final dist = build d77d504..., regression green on 2/3/4 instances,
   bad network, all maps, 21-min soak.
+
+## 2026-10-05 - v1.1.0: high-FPS flicker, game-style UI, hub lobby and visits
+- Repo made public (update check works without a token). Request to remove a "license check": there is
+  none in the mod (the installer only compares data.win hashes to know the game version); declined to add
+  anything aimed at cracked copies.
+- High-FPS enemy flicker: NPC facing compared target x with the *interpolated* x on render frames, mutants
+  compared xprevious (stale between ticks). Pre-Draw now stores live/previous x (zs_live_x/zs_prev_x) and
+  the draw code uses them (hooks in obj_npc_human_parent/obj_enemy_mutant_parent Draw).
+- Tree fade flicker: shd_tree dithers with a screen-space Bayer pattern, so moving the camera by
+  sub-pixels re-rolled the pattern. Replacement pixel shader (mod/shaders/shd_tree_ps.hlsl, same cbuffer
+  and outputs) anchors the pattern to world coordinates. tools/make_shaders.py compiles it (d3dcompiler_47,
+  ps_4_0); build.csx splices the DXBC into GM's container: header u32 at +24 = DXBC size, string-table
+  offsets after the DXBC are absolute and shift by the size delta.
+- Video capture here composes at ~55 Hz (frames looked duplicated); -coop_seq_dump N copies 30 frames of
+  application_surface to GPU surfaces and saves them afterwards (saving per frame took ~70 ms).
+- UI restyle (coop_style.gml): everything in the 1920x1080 UI space with the game's language fonts
+  (index 3 = small, 4 = body; index 2 is too small at 1080), panels/slots/key prompts like the inventory.
+  Revive picker = item icons (item_get_sprite_inv) with +HP / seconds under them; give menu rows with icons.
+  #macro values must not carry trailing // comments (build.csx pastes the whole rest of the line).
+- Hub lobby: players in their own hubs see each other (pstate also sent in the hub, puppets only in a
+  settled hub: creating a character during go_to_map failed half way in Create (save db open) and the
+  CleanUp of the half-built puppet crashed the game -> obj_player_parent CleanUp guard + hub_frames>=30).
+- Visits: bunker modules are global arrays (base_lvl, sl_base_id, sl_free) rebuilt by obj_base_parent
+  Alarm 0 at fixed slots (player room around obj_player_room_spawn 352,880; bunker = y < 1146). A visit
+  applies the friend's arrays and rebuilds; saves go through coop_visit_save_guard (writes ours); module
+  install/upgrade/production blocked. Gotchas: obj_player_parent Create calls lista_base() -> base_load()
+  (every puppet creation reloads the arrays from the save!); the game deactivates off-screen instances and
+  with() skips them, so old furniture survived -> activate the bunker region and event_perform(ev_alarm, 0)
+  synchronously; obj_vertex_props bakes decor after 8 hub frames -> module furniture is excluded.
+- Joining a raid whose owner is a guest (host extracted): JOIN_REQ goes to the owner (lowest slot in the
+  raid), which answers with the settings the raid was generated with (raid_settings_json snapshot at
+  room1 start) + RAID_START. Only higher slots may join (ownership never moves to a fresh map copy).
+  A new owner's NPCs taken over from replicas may lack coop_spawn_sent (fixed read).
+- Down: the last two going down at the same moment each saw the other standing -> both waited 60 s.
+  Now 1.5 s with nobody standing = everyone down.
+- New tests: lobby, lobby2, ownerjoin (3), chest3, both3, grouphp (-coop_diff key=val overrides difficulty
+  without touching the save), solo (one instance: game_guard run with -coop_autoraid 1 -coop_scenario solo),
+  -coop_name for long names. Protocol 6.

@@ -5,7 +5,8 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 
 ## Read first
 - `MODLOG.md` — full journal: every engine fact, gotcha, decision and test result. Read it before changing code.
-- Current release: **v1.0.0** (up to 4 players), network protocol `COOP_VERSION 5` (all players must match).
+- Current release: **v1.1.0** (up to 4 players, hub lobby + bunker visits, game-style UI), network protocol
+  `COOP_VERSION 6` (all players must match).
   `COOP_MOD_VERSION` in coop_update.gml must equal the release version (update check compares GitHub tags).
 
 ## Layout
@@ -13,6 +14,10 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 - `mod/hooks.txt` — patches into the game's own code (`### findreplace|prepend|append <code entry>`).
   NEVER `append` to a `gml_GlobalScript_*` (code lands outside the function) — use findreplace.
 - `mod/ui/` — text inserted into the game's .ui / language files by the installer.
+- `mod/shaders/*_ps.hlsl` — replacement D3D11 pixel shaders (shd_tree: world-anchored fade dither); compile
+  with `python tools/make_shaders.py` (-> .dxbc, committed), build.csx splices them into the game's shaders.
+- UI: draw co-op overlays with `coop_style.gml` helpers (1920x1080 UI space, game fonts COOP_F_SMALL/BODY,
+  coop_ui_panel/slot/prompt/item_icon/fit). Hub lobby + visits live in `coop_hub.gml`.
 - `dist_src/` — installer.ps1, README.txt (Russian, for players), THIRD_PARTY.txt.
 - `tools/` — build/test/release scripts (below). `tools/utmt/build.csx` = UTMT build script.
 - Outside the repo (never commit game data): `C:\Users\pasha\zerosievert-coop-work\`
@@ -32,7 +37,11 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   Prefer 2-instance runs and the 3-instance scenarios (trio, handoff3); run quad/handoff/soak rarely, after
   closing heavy apps (the user allows closing RazerAppEngine, CurseForge, NitroSense; keep Steam and Claude).
   Multi-player scenarios: quad/trio (see each other, credit, revive, ping, give), handoff/handoff3 (host
-  extracts, next slot owns the world), latejoin (-coop_delay_join), reconnect (blackout), menus (UI buttons).
+  extracts, next slot owns the world), latejoin (-coop_delay_join), reconnect (blackout), menus (UI buttons),
+  lobby/lobby2 (hub lobby + visits), ownerjoin/chest3/both3 (3 players), grouphp. Solo with the mod:
+  `python tools/game_guard.py run --max-minutes 3 --note solo --launch "-no_gpu_pref -coop_slot 1 -coop_root
+  coopA -coop_autoraid 1 -coop_scenario solo"`. Test-only args: -coop_diff key=val,... (difficulty override,
+  not saved), -coop_name <name>, -coop_seq_dump N (saves 30 consecutive frames, for flicker hunting).
 - Two-instance local test (host coopA left, guest coopB right, UDP 127.0.0.1):
   `bash tools/test2.sh <minutes> "<note>" "<host args>" "<guest args>"`, e.g.
   `bash tools/test2.sh 3 "x" "-coop_autoraid 1 -coop_scenario livechest" "-coop_scenario livechest"`.
@@ -48,7 +57,7 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   `python tools/peek.py <pid> <addr from log>` shows the game event a frozen process is stuck in. Test save roots `coopA`/`coopB` (copies of an old save, Russian UI,
   coopB has grass 0.25 + low spec to catch determinism bugs). The user's real saves are never touched.
 
-## GitHub (private repo https://github.com/ImmortalSouull/zerosievert-coop)
+## GitHub (public repo https://github.com/ImmortalSouull/zerosievert-coop)
 - gh CLI: `"/c/Program Files/GitHub CLI/gh.exe"` (logged in as ImmortalSouull). Ask the user before publishing.
 - Every release: write `docs/releases/v<ver>.md` in Russian AND English (title "RU / EN", a
   "**Русский** · [English](#english)" line, Russian part, then `<a name="english"></a>` + full English
@@ -85,4 +94,6 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 - If the host leaves the raid, the guest continues alone on local AI; far-away NPCs don't patrol (replicas
   were removed from the off-screen patrol list).
 - Untested: launching the game straight from a Steam invite (+connect_lobby) — needs two accounts.
-- Ideas: shared bunker, 3–4 players, PDA airdrop markers for the guest, publishing.
+- A lower slot cannot join a raid a higher slot owns (by design, see MODLOG v1.1.0).
+- Visits show the friend's modules only (furniture/benches); traders, stash and quests stay local.
+- Ideas: PDA airdrop markers for the guest, shared stash/trading between players, publishing on mod sites.
