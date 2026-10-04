@@ -117,6 +117,9 @@ Patch-Ui $pda '(\t\t\t//Allow scrolling around the minimap)' ([IO.File]::ReadAll
 $btn = [IO.File]::ReadAllText((Join-Path $here "ui_menu_button.txt"))
 Patch-Ui $mmMain '(\t\tbuild UiTextButton \{\r?\n\t\t\tlabel = "Settings")' $btn $true "CoopOpenPanel" "the main menu"
 Patch-Ui $mmPause '(\t\tbuild UiTextButton \{\r?\n\t\t\tlabel = "Settings")' $btn $true "CoopOpenPanel" "the pause menu"
+# the game's "New" tag sits at a fixed height next to "Mods": with one more button it would point at another row
+$t = [IO.File]::ReadAllText($mmMain)
+[IO.File]::WriteAllText($mmMain, $t.Replace('label = "New"', 'label = ""'), (New-Object Text.UTF8Encoding($false)))
 
 # 3. Language rows (Russian text for russian, English for every other language)
 $rows = Get-Content (Join-Path $here "lang_rows.tsv") -Encoding UTF8 | Where-Object { $_ -ne "" }

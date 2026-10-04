@@ -791,7 +791,7 @@ function coop_test_menus_step()
             saveslot_load(1);
         }
     }
-    if (is_in_hub() && instance_exists(obj_player))
+    if (is_in_hub() && (instance_exists(obj_player) || _c.mh >= 120)) // the pause deactivates the player
     {
         _c.mh++;
         if (_c.mh == 120)
