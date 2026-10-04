@@ -35,6 +35,15 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   join, show, panel, difficulty, steamhost. Test save roots `coopA`/`coopB` (copies of an old save, Russian UI,
   coopB has grass 0.25 + low spec to catch determinism bugs). The user's real saves are never touched.
 
+## GitHub (private repo https://github.com/ImmortalSouull/zerosievert-coop)
+- gh CLI: `"/c/Program Files/GitHub CLI/gh.exe"` (logged in as ImmortalSouull). Ask the user before publishing.
+- Every release: write `docs/releases/v<ver>.md` (Russian): what's new, "Исправлено (относительно v<prev>)",
+  "Известные баги" — carry over the previous list, move fixed bugs into "Исправлено", add newly found ones.
+  Also update the bug list of the previous release notes if a bug is found later. Then tag the release commit,
+  `git push origin main --tags`, and `gh release create v<ver> <zip> README_v<ver>.md --title "<first line>"
+  --notes-file docs/releases/v<ver>.md --latest` (README_v<ver>.md = copy of the notes). Update README.md
+  "Текущая версия". Run `um publish check . --game "<game dir>"` and on the dist folder first (no game files).
+
 ## Hard-won rules (details in MODLOG)
 - UTMT CLI needs stdin closed (`< /dev/null`); `#macro` is expanded by build.csx; `async_load[? k]` miscompiles
   (use ds_map_find_value); extension functions the game never calls must be declared (build.csx does it);
