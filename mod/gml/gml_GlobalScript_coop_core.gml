@@ -109,6 +109,9 @@ function coop_parse_params()
             case "-coop_trace":
                 global.coop_trace = true;
                 break;
+            case "-coop_prof":
+                global.coop_prof = true;
+                break;
             case "-coop_phase":
                 global.coop_phase_on = true;
                 break;
@@ -326,6 +329,41 @@ function coop_pos_reseed(_salt)
 }
 
 // Run one subsystem; a bug in it must never take the game down.
+if (!variable_global_exists("coop_prof")) global.coop_prof = false; // test: per-subsystem timing (-coop_prof), logged every 5 s
+
+function coop_prof_add(_name, _us)
+{
+    if (!variable_global_exists("coop_prof_tab"))
+    {
+        global.coop_prof_tab = {};
+        global.coop_prof_t0 = get_timer();
+    }
+    var _tab = global.coop_prof_tab;
+    var _old = variable_struct_exists(_tab, _name) ? variable_struct_get(_tab, _name) : 0;
+    variable_struct_set(_tab, _name, _old + _us);
+    var _now = get_timer();
+    if (_now - global.coop_prof_t0 > 5000000)
+    {
+        var _secs = (_now - global.coop_prof_t0) / 1000000;
+        var _names = variable_struct_get_names(_tab);
+        array_sort(_names, function(_a, _b) { return variable_struct_get(global.coop_prof_tab, _b) - variable_struct_get(global.coop_prof_tab, _a); });
+        var _s = "prof us/s:";
+        var _total = 0;
+        for (var _i = 0; _i < array_length(_names); _i++)
+        {
+            var _v = variable_struct_get(_tab, _names[_i]) / _secs;
+            _total += _v;
+            if (_i < 10)
+            {
+                _s += " " + string_replace(_names[_i], "gml_Script_", "") + "=" + string(round(_v));
+            }
+        }
+        coop_log(_s, " | total=", round(_total));
+        global.coop_prof_tab = {};
+        global.coop_prof_t0 = _now;
+    }
+}
+
 function coop_try(_f)
 {
     try
@@ -333,6 +371,13 @@ function coop_try(_f)
         if (variable_global_exists("coop_trace") && global.coop_trace)
         {
             coop_log("T ", script_get_name(_f));
+        }
+        if (global.coop_prof)
+        {
+            var _t0 = get_timer();
+            _f();
+            coop_prof_add(script_get_name(_f), get_timer() - _t0);
+            exit;
         }
         _f();
     }

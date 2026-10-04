@@ -34,7 +34,8 @@ function zs_fps()
             logic_dt: ZS_TICK_US,
             was_rf: false,
             moved: [],
-            held_alarm: [],
+            alarm_list: zs_fps_alarm_lists(),
+            alarm_mask: zs_fps_alarm_masks(),
             held_motion: [],
             swapped: [],
             wh: [],
@@ -43,7 +44,7 @@ function zs_fps()
             cam_px: 0, cam_py: 0, cam_cx: 0, cam_cy: 0, cam_live_x: 0, cam_live_y: 0, cam_swapped: false,
             parts_paused: false,
             stat_frames: 0, stat_ticks: 0, stat_t0: get_timer(), stat_hold_us: 0, stat_scan_us: 0, stat_interp_us: 0,
-            stat_moved: 0, stat_inst: 0, stat_held: 0
+            stat_moved: 0, stat_inst: 0, stat_held: 0, stat_alarm_us: 0, stat_alarm_n: 0
         };
         zs_fps_load();
     }
@@ -256,25 +257,9 @@ function zs_fps_begin_step()
         exit;
     }
     var _t0 = get_timer();
-    // alarms count down every runner frame: add the frame back on render-only frames
-    var _tab = zs_fps_alarm_table();
-    var _n = array_length(_tab);
-    for (var _i = 0; _i < _n; _i++)
-    {
-        var _idx = _tab[_i][1];
-        var _ni = array_length(_idx);
-        with (_tab[_i][0])
-        {
-            for (var _k = 0; _k < _ni; _k++)
-            {
-                var _a = _idx[_k];
-                if (alarm[_a] > 0)
-                {
-                    alarm[_a] += 1;
-                }
-            }
-        }
-    }
+    // alarms count down every runner frame: give the frame back to every instance that had a running
+    // alarm at the end of the last logic tick (zs_fps_end_step)
+    zs_fps_alarm_hold(_f.alarm_list, _f.alarm_mask);
     // paths and built-in motion (speed/hspeed/vspeed): freeze until End Step
     var _held = _f.held_motion;
     array_resize(_held, 0);
@@ -303,10 +288,41 @@ function zs_fps_begin_step()
     _f.stat_held += array_length(_held);
 }
 
-// obj_coop End Step (first thing): give back what Begin Step froze.
+// obj_coop End Step (first thing; obj_coop is the last object, so every other End Step already ran):
+// give back what Begin Step froze; after a logic tick list the instances with a running alarm.
 function zs_fps_end_step()
 {
     var _f = zs_fps();
+    if (_f.on && !global.zs_rf)
+    {
+        var _t0 = get_timer();
+        zs_fps_alarm_scan(_f.alarm_list, _f.alarm_mask);
+        _f.stat_alarm_us += get_timer() - _t0;
+        var _cnt = 0;
+        var _ll = _f.alarm_list;
+        for (var _k = array_length(_ll) - 1; _k >= 0; _k--)
+        {
+            _cnt += array_length(_ll[_k]);
+        }
+        if (coop().test_mode && _f.stat_ticks == 1)
+        {
+            var _s = "";
+            for (var _k = 0; _k < array_length(_ll); _k++)
+            {
+                if (array_length(_ll[_k]) >= 5 && instance_exists(_ll[_k][0]))
+                {
+                    var _i0 = _ll[_k][0];
+                    _s += " " + object_get_name(_i0.object_index) + "=" + string(array_length(_ll[_k])) + " alarms:";
+                    for (var _q = 0; _q < 12; _q++)
+                    {
+                        if (_i0.alarm[_q] > 0) _s += " [" + string(_q) + "]=" + string(_i0.alarm[_q]);
+                    }
+                }
+            }
+            coop_log("fps alarm families:", _s);
+        }
+        _f.stat_alarm_n = _cnt;
+    }
     var _held = _f.held_motion;
     var _n = array_length(_held);
     if (_n == 0)
@@ -495,7 +511,8 @@ function zs_fps_post_draw()
                 " fps_real=", round(fps_real), " inst=", _f.stat_inst, " moved/tick=", round(_f.stat_moved / _tk),
                 " held/rframe=", round(_f.stat_held / max(1, _f.stat_frames - _f.stat_ticks)),
                 " us: hold=", round(_f.stat_hold_us / max(1, _f.stat_frames - _f.stat_ticks)),
-                " scan=", round(_f.stat_scan_us / _tk), " interp=", round(_f.stat_interp_us / _fr));
+                " scan=", round(_f.stat_scan_us / _tk), " interp=", round(_f.stat_interp_us / _fr),
+                " alarmscan=", round(_f.stat_alarm_us / _tk), " alarm_inst=", _f.stat_alarm_n);
             _f.stat_t0 = _now;
             _f.stat_frames = 0;
             _f.stat_ticks = 0;
@@ -504,6 +521,7 @@ function zs_fps_post_draw()
             _f.stat_interp_us = 0;
             _f.stat_moved = 0;
             _f.stat_held = 0;
+            _f.stat_alarm_us = 0;
         }
     }
 }

@@ -45,7 +45,11 @@ function coop_players_step()
     {
         coop_send_pstate();
     }
-    // Loadout changes (weapon swap, armor change) are cheap to detect.
+    // Loadout changes (weapon swap, armor change): checked a few times per second.
+    if (_c.frame mod 10 != 0)
+    {
+        exit;
+    }
     with (obj_player)
     {
         var _sig = string(arma_now) + "|" + string(armor_now) + "|" + string(backpack_now) + "|" + string(headset_now) + "|" + string(weapon_slot_now);

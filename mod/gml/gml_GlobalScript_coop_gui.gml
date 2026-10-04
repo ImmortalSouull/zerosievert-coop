@@ -4,6 +4,15 @@
 function coop_draw_gui()
 {
     var _c = coop();
+    // nothing to draw (solo play, no notifications): leave the GUI state alone
+    if (_c.role == "none" && array_length(_c.notes) == 0 && !(_c.test_mode && _c.overlay) && room != r_hub && room != r_menu && !coop_in_raid())
+    {
+        exit;
+    }
+    if (_c.role == "none" && array_length(_c.notes) == 0 && !(_c.test_mode && _c.overlay) && coop_in_raid() && !coop_down_is_down())
+    {
+        exit;
+    }
     var _fonts = variable_global_exists("language_fonts") && is_array(global.language_fonts) && font_exists(global.language_fonts[1]);
     display_set_gui_size(480, 270);
     if (_fonts)
@@ -21,16 +30,23 @@ function coop_draw_gui()
     var _lh = 11;
     if (_c.role != "none")
     {
-        var _txt = coop_t("CO-OP ", "КООП ") + ((_c.role == "host") ? coop_t("host", "хост") : coop_t("guest", "гость")) + " [" + _c.transport + "] ";
-        if (_c.connected)
+        // rebuilt only when something in it changes (this runs every frame)
+        var _key = _c.role + _c.transport + string(_c.connected) + _c.peer_name + string(round(_c.ping));
+        if (!variable_struct_exists(_c, "hud_key") || _c.hud_key != _key)
         {
-            _txt += "- " + _c.peer_name + "  " + string(round(_c.ping)) + coop_t(" ms", " мс");
+            var _txt = coop_t("CO-OP ", "КООП ") + ((_c.role == "host") ? coop_t("host", "хост") : coop_t("guest", "гость")) + " [" + _c.transport + "] ";
+            if (_c.connected)
+            {
+                _txt += "- " + _c.peer_name + "  " + string(round(_c.ping)) + coop_t(" ms", " мс");
+            }
+            else
+            {
+                _txt += (_c.role == "guest") ? coop_t("- connecting...", "- подключение...") : coop_t("- waiting for partner", "- ждём напарника");
+            }
+            _c.hud_key = _key;
+            _c.hud_txt = _txt;
         }
-        else
-        {
-            _txt += (_c.role == "guest") ? coop_t("- connecting...", "- подключение...") : coop_t("- waiting for partner", "- ждём напарника");
-        }
-        coop_text_outlined(_x, _y, _txt, c_lime);
+        coop_text_outlined(_x, _y, _c.hud_txt, c_lime);
         _y += _lh;
     }
     var _i = 0;
