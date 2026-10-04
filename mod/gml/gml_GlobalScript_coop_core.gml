@@ -103,6 +103,12 @@ function coop_parse_params()
             case "-coop_delay_join":
                 _c.delay_join = real(_v) * 1000; // test: the guest says hello only after this many seconds
                 break;
+            case "-coop_seq_dump":
+                _c.seq_dump = real(_v);
+                break;
+            case "-coop_fps_marker":
+                _c.fps_marker = true;
+                break;
             case "-coop_expect":
                 _c.expect = real(_v); // test: the autopilot starts the raid only with this many players
                 break;

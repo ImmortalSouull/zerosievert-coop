@@ -39,6 +39,7 @@ function zs_fps()
             held_motion: [],
             swapped: [],
             wh: [],
+            frame_id: 0,
             nswapped: 0,
             cam_ok: false,
             cam_px: 0, cam_py: 0, cam_cx: 0, cam_cy: 0, cam_live_x: 0, cam_live_y: 0, cam_swapped: false,
@@ -399,6 +400,7 @@ function zs_fps_pre_draw()
         _f.stat_scan_us += get_timer() - _t0;
     }
     var _t1 = get_timer();
+    _f.frame_id++;
     var _alpha = clamp((get_timer() - _f.tick_us) / ZS_TICK_US, 0, 1);
     // the swap list: [inst, live x, live y] for every instance drawn somewhere else this frame
     var _sw = _f.swapped;
@@ -426,6 +428,10 @@ function zs_fps_pre_draw()
             _sw[_ns + 1] = _lx;
             _sw[_ns + 2] = _ly;
             _ns += 3;
+            // Draw code that decides facing from x (NPCs) reads the tick values through zs_live_x/zs_prev_x
+            _inst.zs_lf = _f.frame_id;
+            _inst.zs_lx = _lx;
+            _inst.zs_px = _px;
             _inst.x = _px + (_lx - _px) * _alpha;
             _inst.y = _py + (_ly - _py) * _alpha;
         }
@@ -496,6 +502,47 @@ function zs_fps_post_draw()
         _f.cam_swapped = false;
         camera_set_view_pos(view_camera[0], _f.cam_live_x, _f.cam_live_y);
     }
+    // test (-coop_seq_dump N): save 30 consecutive rendered frames N ticks after the shared raid is ready
+    var _cd = coop();
+    if (_f.on && variable_struct_exists(_cd, "seq_dump") && coop_shared_ready())
+    {
+        if (!variable_struct_exists(_cd, "seq_t")) { _cd.seq_t = 0; _cd.seq_n = 0; }
+        if (!global.zs_rf) _cd.seq_t++;
+        if (_cd.seq_t >= _cd.seq_dump && _cd.seq_n < 30 && surface_exists(application_surface))
+        {
+            // copy on the GPU now (cheap), write the files once the series is complete
+            if (!variable_struct_exists(_cd, "seq_s")) _cd.seq_s = [];
+            var _w = surface_get_width(application_surface);
+            var _h = surface_get_height(application_surface);
+            var _sf = surface_create(_w, _h);
+            surface_copy(_sf, 0, 0, application_surface);
+            var _p = instance_exists(obj_player) ? obj_player : noone;
+            array_push(_cd.seq_s, [_sf, global.zs_rf, camera_get_view_x(view_camera[0]), (_p != noone) ? _p.x : -1]);
+            _cd.seq_n++;
+            if (_cd.seq_n == 30)
+            {
+                for (var _q = 0; _q < 30; _q++)
+                {
+                    var _e = _cd.seq_s[_q];
+                    if (surface_exists(_e[0]))
+                    {
+                        surface_save(_e[0], "seq_" + string(_q) + (_e[1] ? "_r" : "_L") + ".png");
+                        surface_free(_e[0]);
+                    }
+                    coop_log("seq ", _q, _e[1] ? " render" : " LOGIC", " cam=", _e[2], " player=", _e[3]);
+                }
+            }
+        }
+    }
+    if (_f.on && variable_struct_exists(coop(), "fps_marker"))
+    {
+        // test (-coop_fps_marker): frame number + whether this was a logic tick, to check what reaches the screen
+        draw_set_colour(global.zs_rf ? c_yellow : c_red);
+        draw_rectangle(0, 0, 40, 12, false);
+        draw_set_colour(c_black);
+        draw_text(2, 0, string(_f.frame_id mod 1000));
+        draw_set_colour(c_white);
+    }
     if (_f.on)
     {
         _f.decided = false;
@@ -524,4 +571,26 @@ function zs_fps_post_draw()
             _f.stat_alarm_us = 0;
         }
     }
+}
+
+// Facing decisions in Draw events must use the tick position, not the interpolated one being drawn: an NPC
+// facing its target would otherwise flip back and forth within a tick when the target is almost straight
+// above/below it (target_for_image_scale < x), and mutants (xprevious vs x) would face backwards on
+// render-only frames.
+function zs_live_x()
+{
+    if (variable_instance_exists(id, "zs_lf") && zs_lf == global.zs_fps_state.frame_id)
+    {
+        return zs_lx;
+    }
+    return x;
+}
+
+function zs_prev_x()
+{
+    if (variable_instance_exists(id, "zs_lf") && zs_lf == global.zs_fps_state.frame_id)
+    {
+        return zs_px;
+    }
+    return xprevious;
 }

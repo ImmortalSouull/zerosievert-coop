@@ -20,6 +20,7 @@ function coop_test_ext_step()
     coop_test_handoff_step();
     coop_test_soak_step();
     coop_test_menus_step();
+    coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -804,4 +805,40 @@ function coop_test_menus_step()
             coop_log("menus: pause menu shot");
         }
     }
+}
+
+// -coop_scenario treefade: stand under a tree canopy and walk (with -coop_seq_dump to grab rendered frames).
+function coop_test_treefade_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "treefade" || !coop_in_raid() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    // trees become one baked mesh (obj_vertex_props destroys the instances): remember one before that
+    if (!variable_struct_exists(_c, "tf_x"))
+    {
+        instance_activate_object(obj_tree);
+        var _t = instance_nearest(obj_player.x, obj_player.y, obj_tree);
+        if (instance_exists(_t))
+        {
+            _c.tf_x = _t.x;
+            _c.tf_y = _t.y;
+            coop_log("treefade: tree at ", _t.x, ",", _t.y);
+        }
+    }
+    if (!coop_shared_ready() || !variable_struct_exists(_c, "tf_x") || !player_state_is(0, scr_player_state_move))
+    {
+        exit; // (the raid's intro scene would put the player back)
+    }
+    if (!variable_struct_exists(_c, "tf")) _c.tf = 0;
+    _c.tf++;
+    if (_c.tf == 60)
+    {
+        obj_player.x = _c.tf_x + 30;
+        obj_player.y = _c.tf_y - 8;
+        coop_log("treefade: player next to the tree");
+    }
+    if (_c.tf == 120) _c.f_key = 3; // walk left through the canopy
+    if (_c.tf == 300) _c.f_key = -1;
 }

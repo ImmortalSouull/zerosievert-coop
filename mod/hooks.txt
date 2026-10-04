@@ -795,3 +795,50 @@ coop_psound(sound_shell_in, 10);
 <<<REPLACE
     coop_fog_freeze(vb);
 <<<END
+
+### findreplace gml_Object_obj_npc_human_parent_Draw_0
+<<<FIND
+if (target_for_image_scale < x)
+{
+    image_xscale = -1;
+}
+<<<REPLACE
+if (target_for_image_scale < zs_live_x())
+{
+    image_xscale = -1;
+}
+<<<END
+
+### findreplace gml_Object_obj_npc_human_parent_Draw_0
+<<<FIND
+if (target_for_image_scale < x)
+{
+    image_xscale = -1;
+    rot
+<<<REPLACE
+if (target_for_image_scale < zs_live_x())
+{
+    image_xscale = -1;
+    rot
+<<<END
+
+### findreplace gml_Object_obj_enemy_mutant_parent_Draw_0
+<<<FIND
+else if (xprevious > x)
+<<<REPLACE
+else if (zs_prev_x() > zs_live_x())
+<<<END
+
+### findreplace gml_Object_obj_enemy_mutant_parent_Draw_0
+<<<FIND
+else if (xprevious == x)
+<<<REPLACE
+else if (zs_prev_x() == zs_live_x())
+<<<END
+
+### findreplace gml_Object_obj_enemy_mutant_parent_Draw_0
+<<<FIND
+else if (xprevious < x)
+<<<REPLACE
+else if (zs_prev_x() < zs_live_x())
+<<<END

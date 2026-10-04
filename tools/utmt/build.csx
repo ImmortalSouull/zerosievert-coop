@@ -170,6 +170,39 @@ if (!string.IsNullOrEmpty(traceRx))
 
 group.Import(true);
 
+// Replacement D3D11 pixel shaders (mod/shaders/<shader>_ps.dxbc, compiled by tools/make_shaders.py): GameMaker
+// wraps the DXBC in its own header (uniform table) followed by a string table; the header holds the DXBC size
+// and absolute offsets into the string table, which move when the DXBC length changes.
+int shadersPatched = 0;
+foreach (string dx in Directory.GetFiles(Path.Combine(root, "mod", "shaders"), "*_ps.dxbc"))
+{
+    string shName = Path.GetFileNameWithoutExtension(dx);
+    shName = shName.Substring(0, shName.Length - 3);
+    var sh = Data.Shaders.ByName(shName);
+    if (sh == null) throw new Exception("no shader " + shName);
+    byte[] old = sh.HLSL11_PixelData.Data;
+    byte[] neu = File.ReadAllBytes(dx);
+    int start = -1;
+    for (int k = 0; k + 4 <= old.Length; k++) if (old[k] == 'D' && old[k + 1] == 'X' && old[k + 2] == 'B' && old[k + 3] == 'C') { start = k; break; }
+    if (start < 0 || start % 4 != 0) throw new Exception("unexpected shader blob " + shName);
+    uint oldSize = BitConverter.ToUInt32(old, start + 24);
+    long tailStart = start + oldSize;
+    int delta = neu.Length - (int)oldSize;
+    var outBytes = new List<byte>();
+    for (int k = 0; k < start; k += 4)
+    {
+        uint v = BitConverter.ToUInt32(old, k);
+        if (v == oldSize && k == 24) v = (uint)neu.Length;
+        else if (v >= tailStart && v < old.Length) v = (uint)(v + delta);
+        outBytes.AddRange(BitConverter.GetBytes(v));
+    }
+    outBytes.AddRange(neu);
+    for (long k = tailStart; k < old.Length; k++) outBytes.Add(old[k]);
+    sh.HLSL11_PixelData.Data = outBytes.ToArray();
+    shadersPatched++;
+}
+Console.WriteLine($"shaders: {shadersPatched} pixel shaders replaced");
+
 var coopObj = Data.GameObjects.ByName("obj_coop");
 coopObj.Persistent = true;
 coopObj.Visible = true;
