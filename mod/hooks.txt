@@ -520,3 +520,152 @@ if (coop_world_guest_skips_roll())
     instance_activate_object(obj_player);
 }
 <<<END
+
+### findreplace gml_Object_obj_light_controller_Step_0
+<<<FIND
+    game_seconds_remainder += (time_increase * (delta_time / 16667));
+<<<REPLACE
+    game_seconds_remainder += (time_increase * (zs_logic_dt() / 16667));
+<<<END
+
+### findreplace gml_Object_obj_light_controller_Step_0
+<<<FIND
+    game_seconds_remainder -= (time_increase * (delta_time / 16667));
+<<<REPLACE
+    game_seconds_remainder -= (time_increase * (zs_logic_dt() / 16667));
+<<<END
+
+### findreplace gml_Object_obj_light_controller_Step_0
+<<<FIND
+real_time_played += (delta_time / 1000000);
+<<<REPLACE
+real_time_played += (zs_logic_dt() / 1000000);
+<<<END
+
+### findreplace gml_GlobalScript_class_player_arms
+<<<FIND
+(sprite_get_speed(sprite_index) / game_get_speed(gamespeed_fps))
+<<<REPLACE
+(sprite_get_speed(sprite_index) / 60)
+<<<END
+
+### findreplace gml_GlobalScript_player_action_interact
+<<<FIND
+    var _steps = max(_duration * game_get_speed(gamespeed_fps), 1);
+<<<REPLACE
+    var _steps = max(_duration * 60, 1);
+<<<END
+
+### findreplace gml_GlobalScript_bullet_hit_player
+<<<FIND
+                                adrenalinerush_cooldown = room_speed *
+<<<REPLACE
+                                adrenalinerush_cooldown = 60 *
+<<<END
+
+### findreplace gml_GlobalScript_bullet_hit_player
+<<<FIND
+                                adrenalinerush_movement_speed_timer = room_speed *
+<<<REPLACE
+                                adrenalinerush_movement_speed_timer = 60 *
+<<<END
+
+### findreplace gml_Object_obj_enemy_mutant_parent_Collision_obj_player_parent
+<<<FIND
+                                    adrenalinerush_cooldown = room_speed *
+<<<REPLACE
+                                    adrenalinerush_cooldown = 60 *
+<<<END
+
+### findreplace gml_Object_obj_enemy_mutant_parent_Collision_obj_player_parent
+<<<FIND
+                                    adrenalinerush_movement_speed_timer = room_speed *
+<<<REPLACE
+                                    adrenalinerush_movement_speed_timer = 60 *
+<<<END
+
+### findreplace gml_GlobalScript_player_action_unjam
+<<<FIND
+            nojamthanks_timer = room_speed *
+<<<REPLACE
+            nojamthanks_timer = 60 *
+<<<END
+
+### findreplace gml_Object_obj_player_parent_Alarm_0
+<<<FIND
+        var _sound_time = audio_sound_length(sound_shell_in) * room_speed;
+<<<REPLACE
+        var _sound_time = audio_sound_length(sound_shell_in) * 60;
+<<<END
+
+### findreplace gml_Object_obj_player_parent_Alarm_0
+<<<FIND
+        var _sound_time = audio_sound_length(item_weapon_get_sound_mag_in(arma_now)) * room_speed;
+<<<REPLACE
+        var _sound_time = audio_sound_length(item_weapon_get_sound_mag_in(arma_now)) * 60;
+<<<END
+
+### findreplace gml_Object_obj_player_parent_Alarm_0
+<<<FIND
+            var sound_time = audio_sound_length(item_weapon_get_sound_cocking(arma_now)) * room_speed;
+<<<REPLACE
+            var sound_time = audio_sound_length(item_weapon_get_sound_cocking(arma_now)) * 60;
+<<<END
+
+### findreplace gml_Object_obj_controller_Step_0
+<<<FIND
+        game_set_speed(global.fps_unlocked ? 1000 : 60, gamespeed_fps);
+<<<REPLACE
+        zs_fps_cycle();
+<<<END
+
+### findreplace gml_Object_obj_mouse_Draw_0
+<<<FIND
+        alpha_dot += (0.025 * alpha_factor);
+<<<REPLACE
+        if (!global.zs_rf) alpha_dot += (0.025 * alpha_factor);
+<<<END
+
+### findreplace gml_Object_obj_surface_aim_Draw_0
+<<<FIND
+    alpha_dot += (0.0075 * alpha_factor);
+<<<REPLACE
+    if (!global.zs_rf) alpha_dot += (0.0075 * alpha_factor);
+<<<END
+
+### findreplace gml_Object_obj_npc_draw_text_Draw_0
+<<<FIND
+    counter += text_speed;
+<<<REPLACE
+    if (!global.zs_rf) counter += text_speed;
+<<<END
+
+### findreplace gml_Object_obj_shader_controller_Draw_77
+<<<FIND
+        radiation_amount += (radiation_ - 200);
+<<<REPLACE
+        if (!global.zs_rf) radiation_amount += (radiation_ - 200);
+<<<END
+
+### findreplace gml_Object_obj_controller_Draw_64
+<<<FIND
+                            _marker.draw_x = lerp(_marker.draw_x, draw_x, 0.25);
+                            _marker.draw_y = lerp(_marker.draw_y, draw_y, 0.25);
+<<<REPLACE
+                            if (!global.zs_rf) { _marker.draw_x = lerp(_marker.draw_x, draw_x, 0.25); _marker.draw_y = lerp(_marker.draw_y, draw_y, 0.25); }
+<<<END
+
+### findreplace gml_Object_obj_light_controller_Draw_0
+<<<FIND
+                    darkness_tot += ((1 - darkness_tot) / 2);
+<<<REPLACE
+                    if (!global.zs_rf) darkness_tot += ((1 - darkness_tot) / 2);
+<<<END
+
+### findreplace gml_Object_obj_player_Step_1
+<<<FIND
+update_keyboard_input();
+<<<REPLACE
+update_keyboard_input();
+coop_test_input();
+<<<END

@@ -22,6 +22,7 @@ function coop_panel_buttons()
         }
         array_push(_b, { id: "leave", label: coop_t("Leave co-op", "Выйти из кооператива") });
     }
+    array_push(_b, { id: "fps", label: coop_t("Frame rate: ", "Частота кадров: ") + zs_fps_mode_label(zs_fps().mode) });
     array_push(_b, { id: "close", label: coop_t("Close [F7]", "Закрыть [F7]") });
     return _b;
 }
@@ -135,6 +136,9 @@ function coop_panel_click(_id)
             coop_net_stop();
             coop_notify(coop_t("Left co-op", "Вы вышли из кооператива"));
             _c.panel = false;
+            break;
+        case "fps":
+            zs_fps_cycle();
             break;
         case "close":
             _c.panel = false;

@@ -104,6 +104,9 @@ function coop_parse_params()
             case "-coop_quiet":
                 _c.overlay = false;
                 break;
+            case "-coop_fps":
+                _c.fps_force = real(_v);
+                break;
             case "-coop_scenario":
                 _c.scenario = _v;
                 break;
@@ -221,6 +224,7 @@ function coop_boot()
         return 0;
     });
     coop_log("boot, steam=", steam_initialised());
+    coop_try(zs_fps_apply);
 }
 
 // Seed handed to the map generator (shared raids use the host's seed).

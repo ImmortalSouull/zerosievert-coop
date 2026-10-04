@@ -12,6 +12,7 @@ function coop_test_ext_step()
         coop_test_join_step();
     }
     coop_test_v3_step();
+    coop_test_fps_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -223,5 +224,47 @@ function coop_test_v3_step()
     if (_t == 720)
     {
         coop_log("v3: done");
+    }
+}
+
+// -coop_scenario fps: walk right for 300 logic ticks and log how far / how long it took (compare -coop_fps 60 vs 165).
+function coop_test_fps_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "fps" || !coop_raid_ready() || !instance_exists(obj_player) || !player_state_is(0, scr_player_state_move))
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "ft")) _c.ft = 0;
+    _c.ft++;
+    var _t = _c.ft;
+    var _gt = instance_exists(obj_light_controller) ? obj_light_controller.game_time_played : 0;
+    if (_t == 120 || _t == 900)
+    {
+        _c.f_us = get_timer();
+        _c.f_x = obj_player.x;
+        _c.f_y = obj_player.y;
+        _c.f_gt = _gt;
+        _c.f_key = (_t == 120) ? 3 : 1; // hold left, then down (coop_test_input)
+    }
+    if (_t == 420 || _t == 1200)
+    {
+        _c.f_key = -1;
+        coop_log("fpstest: 300 ticks real_s=", (get_timer() - _c.f_us) / 1000000, " dx=", obj_player.x - _c.f_x, " dy=", obj_player.y - _c.f_y,
+            " game_s+=", (_gt - _c.f_gt) * 86400, " fps_real=", fps_real, " speed=", game_get_speed(gamespeed_fps), " npcs=", instance_number(obj_npc_parent));
+    }
+    if (_t == 300 || _t == 1000)
+    {
+        screen_save("fps_" + string(_t) + "_" + _c.tag + ".png");
+    }
+}
+
+// obj_player Begin Step, right after the game read the keyboard: scripted held keys (test mode only).
+function coop_test_input()
+{
+    var _c = coop();
+    if (_c.test_mode && variable_struct_exists(_c, "f_key") && _c.f_key >= 0)
+    {
+        global.kb_hold[_c.f_key] = true;
     }
 }
