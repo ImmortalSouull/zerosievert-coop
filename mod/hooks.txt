@@ -703,3 +703,88 @@ with (player_get_local())
 <<<REPLACE
 with (obj_player_parent)
 <<<END
+
+### findreplace gml_GlobalScript_scr_choose_footstep_sound
+<<<FIND
+            if (object_is_player(object_index))
+<<<REPLACE
+            if (object_index == obj_player)
+<<<END
+
+### findreplace gml_Object_obj_player_parent_Alarm_0
+<<<FIND
+audio_play_sound(sound_shell_in, 10, false);
+<<<REPLACE
+coop_psound(sound_shell_in, 10);
+<<<END
+
+### findreplace gml_Object_obj_player_parent_Alarm_0
+<<<FIND
+        audio_play_sound(item_weapon_get_sound_mag_in(arma_now), 10, false);
+<<<REPLACE
+        coop_psound(item_weapon_get_sound_mag_in(arma_now), 10);
+<<<END
+
+### findreplace gml_Object_obj_player_parent_Alarm_0
+<<<FIND
+            audio_play_sound(item_weapon_get_sound_cocking(arma_now), 10, false);
+<<<REPLACE
+            coop_psound(item_weapon_get_sound_cocking(arma_now), 10);
+<<<END
+
+### findreplace gml_GlobalScript_player_action_reload
+<<<FIND
+                        audio_play_sound(item_weapon_get_sound_mag_out(arma_now), 10, false);
+<<<REPLACE
+                        coop_psound(item_weapon_get_sound_mag_out(arma_now), 10);
+<<<END
+
+### findreplace gml_GlobalScript_player_action_change_ammo
+<<<FIND
+                audio_play_sound(item_weapon_get_sound_mag_out(arma_now), 10, false);
+<<<REPLACE
+                coop_psound(item_weapon_get_sound_mag_out(arma_now), 10);
+<<<END
+
+### findreplace gml_GlobalScript_player_action_unjam
+<<<FIND
+        audio_play_sound(snd_jam_free, 10, false);
+<<<REPLACE
+        coop_psound(snd_jam_free, 10);
+<<<END
+
+### findreplace gml_Object_obj_player_parent_Alarm_10
+<<<FIND
+    audio_play_sound(snd_sniper_bolt, 10, false);
+<<<REPLACE
+    coop_psound(snd_sniper_bolt, 10);
+<<<END
+
+### findreplace gml_GlobalScript_player_action_toggle_torch
+<<<FIND
+            audio_play_sound(snd_laser_on, 10, false);
+<<<REPLACE
+            coop_psound(snd_laser_on, 10);
+<<<END
+
+### findreplace gml_GlobalScript_player_action_toggle_laser
+<<<FIND
+            audio_play_sound(snd_laser_on, 10, false);
+<<<REPLACE
+            coop_psound(snd_laser_on, 10);
+<<<END
+
+### findreplace gml_GlobalScript_player_action_open_chest
+<<<FIND
+    audio_play_sound(chest_get_open_sound(arg0.tipo), 10, false);
+<<<REPLACE
+    coop_psound(chest_get_open_sound(arg0.tipo), 10);
+<<<END
+
+### findreplace gml_GlobalScript_inventory_use_quick_slot
+<<<FIND
+                    audio_play_sound_on(_player.emitter_walk, _sound, false, 18);
+<<<REPLACE
+                    audio_play_sound_on(_player.emitter_walk, _sound, false, 18);
+                    coop_psound_send(_sound);
+<<<END

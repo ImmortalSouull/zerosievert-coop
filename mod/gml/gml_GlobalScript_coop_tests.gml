@@ -314,6 +314,13 @@ function coop_test_anim_step()
                     coop_send_loadout();
                 }
             }
+            if (_t == 1200) _c.f_key = 2; // walk right (footsteps)
+            if (_t == 1320) _c.f_key = -1;
+            if (_t == 1350)
+            {
+                player_action_reload();
+                coop_log("anim: guest reload, reloading=", reloading);
+            }
             if (_t == 1100)
             {
                 torch_on_general = true;

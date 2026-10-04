@@ -3,6 +3,7 @@
 
 #macro COOP_PARTNER_INDEX 1
 #macro COOP_MSG_ARMS 12
+#macro COOP_MSG_PSND 13
 
 function coop_state_list()
 {
@@ -458,6 +459,7 @@ function coop_puppet_step()
     }
     depth = -y;
     player_step_update_building_exit();
+    coop_puppet_footsteps();
     if (torch_on_general || laser_on_general || coop_lights_were_on)
     {
         // torch/laser attachment positions on the partner's own weapon (mods come with the loadout)
@@ -581,4 +583,76 @@ function coop_puppet_draw_tag_gui()
     }
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
+}
+
+// ---- partner sounds (reload, bolt, unjam, torch click, footsteps...) ----
+
+// Replaces audio_play_sound(snd, prio, false) in the local player's actions: same local sound, and the
+// partner hears it at our puppet.
+function coop_psound(_snd, _prio)
+{
+    var _h = audio_play_sound(_snd, _prio, false);
+    coop_psound_send(_snd);
+    return _h;
+}
+
+function coop_psound_send(_snd)
+{
+    try
+    {
+        var _c = coop();
+        if (_c.connected && _c.peer_in_raid && coop_in_raid() && audio_exists(_snd))
+        {
+            var _b = coop_msg_begin(COOP_MSG_PSND);
+            buffer_write(_b, buffer_u32, real(_snd));
+            coop_msg_send(false);
+        }
+    }
+    catch (_e)
+    {
+        coop_log("ERROR (recovered): psound ", _e.message);
+    }
+}
+
+function coop_puppet_on_sound(_b)
+{
+    var _snd = buffer_read(_b, buffer_u32);
+    var _p = coop_partner();
+    if (!instance_exists(_p) || !audio_exists(_snd))
+    {
+        exit;
+    }
+    with (_p)
+    {
+        audio_emitter_position(emitter_walk, x, y, 0);
+        audio_play_sound_on(emitter_walk, _snd, false, 10);
+    }
+    if (coop().test_mode)
+    {
+        coop_log("psound from partner: ", audio_get_name(_snd));
+    }
+}
+
+// Puppet footsteps: same cadence and ground sounds as the local player (scr_player_movement).
+function coop_puppet_footsteps()
+{
+    if (sprite_index != sprite_run)
+    {
+        exit;
+    }
+    if (!variable_instance_exists(id, "coop_walk_time"))
+    {
+        coop_walk_time = 0;
+    }
+    coop_walk_time++;
+    if (coop_walk_time >= 28)
+    {
+        coop_walk_time = 0;
+        audio_emitter_position(emitter_walk, x, y, 0);
+        scr_choose_footstep_sound(1);
+        if (coop().test_mode && coop().scenario == "anim")
+        {
+            coop_log("puppet footstep");
+        }
+    }
 }
