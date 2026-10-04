@@ -621,7 +621,7 @@ function coop_spawn_sync(_hx, _hy)
     }
 }
 
-// Draw GUI (480x270): partner name + hp over everything (night darkness, roofs). Off screen: an edge marker
+// Draw GUI (UI space): partner name + hp over everything (night darkness, roofs). Off screen: an edge marker
 // pointing at them with the distance.
 function coop_puppet_draw_tag_gui()
 {
@@ -629,11 +629,34 @@ function coop_puppet_draw_tag_gui()
     {
         exit;
     }
+    coop_ui_font(COOP_F_SMALL);
     var _l = coop_puppets();
     for (var _i = 0; _i < array_length(_l); _i++)
     {
         coop_puppet_draw_tag_gui_one(_l[_i]);
     }
+}
+
+// An arrow at the screen edge pointing at an off-screen spot, with a label (partners, ping marks).
+function coop_ui_edge_arrow(_gx, _gy, _label, _col)
+{
+    var _cx = clamp(_gx, 40, COOP_GW - 40);
+    var _cy = clamp(_gy, 150, COOP_GH - 140);
+    var _dir = point_direction(COOP_GW / 2, COOP_GH / 2, _gx, _gy);
+    var _x1 = _cx + lengthdir_x(22, _dir);
+    var _y1 = _cy + lengthdir_y(22, _dir);
+    var _x2 = _cx + lengthdir_x(15, _dir + 140);
+    var _y2 = _cy + lengthdir_y(15, _dir + 140);
+    var _x3 = _cx + lengthdir_x(15, _dir - 140);
+    var _y3 = _cy + lengthdir_y(15, _dir - 140);
+    draw_triangle_colour(_x1, _y1 + 3, _x2, _y2 + 3, _x3, _y3 + 3, c_black, c_black, c_black, false);
+    draw_triangle_colour(_x1, _y1, _x2, _y2, _x3, _y3, _col, _col, _col, false);
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    var _w = string_width(_label) / 2 + 8;
+    coop_ui_text_ol(clamp(_cx - lengthdir_x(50, _dir), _w, COOP_GW - _w), _cy - lengthdir_y(34, _dir), _label, _col);
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
 }
 
 function coop_puppet_draw_tag_gui_one(_p)
@@ -642,38 +665,27 @@ function coop_puppet_draw_tag_gui_one(_p)
     {
         exit;
     }
-    var _cam = view_camera[0];
-    var _vx = camera_get_view_x(_cam);
-    var _vy = camera_get_view_y(_cam);
-    var _vw = max(1, camera_get_view_width(_cam));
-    var _vh = max(1, camera_get_view_height(_cam));
-    var _gx = (_p.x - _vx) / _vw * 480;
-    var _gy = (_p.y - _vy) / _vh * 270;
+    var _gx = coop_ui_world_x(_p.x);
+    var _gy = coop_ui_world_y(_p.y);
     var _name = variable_instance_exists(_p, "coop_name") ? _p.coop_name : "Partner";
     var _down = (_p.coop_flags & 2) != 0;
-    var _col = _down ? c_red : c_lime;
-    draw_set_halign(fa_center);
-    draw_set_valign(fa_bottom);
-    if (_gx >= 8 && _gx <= 472 && _gy >= 16 && _gy <= 262)
+    var _slot = variable_instance_exists(_p, "coop_slot") ? _p.coop_slot : 1;
+    if (_gx >= 32 && _gx <= COOP_GW - 32 && _gy >= 64 && _gy <= COOP_GH - 32)
     {
-        coop_text_outlined(_gx, _gy - 13, _name, c_white);
-        var _w = 18;
+        draw_set_halign(fa_center);
+        draw_set_valign(fa_bottom);
+        coop_ui_text_ol(_gx, _gy - 60, _name, _down ? COOP_C_RED : COOP_C_TEXT);
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_top);
+        coop_ui_rect(_gx - 46, _gy - 57, _gx - 37, _gy - 48, coop_slot_colour(_slot));
         var _k = clamp(_p.coop_hp / max(1, _p.coop_hp_max), 0, 1);
-        draw_rectangle_colour(_gx - _w / 2, _gy - 12, _gx + _w / 2, _gy - 11, c_black, c_black, c_black, c_black, false);
-        draw_rectangle_colour(_gx - _w / 2, _gy - 12, _gx - _w / 2 + _w * _k, _gy - 11, _col, _col, _col, _col, false);
+        coop_ui_bar(_gx - 32, _gy - 56, 72, 7, _k, _down ? COOP_C_RED : COOP_C_GREEN);
     }
     else
     {
-        var _cx = clamp(_gx, 14, 466);
-        var _cy = clamp(_gy, 24, 252);
-        var _dir = point_direction(240, 135, _gx, _gy);
         var _m = floor(point_distance(obj_player.x, obj_player.y, _p.x, _p.y) / 16);
-        draw_triangle_colour(_cx + lengthdir_x(6, _dir), _cy + lengthdir_y(6, _dir), _cx + lengthdir_x(4, _dir + 140), _cy + lengthdir_y(4, _dir + 140), _cx + lengthdir_x(4, _dir - 140), _cy + lengthdir_y(4, _dir - 140), _col, _col, _col, false);
-        draw_set_valign(fa_middle);
-        coop_text_outlined(clamp(_cx - lengthdir_x(14, _dir), 30, 450), _cy - lengthdir_y(10, _dir), _name + " " + string(_m) + coop_t("m", "м"), _col);
+        coop_ui_edge_arrow(_gx, _gy, _name + " " + string(_m) + coop_t("m", "м"), _down ? COOP_C_RED : coop_slot_colour(_slot));
     }
-    draw_set_halign(fa_left);
-    draw_set_valign(fa_top);
 }
 
 // ---- partner sounds (reload, bolt, unjam, torch click, footsteps...) ----

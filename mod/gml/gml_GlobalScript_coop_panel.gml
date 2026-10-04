@@ -1,4 +1,5 @@
-// ZERO Sievert co-op: F7 panel (host / join / leave), drawn in 480x270 GUI space with the game font.
+// ZERO Sievert co-op: the co-op panel (host / join / leave / frame rate), opened from the main or pause menu
+// or with F7, drawn in the game's UI style (coop_style.gml).
 
 function coop_panel_buttons()
 {
@@ -89,17 +90,10 @@ function coop_panel_step()
     {
         exit;
     }
-    var _mx = coop_gui_mouse_x();
-    var _my = coop_gui_mouse_y();
-    var _btn = coop_panel_buttons();
-    for (var _i = 0; _i < array_length(_btn); _i++)
+    var _hit = coop_panel_hit(coop_ui_mouse_x(), coop_ui_mouse_y());
+    if (_hit >= 0)
     {
-        var _y = 106 + _i * 16;
-        if (_mx > 120 && _mx < 360 && _my > _y - 7 && _my < _y + 7)
-        {
-            coop_panel_click(_btn[_i].id);
-            break;
-        }
+        coop_panel_click(_btns[_hit].id);
     }
 }
 
@@ -146,6 +140,35 @@ function coop_panel_click(_id)
     }
 }
 
+// Panel geometry in the 1920x1080 UI space (shared by drawing and mouse hit tests).
+function coop_panel_layout()
+{
+    var _c = coop();
+    var _lines = 1 + (_c.connected ? coop_player_count() : 0);
+    var _nb = array_length(coop_panel_buttons());
+    var _w = 760;
+    var _x1 = COOP_GW / 2 - _w / 2;
+    var _btn_h = 46;
+    var _h = 66 + _lines * 34 + 16 + _nb * (_btn_h + 8) + ((coop_update_text() != "") ? 50 : 10);
+    var _y1 = max(80, COOP_GH / 2 - _h / 2);
+    return { x1: _x1, x2: _x1 + _w, y1: _y1, y2: _y1 + _h, lines: _lines, btn_y0: _y1 + 66 + _lines * 34 + 16, btn_h: _btn_h, nb: _nb };
+}
+
+// Index of the button under (_mx, _my) in UI space, or -1.
+function coop_panel_hit(_mx, _my)
+{
+    var _l = coop_panel_layout();
+    for (var _i = 0; _i < _l.nb; _i++)
+    {
+        var _y = _l.btn_y0 + _i * (_l.btn_h + 8);
+        if (_mx > _l.x1 + 24 && _mx < _l.x2 - 24 && _my > _y && _my < _y + _l.btn_h)
+        {
+            return _i;
+        }
+    }
+    return -1;
+}
+
 function coop_panel_draw()
 {
     var _c = coop();
@@ -153,68 +176,84 @@ function coop_panel_draw()
     {
         exit;
     }
-    draw_set_alpha(0.85);
-    draw_rectangle_colour(100, 56, 380, 222, c_black, c_black, c_black, c_black, false);
-    draw_set_alpha(1);
+    coop_ui_begin(COOP_F_BODY);
+    var _l = coop_panel_layout();
+    var _y = coop_ui_panel(_l.x1, _l.y1, _l.x2, _l.y2, coop_t("CO-OP", "КООПЕРАТИВ"));
+    var _cx = (_l.x1 + _l.x2) / 2;
+    var _status = (_c.role == "none") ? coop_t("Not connected", "Не подключено")
+        : (_c.connected ? (coop_t("Players: ", "Игроков: ") + string(coop_player_count()) + "/" + string(COOP_MAX_PLAYERS) + "   " + ((_c.role == "host") ? coop_t("you are the host", "вы хост") : coop_t("you are a guest", "вы гость")))
+        : ((_c.role == "host") ? coop_t("Waiting for players...", "Ждём игроков...") : coop_t("Connecting...", "Подключение...")));
     draw_set_halign(fa_center);
-    draw_set_valign(fa_middle);
-    coop_text_outlined(240, 72, "ZERO Sievert CO-OP", c_lime);
-    var _status = (_c.role == "none") ? coop_t("Not connected", "Не подключено") : (_c.connected ? (coop_t("Players: ", "Игроков: ") + string(coop_player_count()) + "/" + string(COOP_MAX_PLAYERS)) : ((_c.role == "host") ? coop_t("Waiting for players...", "Ждём игроков...") : coop_t("Connecting...", "Подключение...")));
-    coop_text_outlined(240, 82, _status, c_ltgray);
+    coop_ui_text(_cx, _y, _status, COOP_C_DIM);
+    _y += 34;
     if (_c.connected)
     {
-        // everybody in the session, with ping (the host sees each guest's, a guest sees the host's)
+        // everybody in the session, each in their marker colour, with ping
         var _ps = coop_peers();
-        var _list = "";
         for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++)
         {
             var _pp = _ps[_k];
-            var _nm = (_k == _c.slot) ? coop_my_name() : (is_struct(_pp) && _pp.connected ? _pp.name : "");
-            if (_nm == "")
+            var _me = (_k == _c.slot);
+            if (!_me && !(is_struct(_pp) && _pp.connected))
             {
                 continue;
             }
-            if (_list != "") _list += "  ";
-            _list += _nm;
-            if (_k != _c.slot && is_struct(_pp) && (_c.role == "host" || _k == 0))
+            var _nm = _me ? (coop_my_name() + coop_t(" (you)", " (вы)")) : _pp.name;
+            if (_k == 0)
             {
-                _list += " (" + string(round(_pp.ping)) + coop_t("ms", "мс") + ")";
+                _nm += coop_t("  - host", "  - хост");
             }
+            if (!_me && is_struct(_pp) && (_c.role == "host" || _k == 0))
+            {
+                _nm += "   " + string(round(_pp.ping)) + coop_t(" ms", " мс");
+            }
+            coop_ui_rect(_cx - string_width(_nm) / 2 - 22, _y + 11, _cx - string_width(_nm) / 2 - 12, _y + 21, coop_slot_colour(_k));
+            coop_ui_text(_cx, _y, _nm, COOP_C_TEXT);
+            _y += 34;
         }
-        coop_text_outlined(240, 94, _list, c_lime);
     }
+    draw_set_halign(fa_left);
+    if (_c.ip_edit)
+    {
+        var _by = _l.btn_y0;
+        draw_set_halign(fa_center);
+        coop_ui_text(_cx, _by, coop_t("Host IP address", "IP-адрес хоста"), COOP_C_DIM);
+        coop_ui_slot(_l.x1 + 60, _by + 40, _l.x2 - 60, _by + 40 + _l.btn_h, true);
+        draw_set_valign(fa_middle);
+        coop_ui_text(_cx, _by + 40 + _l.btn_h / 2, _c.last_ip + ((current_time div 400) mod 2 ? "_" : " "), COOP_C_KEY);
+        draw_set_valign(fa_top);
+        draw_set_halign(fa_left);
+        coop_ui_prompt(_cx, _l.y2 - 48, "Enter", coop_t("connect   [Esc] back", "подключиться   [Esc] назад"));
+        coop_ui_end();
+        exit;
+    }
+    var _mx = coop_ui_mouse_x();
+    var _my = coop_ui_mouse_y();
+    var _btn = coop_panel_buttons();
+    var _hit = coop_panel_hit(_mx, _my);
+    var _moved = !variable_struct_exists(_c, "panel_mx") || abs(_c.panel_mx - _mx) + abs(_c.panel_my - _my) > 2;
+    if (_hit >= 0 && _moved)
+    {
+        _c.panel_sel = _hit; // the mouse wins only when it actually moved
+    }
+    _c.panel_mx = _mx;
+    _c.panel_my = _my;
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    for (var _i = 0; _i < array_length(_btn); _i++)
+    {
+        var _by = _l.btn_y0 + _i * (_l.btn_h + 8);
+        var _sel = variable_struct_exists(_c, "panel_sel") && _c.panel_sel == _i;
+        coop_ui_slot(_l.x1 + 24, _by, _l.x2 - 24, _by + _l.btn_h, _sel);
+        coop_ui_text(_cx, _by + _l.btn_h / 2, _btn[_i].label, _sel ? COOP_C_KEY : COOP_C_TEXT);
+    }
+    draw_set_valign(fa_top);
     var _upd = coop_update_text();
     if (_upd != "")
     {
-        coop_text_outlined(240, 214, _upd, c_yellow);
+        coop_ui_text(_cx, _l.y2 - 42, _upd, COOP_C_KEY);
     }
-    if (_c.ip_edit)
-    {
-        coop_text_outlined(240, 110, coop_t("Host IP (Enter to connect, Esc back):", "IP хоста (Enter - подключиться, Esc - назад):"), c_white);
-        coop_text_outlined(240, 126, _c.last_ip + ((current_time div 400) mod 2 ? "_" : " "), c_yellow);
-    }
-    else
-    {
-        var _mx = coop_gui_mouse_x();
-        var _my = coop_gui_mouse_y();
-        var _btn = coop_panel_buttons();
-        for (var _i = 0; _i < array_length(_btn); _i++)
-        {
-            var _y = 106 + _i * 16;
-            var _hover = _mx > 120 && _mx < 360 && _my > _y - 7 && _my < _y + 7;
-            var _moved = !variable_struct_exists(_c, "panel_mx") || abs(_c.panel_mx - _mx) + abs(_c.panel_my - _my) > 0.5;
-            if (_hover && _moved)
-            {
-                _c.panel_sel = _i; // mouse wins only when it actually moved
-            }
-            _hover = variable_struct_exists(_c, "panel_sel") && _c.panel_sel == _i;
-            coop_text_outlined(240, _y, _btn[_i].label, _hover ? c_yellow : c_white);
-        }
-        _c.panel_mx = _mx;
-        _c.panel_my = _my;
-    }
-    draw_set_halign(fa_left);
-    draw_set_valign(fa_top);
+    coop_ui_end();
 }
 
 // Mouse in the panel's 480x270 GUI space. The GUI layer always covers the whole window, but the game

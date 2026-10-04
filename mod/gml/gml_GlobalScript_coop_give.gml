@@ -184,7 +184,7 @@ function coop_give_on_message(_b)
     coop_log("received ", _name, " from slot ", _c.msg_from);
 }
 
-// Draw GUI (480x270): the list next to the teammate.
+// Draw GUI (UI space): the list next to the teammate, inventory-style rows with item icons.
 function coop_give_draw_gui()
 {
     var _g = coop_give();
@@ -192,35 +192,46 @@ function coop_give_draw_gui()
     {
         exit;
     }
-    var _cam = view_camera[0];
-    var _gx = (_g.target.x - camera_get_view_x(_cam)) / max(1, camera_get_view_width(_cam)) * 480;
-    var _gy = (_g.target.y - camera_get_view_y(_cam)) / max(1, camera_get_view_height(_cam)) * 270;
+    coop_ui_font(COOP_F_BODY);
+    var _gx = coop_ui_world_x(_g.target.x);
+    var _gy = coop_ui_world_y(_g.target.y);
     var _n = array_length(_g.options);
-    var _show = min(_n, 10);
-    var _first = clamp(_g.sel - 4, 0, max(0, _n - _show));
-    var _w = string_width(coop_t("Wheel/arrows, [X] - give", "Колесо/стрелки, [X] - передать"));
+    var _show = min(_n, 8);
+    var _first = clamp(_g.sel - 3, 0, max(0, _n - _show));
+    var _rh = 52;
+    var _w = 300;
     for (var _i = _first; _i < _first + _show; _i++)
     {
-        _w = max(_w, string_width(_g.options[_i].name));
+        _w = max(_w, string_width(_g.options[_i].name) + 104);
     }
-    var _lh = 11;
-    var _bw = _w + 12;
-    var _bh = (_show + 2) * _lh + 6;
-    var _bx = clamp(_gx + 14, 4, 476 - _bw);
-    var _by = clamp(_gy - _bh / 2, 4, 266 - _bh);
-    draw_set_alpha(0.8);
-    draw_rectangle_colour(_bx, _by, _bx + _bw, _by + _bh, c_black, c_black, c_black, c_black, false);
-    draw_set_alpha(1);
-    draw_set_halign(fa_left);
+    var _title = coop_t("Give to ", "Передать: ") + coop_peer_name(_g.target.coop_slot);
+    _w = min(max(_w, string_width(_title) + 40), 640);
+    var _h = 66 + _show * (_rh + 4) + 64;
+    var _bx = clamp(_gx + 60, 16, COOP_GW - _w - 16);
+    var _by = clamp(_gy - _h / 2, 140, COOP_GH - _h - 140);
+    var _y = coop_ui_panel(_bx, _by, _bx + _w, _by + _h, _title);
     draw_set_valign(fa_middle);
-    var _y = _by + 3 + _lh / 2;
-    coop_text_outlined(_bx + 6, _y, coop_t("Give to ", "Передать ") + coop_peer_name(_g.target.coop_slot), c_white);
-    _y += _lh;
     for (var _i = _first; _i < _first + _show; _i++)
     {
-        coop_text_outlined(_bx + 6, _y, _g.options[_i].name, (_i == _g.sel) ? c_yellow : c_ltgray);
-        _y += _lh;
+        var _sel = (_i == _g.sel);
+        coop_ui_slot(_bx + 14, _y, _bx + _w - 14, _y + _rh, _sel);
+        var _o = _g.options[_i];
+        coop_ui_item_icon(_o.loot.item, _bx + 42, _y + _rh / 2, 42);
+        var _nm = _o.name;
+        while (string_length(_nm) > 4 && string_width(_nm) > _w - 104)
+        {
+            _nm = string_copy(_nm, 1, string_length(_nm) - 4) + "..";
+        }
+        coop_ui_text(_bx + 74, _y + _rh / 2, _nm, _sel ? COOP_C_KEY : COOP_C_TEXT);
+        _y += _rh + 4;
     }
-    coop_text_outlined(_bx + 6, _y, coop_t("Wheel/arrows, [X] - give", "Колесо/стрелки, [X] - передать"), c_gray);
     draw_set_valign(fa_top);
+    if (_n > _show)
+    {
+        draw_set_halign(fa_right);
+        coop_ui_text(_bx + _w - 16, _y + 14, string(_g.sel + 1) + "/" + string(_n), COOP_C_DIM);
+        draw_set_halign(fa_left);
+    }
+    coop_ui_font(COOP_F_SMALL);
+    coop_ui_prompt(_bx + 14, _y + 8, "X", coop_t("give", "передать"), 0);
 }

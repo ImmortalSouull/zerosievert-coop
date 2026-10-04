@@ -98,7 +98,7 @@ function coop_slot_colour(_slot)
     return _cols[clamp(_slot, 0, 3)];
 }
 
-// Draw GUI (480x270 space, set by coop_draw_gui).
+// Draw GUI (UI space, set by coop_draw_gui).
 function coop_ping_draw_gui()
 {
     var _m = coop_marks();
@@ -107,13 +107,7 @@ function coop_ping_draw_gui()
     {
         exit;
     }
-    var _cam = view_camera[0];
-    var _vx = camera_get_view_x(_cam);
-    var _vy = camera_get_view_y(_cam);
-    var _vw = max(1, camera_get_view_width(_cam));
-    var _vh = max(1, camera_get_view_height(_cam));
-    draw_set_halign(fa_center);
-    draw_set_valign(fa_bottom);
+    coop_ui_font(COOP_F_SMALL);
     for (var _i = _n - 1; _i >= 0; _i--)
     {
         var _k = _m[_i];
@@ -123,29 +117,29 @@ function coop_ping_draw_gui()
             continue;
         }
         var _col = coop_slot_colour(_k.slot);
-        var _gx = (_k.x - _vx) / _vw * 480;
-        var _gy = (_k.y - _vy) / _vh * 270;
+        var _gx = coop_ui_world_x(_k.x);
+        var _gy = coop_ui_world_y(_k.y);
         var _dist = instance_exists(obj_player) ? floor(point_distance(obj_player.x, obj_player.y, _k.x, _k.y) / 16) : 0;
         var _name = (_k.slot == coop().slot) ? coop_t("You", "Вы") : coop_peer_name(_k.slot);
         var _label = _name + " " + string(_dist) + coop_t("m", "м");
         // a short pulse when it appears
         var _age = current_time - _k.t0;
-        var _r = 4 + ((_age < 600) ? (1 - _age / 600) * 6 : 0);
-        if (_gx >= 8 && _gx <= 472 && _gy >= 16 && _gy <= 262)
+        var _r = 14 + ((_age < 600) ? (1 - _age / 600) * 22 : 0);
+        if (_gx >= 32 && _gx <= COOP_GW - 32 && _gy >= 64 && _gy <= COOP_GH - 32)
         {
+            draw_triangle_colour(_gx, _gy + _r + 3, _gx - _r - 3, _gy, _gx + _r + 3, _gy, c_black, c_black, c_black, false);
+            draw_triangle_colour(_gx, _gy - _r - 3, _gx - _r - 3, _gy, _gx + _r + 3, _gy, c_black, c_black, c_black, false);
             draw_triangle_colour(_gx, _gy + _r, _gx - _r, _gy, _gx + _r, _gy, _col, _col, _col, false);
             draw_triangle_colour(_gx, _gy - _r, _gx - _r, _gy, _gx + _r, _gy, _col, _col, _col, false);
-            coop_text_outlined(_gx, _gy - _r - 1, _label, _col);
+            draw_set_halign(fa_center);
+            draw_set_valign(fa_bottom);
+            coop_ui_text_ol(_gx, _gy - _r - 6, _label, _col);
+            draw_set_halign(fa_left);
+            draw_set_valign(fa_top);
         }
         else
         {
-            var _cx = clamp(_gx, 14, 466);
-            var _cy = clamp(_gy, 24, 252);
-            var _dir = point_direction(240, 135, _gx, _gy);
-            draw_triangle_colour(_cx + lengthdir_x(6, _dir), _cy + lengthdir_y(6, _dir), _cx + lengthdir_x(4, _dir + 140), _cy + lengthdir_y(4, _dir + 140), _cx + lengthdir_x(4, _dir - 140), _cy + lengthdir_y(4, _dir - 140), _col, _col, _col, false);
-            draw_set_valign(fa_middle);
-            coop_text_outlined(clamp(_cx - lengthdir_x(14, _dir), 30, 450), _cy - lengthdir_y(10, _dir), _label, _col);
-            draw_set_valign(fa_bottom);
+            coop_ui_edge_arrow(_gx, _gy, _label, _col);
         }
     }
     draw_set_halign(fa_left);

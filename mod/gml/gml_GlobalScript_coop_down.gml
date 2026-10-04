@@ -471,36 +471,37 @@ function coop_revive_step()
     }
 }
 
-// Draw GUI. Drawn in an 800x450 GUI space so the game font comes out ~60% of the HUD size,
-// keeping the middle of the screen (the player) free.
+// Draw GUI (UI space): the down banner above the hotbar, and next to a downed teammate the revive prompt,
+// the item picker (icons with HP and time under them) and the progress.
 function coop_down_draw_gui()
 {
     var _d = coop_down();
     var _r = coop_revive();
-    var _W = 800;
-    var _H = 450;
-    display_set_gui_size(_W, _H);
-    draw_set_valign(fa_middle);
+    var _W = COOP_GW;
+    var _H = COOP_GH;
     if (_d.active)
     {
-        draw_set_alpha(0.15);
-        draw_rectangle_colour(0, 0, _W, _H, c_maroon, c_maroon, c_maroon, c_maroon, false);
-        draw_set_alpha(1);
-        draw_set_halign(fa_center);
+        coop_ui_rect(0, 0, _W, _H, c_maroon, 0.15);
         var _sec = ceil(_d.timer / 60);
-        coop_text_outlined(_W / 2, 330, coop_t("YOU ARE DOWN", "ВЫ ТЯЖЕЛО РАНЕНЫ") + "  " + string(_sec) + coop_t(" s", " с"), c_red);
-        var _k = clamp(_d.timer / max(1, _d.timer_max), 0, 1);
-        draw_set_alpha(0.7);
-        draw_rectangle_colour(_W / 2 - 70, 342, _W / 2 + 70, 345, c_black, c_black, c_black, c_black, false);
-        draw_set_alpha(1);
-        draw_rectangle_colour(_W / 2 - 70, 342, _W / 2 - 70 + 140 * _k, 345, c_red, c_red, c_red, c_red, false);
         var _being = current_time - _d.ping_time < 400;
         var _line = _being ? coop_t("You are being revived...", "Вас поднимают...") : coop_t("Wait for help", "Ждите помощи");
         if (_d.count == 1 && !_being)
         {
             _line += coop_t(" · pistol only", " · можно стрелять из пистолета");
         }
-        coop_text_outlined(_W / 2, 356, _line, _being ? c_lime : c_ltgray);
+        coop_ui_font(COOP_F_BODY);
+        var _title = coop_t("YOU ARE DOWN", "ВЫ ТЯЖЕЛО РАНЕНЫ") + "   " + string(_sec) + coop_t(" s", " с");
+        var _tw = string_width(_title);
+        coop_ui_font(COOP_F_SMALL);
+        var _bw = max(_tw, string_width(_line)) + 80;
+        var _by = _H - 260;
+        coop_ui_panel(_W / 2 - _bw / 2, _by, _W / 2 + _bw / 2, _by + 122);
+        draw_set_halign(fa_center);
+        coop_ui_text(_W / 2, _by + 82, _line, _being ? COOP_C_GREEN : COOP_C_DIM);
+        coop_ui_font(COOP_F_BODY);
+        coop_ui_text(_W / 2, _by + 14, _title, COOP_C_RED);
+        draw_set_halign(fa_left);
+        coop_ui_bar(_W / 2 - _bw / 2 + 24, _by + 62, _bw - 48, 8, _d.timer / max(1, _d.timer_max), COOP_C_RED);
     }
     // The downed player's position on screen: the prompt / menu / progress sit next to them.
     var _p = (variable_struct_exists(_r, "target") && instance_exists(_r.target)) ? _r.target : coop_revive_target();
@@ -508,70 +509,62 @@ function coop_down_draw_gui()
     var _gy = _H / 2;
     if (instance_exists(_p))
     {
-        var _cam = view_camera[0];
-        _gx = (_p.x - camera_get_view_x(_cam)) / camera_get_view_width(_cam) * _W;
-        _gy = (_p.y - camera_get_view_y(_cam)) / camera_get_view_height(_cam) * _H;
+        _gx = coop_ui_world_x(_p.x);
+        _gy = coop_ui_world_y(_p.y);
     }
+    coop_ui_font(COOP_F_SMALL);
     if (coop_revive_in_range() && !_r.menu && !_r.active)
     {
-        draw_set_halign(fa_center);
-        coop_text_outlined(_gx, _gy - 48, coop_t("[E] Revive", "[E] Поднять"), c_yellow);
+        coop_ui_prompt(_gx, _gy - 150, "E", coop_t("Revive", "Поднять"));
     }
     if (_r.menu)
     {
         var _n = array_length(_r.options);
-        var _rows = [];
-        var _w = string_width(coop_t("Wheel/arrows, [E] - pick", "Колесо/стрелки, [E] - выбрать"));
+        var _sw = 96;
+        var _sh = 72;
+        var _gap = 10;
+        var _bw = max(_n * (_sw + _gap) - _gap + 40, 380);
+        var _bh = 66 + 44 + _sh + 72 + 60;
+        var _bx = clamp(_gx + 70, 16, _W - _bw - 16);
+        var _by = clamp(_gy - _bh / 2, 140, _H - _bh - 140);
+        coop_ui_font(COOP_F_BODY);
+        var _y = coop_ui_panel(_bx, _by, _bx + _bw, _by + _bh, coop_t("Revive with", "Чем поднять"));
+        draw_set_halign(fa_center);
+        var _sel_o = _r.options[clamp(_r.sel, 0, _n - 1)];
+        coop_ui_text(_bx + _bw / 2, _y, _sel_o.name, COOP_C_KEY);
+        _y += 44;
+        coop_ui_font(COOP_F_SMALL);
+        var _sx = _bx + (_bw - (_n * (_sw + _gap) - _gap)) / 2;
         for (var _i = 0; _i < _n; _i++)
         {
             var _o = _r.options[_i];
-            _rows[_i] = _o.name + "   " + string(_o.time) + coop_t(" s · ", " с · ") + string(_o.hp) + " HP";
-            _w = max(_w, string_width(_rows[_i]) + 10);
-        }
-        var _lh = 13;
-        var _bw = _w + 12;
-        var _bh = (_n + 2) * _lh + 8;
-        var _bx = clamp(_gx + 20, 4, _W - _bw - 4);
-        var _by = clamp(_gy - _bh / 2, 4, _H - _bh - 60);
-        draw_set_alpha(0.8);
-        draw_rectangle_colour(_bx, _by, _bx + _bw, _by + _bh, c_black, c_black, c_black, c_black, false);
-        draw_set_alpha(1);
-        draw_rectangle_colour(_bx, _by, _bx + _bw, _by + _bh, c_dkgray, c_dkgray, c_dkgray, c_dkgray, true);
-        draw_set_halign(fa_left);
-        var _y = _by + 4 + _lh / 2;
-        coop_text_outlined(_bx + 6, _y, coop_t("Revive with", "Чем поднять"), c_white);
-        _y += _lh;
-        for (var _i = 0; _i < _n; _i++)
-        {
             var _sel = (_i == _r.sel);
-            if (_sel)
+            var _x1 = _sx + _i * (_sw + _gap);
+            coop_ui_slot(_x1, _y, _x1 + _sw, _y + _sh, _sel);
+            if (_o.item == "" || !coop_ui_item_icon(_o.item, _x1 + _sw / 2, _y + _sh / 2, _sh - 12))
             {
-                draw_set_alpha(0.35);
-                draw_rectangle_colour(_bx + 2, _y - _lh / 2, _bx + _bw - 2, _y + _lh / 2 - 1, c_olive, c_olive, c_olive, c_olive, false);
-                draw_set_alpha(1);
+                // no items: a plain cross
+                var _cc = _sel ? COOP_C_TEXT : COOP_C_DIM;
+                coop_ui_rect(_x1 + _sw / 2 - 5, _y + 16, _x1 + _sw / 2 + 5, _y + _sh - 16, _cc);
+                coop_ui_rect(_x1 + _sw / 2 - 20, _y + _sh / 2 - 5, _x1 + _sw / 2 + 20, _y + _sh / 2 + 5, _cc);
             }
-            coop_text_outlined(_bx + 6, _y, _rows[_i], _sel ? c_yellow : c_ltgray);
-            _y += _lh;
+            coop_ui_text(_x1 + _sw / 2, _y + _sh + 6, "+" + string(_o.hp) + " HP", _sel ? COOP_C_GREEN : COOP_C_TEXT);
+            coop_ui_text(_x1 + _sw / 2, _y + _sh + 36, string(_o.time) + coop_t(" s", " с"), _sel ? COOP_C_TEXT : COOP_C_DIM);
         }
-        coop_text_outlined(_bx + 6, _y, coop_t("Wheel/arrows, [E] - pick", "Колесо/стрелки, [E] - выбрать"), c_gray);
+        draw_set_halign(fa_left);
+        coop_ui_prompt(_bx + _bw / 2, _by + _bh - 54, "E", coop_t("revive   [Wheel] choose", "поднять   [Колесо] выбор"));
     }
     if (_r.active)
     {
-        var _k2 = _r.t / _r.tmax;
         draw_set_halign(fa_center);
-        coop_text_outlined(_gx, _gy - 54, coop_t("Reviving...", "Поднимаем..."), c_lime);
-        draw_rectangle_colour(_gx - 30, _gy - 45, _gx + 30, _gy - 42, c_black, c_black, c_black, c_black, false);
-        draw_rectangle_colour(_gx - 30, _gy - 45, _gx - 30 + 60 * _k2, _gy - 42, c_lime, c_lime, c_lime, c_lime, false);
+        draw_set_valign(fa_bottom);
+        coop_ui_text_ol(_gx, _gy - 160, coop_t("Reviving...", "Поднимаем..."), COOP_C_GREEN);
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_top);
+        coop_ui_bar(_gx - 90, _gy - 152, 180, 10, _r.t / _r.tmax, COOP_C_GREEN);
     }
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
-    display_set_gui_size(480, 270);
-}
-
-function coop_text_outlined(_x, _y, _s, _col)
-{
-    draw_text_colour(_x + 1, _y + 1, _s, c_black, c_black, c_black, c_black, 1);
-    draw_text_colour(_x, _y, _s, _col, _col, _col, _col, 1);
 }
 
 // AI targeting (replaces player_nearest_instance): downed players are ignored.

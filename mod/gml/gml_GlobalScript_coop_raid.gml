@@ -138,6 +138,7 @@ function coop_scenario_hub_step()
     if (_c.scenario == "panel")
     {
         if (_t == 90) { _c.panel = true; _c.ip_edit = false; _c.last_ip = "127.0.0.1"; }
+        if (_t == 150) screen_save("coop_panel_" + _c.tag + ".png");
         if (_t == 330) _c.panel = false;
         if (_t == 3600) game_end();
         exit;
@@ -246,6 +247,24 @@ function coop_scenario_step()
         {
             coop_log("scenario: taking lethal damage");
             obj_player.hp = 0;
+        }
+        // after the revive: the give menu next to the partner (screenshot), then give the first item
+        if (_c.scenario == "revive" && _c.role == "host" && variable_struct_exists(_c, "sc_rev_t") && !coop_partner_is_down())
+        {
+            var _k2 = _t - _c.sc_rev_t;
+            if (_k2 == 520)
+            {
+                _c.sim_give = true;
+            }
+            if (_k2 == 540)
+            {
+                screen_save("coop_give_menu.png");
+                coop_log("scenario: give menu open=", coop_give().menu);
+            }
+            if (_k2 == 560)
+            {
+                _c.sim_give_ok = true;
+            }
         }
         if (_c.role == "host")
         {
