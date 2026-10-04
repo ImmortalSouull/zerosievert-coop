@@ -12,12 +12,31 @@ function coop_difficulty_define()
     __difficulty_define_range("coop_revive_time_bandage", 7, 1, 30, "coop.difficulty.revive_time_bandage", "Co-op: seconds to revive with a bandage.");
     __difficulty_define_range("coop_revive_time_medkit", 5, 1, 30, "coop.difficulty.revive_time_medkit", "Co-op: seconds to revive with a medkit.");
     __difficulty_define_toggle("coop_friendly_fire", false, "coop.difficulty.friendly_fire", "Co-op: your bullets can hurt your partner.");
+    __difficulty_define_range("coop_group_enemies", 0.25, 0, 1, "coop.difficulty.group_enemies", "Co-op: extra enemies for every additional player (0.25 = +25% per player).");
+    __difficulty_define_range("coop_group_hp", 0, 0, 0.5, "coop.difficulty.group_hp", "Co-op: extra enemy health for every additional player (0.1 = +10% per player).");
     __difficulty_define_range("enemy_count_mult", 1, 0, 3, "coop.difficulty.enemy_count", "Multiplier on how many enemies spawn in a raid.");
     __difficulty_define_range("anomaly_mult", 1, 0, 3, "coop.difficulty.anomaly_amount", "Multiplier on how many anomalies are generated in a raid.");
 }
 
 // Raid-wide rules come from the host while connected.
-#macro COOP_SHARED_SETTINGS ["coop_revive_enabled", "coop_down_seconds", "coop_second_down_hp", "coop_revive_time_none", "coop_revive_time_bandage", "coop_revive_time_medkit", "coop_friendly_fire"]
+#macro COOP_SHARED_SETTINGS ["coop_revive_enabled", "coop_down_seconds", "coop_second_down_hp", "coop_revive_time_none", "coop_revive_time_bandage", "coop_revive_time_medkit", "coop_friendly_fire", "coop_group_enemies", "coop_group_hp"]
+
+// Group size scaling (enemies, enemy health), fixed by the host when it sends the settings at raid start, so
+// every machine generates the raid with the same numbers.
+function coop_group_factor(_what)
+{
+    var _c = coop();
+    var _key = (_what == "hp") ? "coop_group_hp_mult" : "coop_group_enemy_mult";
+    if (_c.role == "guest" && _c.connected && variable_struct_exists(_c, "host_settings") && variable_struct_exists(_c.host_settings, _key))
+    {
+        return variable_struct_get(_c.host_settings, _key);
+    }
+    if (_c.role == "host" && variable_struct_exists(_c, _key))
+    {
+        return variable_struct_get(_c, _key);
+    }
+    return 1;
+}
 
 function coop_setting(_name)
 {
@@ -52,6 +71,26 @@ function coop_is_world_setting(_key)
 function coop_difficulty_override(_key)
 {
     var _c = coop();
+    if (variable_struct_exists(_c, "coop_hp_guard") && _c.coop_hp_guard)
+    {
+        return undefined;
+    }
+    if (room == room1 && (_key == "enemy_human_hp" || _key == "enemy_mutant_hp") && _c.connected)
+    {
+        var _f = coop_group_factor("hp");
+        if (_f != 1)
+        {
+            var _base = (_c.role == "guest" && variable_struct_exists(_c, "host_settings") && variable_struct_exists(_c.host_settings, _key)) ? variable_struct_get(_c.host_settings, _key) : undefined;
+            if (_base == undefined)
+            {
+                // our own value (host): read it without coming back here
+                _c.coop_hp_guard = true;
+                _base = difficulty_get(_key);
+                _c.coop_hp_guard = false;
+            }
+            return _base * _f;
+        }
+    }
     if (_c.role != "guest" || !_c.connected || room != room1 || !variable_struct_exists(_c, "host_settings") || !coop_is_world_setting(_key))
     {
         return undefined;
@@ -71,6 +110,12 @@ function coop_settings_send()
         exit;
     }
     var _data = {};
+    // group scaling for this raid: fixed now, while the host knows who is coming
+    var _extra = coop_player_count() - 1;
+    _c.coop_group_enemy_mult = 1 + difficulty_get("coop_group_enemies") * _extra;
+    _c.coop_group_hp_mult = 1 + difficulty_get("coop_group_hp") * _extra;
+    variable_struct_set(_data, "coop_group_enemy_mult", _c.coop_group_enemy_mult);
+    variable_struct_set(_data, "coop_group_hp_mult", _c.coop_group_hp_mult);
     var _keys = COOP_SHARED_SETTINGS;
     for (var _i = 0; _i < array_length(_keys); _i++)
     {
@@ -102,7 +147,7 @@ function coop_spawn_count(_chance, _obj, _group)
     var _mult = 1;
     if (object_is_ancestor(_obj, obj_npc_parent))
     {
-        _mult = difficulty_get("enemy_count_mult");
+        _mult = difficulty_get("enemy_count_mult") * coop_group_factor("enemies");
     }
     var _c = _chance * _mult;
     var _n = floor(_c / 100);

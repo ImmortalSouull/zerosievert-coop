@@ -1,11 +1,30 @@
-			if (CoopPartnerOnMap()) {
+			if (CoopMateOnMap(0)) {
 				build UiMinimapPlayerMarker {
-					xy = [CoopPartnerX(), CoopPartnerY()]
+					xy = [CoopMateX(0), CoopMateY(0)]
 					color = 65280
 
 					step = fn {
-						xy = [CoopPartnerX(), CoopPartnerY()]
+						xy = [CoopMateX(0), CoopMateY(0)]
 					}
 				}
 			}
+			if (CoopMateOnMap(1)) {
+				build UiMinimapPlayerMarker {
+					xy = [CoopMateX(1), CoopMateY(1)]
+					color = 16776960
 
+					step = fn {
+						xy = [CoopMateX(1), CoopMateY(1)]
+					}
+				}
+			}
+			if (CoopMateOnMap(2)) {
+				build UiMinimapPlayerMarker {
+					xy = [CoopMateX(2), CoopMateY(2)]
+					color = 65535
+
+					step = fn {
+						xy = [CoopMateX(2), CoopMateY(2)]
+					}
+				}
+			}

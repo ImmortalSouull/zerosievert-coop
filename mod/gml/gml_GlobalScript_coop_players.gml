@@ -1,7 +1,7 @@
-// ZERO Sievert co-op: local player broadcast + partner puppet.
-// Each client sees itself as player index 0 and the partner as index 1 (the game's own mp_index API).
+// ZERO Sievert co-op: local player broadcast + puppets of the other players.
+// Each client sees itself as player index 0; the player in slot s is mp_index coop_mp_of(s) (1..3), using the
+// game's own multiplayer player API (player_get / player_create with obj_player_puppet).
 
-#macro COOP_PARTNER_INDEX 1
 #macro COOP_MSG_ARMS 12
 #macro COOP_MSG_PSND 13
 
@@ -27,9 +27,49 @@ function coop_state_to_id(_state)
     return 0;
 }
 
+// The character of the player in slot _slot on this machine (noone if not in our raid).
+function coop_puppet_of(_slot)
+{
+    if (_slot == coop().slot)
+    {
+        return instance_exists(obj_player) ? obj_player.id : -4;
+    }
+    with (obj_player_puppet)
+    {
+        if (variable_instance_exists(id, "coop_slot") && coop_slot == _slot)
+        {
+            return id;
+        }
+    }
+    return -4;
+}
+
+// All puppets (other players' characters) present in our raid.
+function coop_puppets()
+{
+    var _out = [];
+    with (obj_player_puppet)
+    {
+        if (variable_instance_exists(id, "coop_slot"))
+        {
+            array_push(_out, id);
+        }
+    }
+    return _out;
+}
+
+// Older single-partner call sites: the nearest other player's character.
 function coop_partner()
 {
-    return player_get(COOP_PARTNER_INDEX);
+    if (!instance_exists(obj_player_puppet))
+    {
+        return -4;
+    }
+    if (!instance_exists(obj_player))
+    {
+        return instance_find(obj_player_puppet, 0);
+    }
+    return instance_nearest(obj_player.x, obj_player.y, obj_player_puppet);
 }
 
 // ---- local -> partner ----
@@ -177,9 +217,9 @@ function coop_struct_to_loot(_data)
 
 // ---- partner -> puppet ----
 
-function coop_puppet_ensure(_x, _y)
+function coop_puppet_ensure(_slot, _x, _y)
 {
-    var _p = coop_partner();
+    var _p = coop_puppet_of(_slot);
     if (instance_exists(_p))
     {
         return _p;
@@ -188,9 +228,10 @@ function coop_puppet_ensure(_x, _y)
     {
         return -4;
     }
-    _p = player_create(_x, _y, COOP_PARTNER_INDEX);
+    _p = player_create(_x, _y, coop_mp_of(_slot));
     with (_p)
     {
+        coop_slot = _slot;
         coop_net_x = _x;
         coop_net_y = _y;
         coop_hp = 100;
@@ -199,28 +240,48 @@ function coop_puppet_ensure(_x, _y)
         hp_max = 100;
         coop_flags = 0;
         coop_lights_were_on = false;
-        coop_name = coop().peer_name;
+        coop_name = coop_peer_name(_slot);
         state = scr_player_state_move;
     }
-    var _c = coop();
-    if (variable_struct_exists(_c, "pending_loadout"))
+    var _peer = coop_peer(_slot);
+    if (is_struct(_peer) && variable_struct_exists(_peer, "loadout"))
     {
-        coop_puppet_apply_loadout(_p, _c.pending_loadout);
+        coop_puppet_apply_loadout(_p, _peer.loadout);
     }
     player_get(-1); // reset player_get cache
-    coop_log("puppet created at ", _x, ",", _y);
+    coop_log("puppet of slot ", _slot, " created at ", _x, ",", _y);
     return _p;
 }
 
-function coop_puppet_remove()
+function coop_puppet_remove_slot(_slot)
 {
-    var _p = coop_partner();
-    if (instance_exists(_p))
+    var _p = coop_puppet_of(_slot);
+    if (instance_exists(_p) && _p.object_index == obj_player_puppet)
     {
         instance_destroy(_p);
         player_get(-1);
-        coop_log("puppet removed");
+        coop_log("puppet of slot ", _slot, " removed");
     }
+}
+
+function coop_puppet_remove_all()
+{
+    var _l = coop_puppets();
+    for (var _i = 0; _i < array_length(_l); _i++)
+    {
+        instance_destroy(_l[_i]);
+    }
+    if (array_length(_l) > 0)
+    {
+        player_get(-1);
+        coop_log("puppets removed: ", array_length(_l));
+    }
+}
+
+// Legacy name.
+function coop_puppet_remove()
+{
+    coop_puppet_remove_all();
 }
 
 function coop_puppet_on_state(_b)
@@ -245,16 +306,21 @@ function coop_puppet_on_state(_b)
     var _wxs = buffer_read(_b, buffer_f32);
     var _wbf = buffer_read(_b, buffer_u8);
     var _c = coop();
-    if (!_c.peer_in_raid)
+    var _slot = _c.msg_from;
+    var _peer = coop_peer(_slot);
+    if (!is_struct(_peer) || !_peer.in_raid)
     {
         exit;
     }
-    var _p = coop_puppet_ensure(_x, _y);
+    var _p = coop_puppet_ensure(_slot, _x, _y);
     if (!instance_exists(_p))
     {
         exit;
     }
-    coop_spawn_sync(_x, _y);
+    if (_slot == 0)
+    {
+        coop_spawn_sync(_x, _y);
+    }
     with (_p)
     {
         coop_net_x = _x;
@@ -271,6 +337,7 @@ function coop_puppet_on_state(_b)
         var _list = coop_state_list();
         state = _list[clamp(_st, 0, array_length(_list) - 1)];
         coop_hp = _hp;
+        coop_name = coop_peer_name(_slot);
         coop_hp_max = _hpm;
         hp = _hp;
         coop_flags = _flags;
@@ -372,7 +439,7 @@ function coop_arms_view_destroy()
 function coop_puppet_on_arms(_b)
 {
     var _item = buffer_read(_b, buffer_string);
-    var _p = coop_partner();
+    var _p = coop_puppet_of(coop().msg_from);
     if (!instance_exists(_p) || !item_exists(_item))
     {
         exit;
@@ -412,9 +479,13 @@ function coop_puppet_on_loadout(_b)
     var _json = buffer_read(_b, buffer_string);
     var _data = json_parse(_json);
     var _c = coop();
-    _c.pending_loadout = _data;
-    var _p = coop_partner();
-    if (instance_exists(_p))
+    var _peer = coop_peer(_c.msg_from);
+    if (is_struct(_peer))
+    {
+        _peer.loadout = _data;
+    }
+    var _p = coop_puppet_of(_c.msg_from);
+    if (instance_exists(_p) && _p.object_index == obj_player_puppet)
     {
         coop_puppet_apply_loadout(_p, _data);
     }
@@ -484,12 +555,7 @@ function coop_puppet_step()
 // Name tag + hp bar above the partner (Draw event of obj_coop, world space).
 function coop_puppet_draw_tag()
 {
-    var _p = coop_partner();
-    if (!instance_exists(_p))
-    {
-        exit;
-    }
-    with (_p)
+    with (obj_player_puppet)
     {
         draw_set_halign(fa_center);
         draw_set_valign(fa_bottom);
@@ -550,8 +616,20 @@ function coop_spawn_sync(_hx, _hy)
 // pointing at them with the distance.
 function coop_puppet_draw_tag_gui()
 {
-    var _p = coop_partner();
-    if (!instance_exists(_p) || !variable_instance_exists(_p, "coop_hp") || !player_state_is(0, scr_player_state_move))
+    if (!player_state_is(0, scr_player_state_move))
+    {
+        exit;
+    }
+    var _l = coop_puppets();
+    for (var _i = 0; _i < array_length(_l); _i++)
+    {
+        coop_puppet_draw_tag_gui_one(_l[_i]);
+    }
+}
+
+function coop_puppet_draw_tag_gui_one(_p)
+{
+    if (!instance_exists(_p) || !variable_instance_exists(_p, "coop_hp"))
     {
         exit;
     }
@@ -621,7 +699,7 @@ function coop_psound_send(_snd)
 function coop_puppet_on_sound(_b)
 {
     var _snd = buffer_read(_b, buffer_u32);
-    var _p = coop_partner();
+    var _p = coop_puppet_of(coop().msg_from);
     if (!instance_exists(_p) || !audio_exists(_snd))
     {
         exit;

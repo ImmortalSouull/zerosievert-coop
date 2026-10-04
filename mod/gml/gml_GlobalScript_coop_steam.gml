@@ -1,5 +1,5 @@
 // ZERO Sievert co-op: Steam lobby + invite flow (GMEXT-Steamworks).
-// Host: F7 panel -> "Host via Steam" -> friends-only lobby (2 slots) -> Steam invite overlay.
+// Host: F7 panel -> "Host via Steam" -> friends-only lobby (up to 4 players) -> Steam invite overlay.
 // Friend: accepts the invite in Steam. Running game: lobby_join_requested event; not running:
 // Steam starts the game with "+connect_lobby <id>". Once in the lobby, gameplay traffic is Steam P2P.
 
@@ -16,7 +16,7 @@ function coop_steam_host()
     _c.transport = "steam";
     _c.peer_steam = 0;
     coop_net_start();
-    steam_lobby_create(1, 2); // friends only, 2 players
+    steam_lobby_create(1, COOP_MAX_PLAYERS); // friends only
     coop_notify(coop_t("Creating Steam lobby...", "Создаём лобби Steam..."));
     coop_log("steam lobby create requested");
 }
@@ -105,12 +105,8 @@ function coop_steam_on_async()
             }
             break;
         case "lobby_chat_update":
-            // Someone entered/left: the host learns the guest id from its first P2P packet anyway.
+            // Someone entered/left: the host learns a guest's id from its first P2P packet.
             coop_log("lobby update, members ", steam_lobby_get_member_count());
-            if (_c.role == "host" && _c.peer_steam == 0)
-            {
-                coop_steam_pick_peer();
-            }
             break;
         case "p2p_session_request":
             var _who = ds_map_find_value(async_load, "user_id");
@@ -122,22 +118,22 @@ function coop_steam_on_async()
     }
 }
 
-// The other lobby member is our partner.
+// Guest: the lobby owner is the host (other members are reached through it).
 function coop_steam_pick_peer()
 {
     var _c = coop();
-    var _me = steam_get_user_steam_id();
-    var _n = steam_lobby_get_member_count();
-    for (var _i = 0; _i < _n; _i++)
+    var _owner = steam_lobby_get_owner_id();
+    if (_owner == 0 || _owner == steam_get_user_steam_id())
     {
-        var _id = steam_lobby_get_member_id(_i);
-        if (_id != _me && _id != 0)
-        {
-            _c.peer_steam = _id;
-            coop_log("steam peer = ", _id);
-            return;
-        }
+        exit;
     }
+    _c.peer_steam = _owner;
+    var _h = coop_peer(0);
+    if (is_struct(_h))
+    {
+        _h.steam = _owner;
+    }
+    coop_log("steam host = ", _owner);
 }
 
 function coop_steam_step()

@@ -31,13 +31,17 @@ function coop_draw_gui()
     if (_c.role != "none")
     {
         // rebuilt only when something in it changes (this runs every frame)
-        var _key = _c.role + _c.transport + string(_c.connected) + _c.peer_name + string(round(_c.ping));
+        var _key = _c.role + _c.transport + string(_c.connected) + _c.peer_name + string(round(_c.ping)) + string(coop_player_count());
         if (!variable_struct_exists(_c, "hud_key") || _c.hud_key != _key)
         {
             var _txt = coop_t("CO-OP ", "КООП ") + ((_c.role == "host") ? coop_t("host", "хост") : coop_t("guest", "гость")) + " [" + _c.transport + "] ";
-            if (_c.connected)
+            if (_c.connected && _c.role == "guest")
             {
                 _txt += "- " + _c.peer_name + "  " + string(round(_c.ping)) + coop_t(" ms", " мс");
+            }
+            else if (_c.connected)
+            {
+                _txt += "- " + coop_t("players: ", "игроков: ") + string(coop_player_count());
             }
             else
             {
@@ -84,12 +88,18 @@ function coop_draw_gui()
         {
             coop_puppet_draw_tag_gui();
         }
+        coop_ping_draw_gui();
         coop_down_draw_gui();
     }
     else if (_c.role == "none" && (room == r_hub || room == r_menu) && !(variable_struct_exists(_c, "panel") && _c.panel))
     {
         draw_set_halign(fa_right);
         coop_text_outlined(474, 4, coop_t("[F7] Co-op", "[F7] Кооператив"), c_lime);
+        var _upd = coop_update_text();
+        if (_upd != "")
+        {
+            coop_text_outlined(474, 16, _upd, c_yellow);
+        }
         draw_set_halign(fa_left);
     }
     draw_set_font(-1);

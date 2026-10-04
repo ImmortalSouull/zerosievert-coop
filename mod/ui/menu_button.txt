@@ -1,0 +1,9 @@
+		build UiTextButton {
+			label = Translate("coop.menu.button")
+			captureClick = "action"
+			click = fn {
+				CallInherited()
+				CoopOpenPanel()
+			}
+		}
+

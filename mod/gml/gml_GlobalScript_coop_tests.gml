@@ -16,6 +16,7 @@ function coop_test_ext_step()
     coop_test_anim_step();
     coop_test_tele_step();
     coop_test_leave_step();
+    coop_test_quad_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -467,5 +468,91 @@ function coop_test_leave_step()
             coop_log("leave: guest t=", _c.lv, " peer_in_raid=", _c.peer_in_raid, " peer_loc=", _c.peer_loc, " npcs=", _active, " replicas=", _repl,
                 " slaved=", coop_world_guest_skips_roll(), " hp=", obj_player.hp);
         }
+    }
+}
+
+// -coop_scenario quad (tools/test4.sh): everybody sees everybody, slot 1 kills NPCs (credit), slot 2 goes down and
+// the host revives it.
+function coop_test_quad_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "quad" || !coop_shared_ready() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "qt")) _c.qt = 0;
+    _c.qt++;
+    var _t = _c.qt;
+    if (_t == 200 || _t == 900)
+    {
+        var _l = coop_puppets();
+        var _s = "";
+        for (var _i = 0; _i < array_length(_l); _i++) _s += string(_l[_i].coop_slot) + ":" + _l[_i].coop_name + " ";
+        coop_log("quad: me slot ", _c.slot, " players=", coop_player_count(), " puppets=", array_length(_l), " [", _s, "]");
+    }
+    if (_c.slot == 1 && _t >= 300 && _t <= 700 && _t mod 12 == 0)
+    {
+        // like the v3 scenario: stand next to a replica and shoot it
+        if (!variable_struct_exists(_c, "q_tg") || !instance_exists(_c.q_tg) || _c.q_tg.hp <= 0)
+        {
+            instance_activate_object(obj_npc_parent);
+            var _best = -4;
+            var _bd = infinity;
+            with (obj_npc_parent)
+            {
+                if (coop_npc_is_replica() && hp > 0 && object_is_ancestor(object_index, obj_npc_human_parent))
+                {
+                    var _d = point_distance(x, y, obj_player.x, obj_player.y);
+                    if (_d < _bd) { _bd = _d; _best = id; }
+                }
+            }
+            _c.q_tg = _best;
+        }
+        var _tg = _c.q_tg;
+        if (instance_exists(_tg))
+        {
+            obj_player.x = _tg.x - 50;
+            obj_player.y = _tg.y;
+            with (obj_player)
+            {
+                if (item_exists(arma_now) && item_get_category(arma_now) == "weapon")
+                {
+                    scr_shoot(point_direction(x, y, _tg.x, _tg.y), 1, item_weapon_get_damage(arma_now) * 3, 0);
+                }
+            }
+        }
+    }
+    if (_c.slot == 2 && _t == 260)
+    {
+        coop_log("quad: slot 2 takes lethal damage");
+        obj_player.hp = 0;
+    }
+    if (_c.slot == 0 && _t > 300)
+    {
+        var _down = coop_puppet_of(2);
+        if (instance_exists(_down) && coop_puppet_is_down(_down))
+        {
+            if (!variable_struct_exists(_c, "q_rev"))
+            {
+                _c.q_rev = _t;
+                obj_player.x = _down.x + 12;
+                obj_player.y = _down.y;
+                coop_log("quad: host goes to downed slot 2");
+            }
+            var _k = _t - _c.q_rev;
+            if (_k == 60 || _k == 100)
+            {
+                _c.sim_e = true;
+            }
+            if (_k == 30 || _k == 90)
+            {
+                obj_player.x = _down.x + 12;
+                obj_player.y = _down.y;
+            }
+        }
+    }
+    if (_t == 1000)
+    {
+        coop_log("quad: done");
     }
 }

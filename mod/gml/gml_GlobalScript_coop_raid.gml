@@ -57,6 +57,7 @@ function coop_on_room_start()
         coop_chest_reset_room();
         _c.my_fp = undefined;
         _c.peer_fp = undefined;
+        _c.ready_time = 0;
     }
     if (_c.connected)
     {
@@ -174,7 +175,10 @@ function coop_scenario_step()
         }
         if (_t == 200 || _t == 420)
         {
-            var _ch = instance_nearest(obj_player.x, obj_player.y, obj_chest_general);
+            // both read the container nearest to the host (the guest spawns next to it)
+            var _hp = (_c.role == "host") ? obj_player.id : coop_puppet_of(0);
+            if (!instance_exists(_hp)) _hp = obj_player.id;
+            var _ch = instance_nearest(_hp.x, _hp.y, obj_chest_general);
             if (instance_exists(_ch))
             {
                 _c.sc_chest = coop_chest_key(_ch);
@@ -347,7 +351,7 @@ function coop_request_join()
 }
 
 // Host: send the running raid (settings + map + seed) to a guest standing in the bunker.
-function coop_on_join_request()
+function coop_on_join_request(_from)
 {
     var _c = coop();
     if (_c.role != "host" || !coop_raid_ready() || _c.gen_seed == undefined)
@@ -355,16 +359,18 @@ function coop_on_join_request()
         coop_log("join request ignored (not in a raid)");
         exit;
     }
+    _c.msg_dest = _from;
     coop_settings_send();
     coop_msg_begin(COOP_MSG_RAID_START);
     buffer_write(_c.send_buf, buffer_u8, obj_map_generator.area);
     buffer_write(_c.send_buf, buffer_f64, _c.gen_seed);
     coop_msg_send(true);
-    coop_log("join request accepted: map ", obj_map_generator.area, " seed ", _c.gen_seed);
+    _c.msg_dest = COOP_ALL;
+    coop_log("join request of slot ", _from, " accepted: map ", obj_map_generator.area, " seed ", _c.gen_seed);
 }
 
-// Host: the guest's copy of our raid finished generating (fresh start or late join): stream everything.
-function coop_on_peer_ready()
+// Host: a guest's copy of our raid finished generating (fresh start or late join): stream everything to it.
+function coop_on_peer_ready(_slot)
 {
     var _c = coop();
     if (_c.role != "host" || !coop_raid_ready())
@@ -379,10 +385,20 @@ function coop_on_peer_ready()
             coop_spawn_sent = false;
         }
     }
-    coop_chest_sync_late_joiner();
-    coop_doors_resend_all();
-    coop_world_sync_peer();
-    coop_send_loadout();
+    // NPC spawns go to everybody (known ones are ignored); the rest only to the new player
+    _c.msg_dest = _slot;
+    try
+    {
+        coop_chest_sync_late_joiner();
+        coop_doors_resend_all();
+        coop_world_sync_peer();
+        coop_send_loadout();
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    _c.msg_dest = COOP_ALL;
 }
 
 // Guest: follow the host's raid as soon as we are in the bunker and not busy (dialog, trading, inventory).

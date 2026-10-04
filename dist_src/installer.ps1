@@ -31,14 +31,25 @@ if (Get-Process "ZERO Sievert" -ErrorAction SilentlyContinue) { Say "Close the g
 $data = Join-Path $game "data.win"
 $ui = Join-Path $game "ZS_vanilla\ui\mm_difficulty.ui"
 $pda = Join-Path $game "ZS_vanilla\ui\pda_map.ui"
+$mmMain = Join-Path $game "ZS_vanilla\ui\mm_sidebar_main.ui"
+$mmPause = Join-Path $game "ZS_vanilla\ui\mm_sidebar_pause.ui"
+# game UI files the mod patches, with a text that only a patched file contains
+$uiFiles = @(
+    @{ path = $ui; name = "mm_difficulty.ui"; mark = "coop\.difficulty\.tab" },
+    @{ path = $pda; name = "pda_map.ui"; mark = "CoopPartnerOnMap|CoopMateOnMap" },
+    @{ path = $mmMain; name = "mm_sidebar_main.ui"; mark = "CoopOpenPanel" },
+    @{ path = $mmPause; name = "mm_sidebar_pause.ui"; mark = "CoopOpenPanel" }
+)
 $langDir = Join-Path $game "ZS_vanilla\languages"
 $backup = Join-Path $game "coop_backup"
 
 if ($Action -eq "uninstall") {
     if (-not (Test-Path $backup)) { Say "No backup found - use Steam > Verify integrity of game files." "Бэкап не найден - используйте Steam > Проверить целостность файлов."; exit 1 }
     Copy-Item (Join-Path $backup "data.win") $data -Force
-    Copy-Item (Join-Path $backup "mm_difficulty.ui") $ui -Force
-    if (Test-Path (Join-Path $backup "pda_map.ui")) { Copy-Item (Join-Path $backup "pda_map.ui") $pda -Force }
+    foreach ($f in $uiFiles) {
+        $b = Join-Path $backup $f.name
+        if (Test-Path $b) { Copy-Item $b $f.path -Force }
+    }
     Get-ChildItem (Join-Path $backup "languages") -Filter *.csv | ForEach-Object {
         Copy-Item $_.FullName (Join-Path $langDir ($_.BaseName + "\" + $_.Name)) -Force
     }
@@ -64,8 +75,6 @@ if ($h -ne $cfg.vanilla_sha256 -and $h -ne $cfg.modded_sha256) {
 if (-not (Test-Path $backup) -and $h -eq $cfg.vanilla_sha256) {
     New-Item -ItemType Directory -Force (Join-Path $backup "languages") | Out-Null
     Copy-Item $data (Join-Path $backup "data.win")
-    Copy-Item $ui (Join-Path $backup "mm_difficulty.ui")
-    Copy-Item $pda (Join-Path $backup "pda_map.ui")
     Get-ChildItem $langDir -Directory | ForEach-Object {
         $csv = Join-Path $_.FullName ($_.Name + ".csv")
         if (Test-Path $csv) { Copy-Item $csv (Join-Path $backup "languages\") }
@@ -80,29 +89,34 @@ if ($h -eq $cfg.vanilla_sha256) {
     Move-Item $new $data -Force
 }
 
-# 2. Difficulty menu: Co-op tab + enemy/anomaly sliders
-$u = [IO.File]::ReadAllText($ui)
-if ($u -notmatch "coop\.difficulty\.tab") {
-    $enemies = [IO.File]::ReadAllText((Join-Path $here "ui_enemies_entries.txt"))
-    $tab = [IO.File]::ReadAllText((Join-Path $here "ui_coop_tab.txt"))
-    $u = [regex]::Replace($u, '(setting: "enemy_mutant_damage",\r?\n\t+\},\r?\n)', { param($m) $m.Value + $enemies })
-    $u = [regex]::Replace($u, '(\t\tbuild UiBox \{\r?\n\t\t\tsize = \[50, 50\])', { param($m) $tab + $m.Value })
-    if ($u -notmatch "coop\.difficulty\.tab" -or $u -notmatch "enemy_count_mult") { Say "Could not patch the difficulty menu (unexpected file)." "Не удалось изменить меню сложности (неожиданный файл)."; exit 1 }
-    [IO.File]::WriteAllText($ui, $u, (New-Object Text.UTF8Encoding($false)))
+New-Item -ItemType Directory -Force (Join-Path $backup "languages") | Out-Null
+# 2. Game UI files. An older install may lack the backup of a file the mod patches only since a later
+# version: take it now, while that file is still untouched. Then every install starts again from the
+# backups, so an update always brings the current UI changes.
+foreach ($f in $uiFiles) {
+    $b = Join-Path $backup $f.name
+    if (-not (Test-Path $b)) {
+        $t0 = [IO.File]::ReadAllText($f.path)
+        if ($t0 -match $f.mark) { Say "$($f.name) is modified but has no backup - verify the game files in Steam, then install again." "$($f.name) изменён, но бэкапа нет - проверьте целостность файлов в Steam и установите снова."; exit 1 }
+        Copy-Item $f.path $b
+    }
+    Copy-Item $b $f.path -Force
 }
-
-# 2b. PDA map: partner marker (older installs have no pda_map.ui backup yet - take it now if untouched)
-if ((Test-Path $backup) -and -not (Test-Path (Join-Path $backup "pda_map.ui"))) {
-    $p0 = [IO.File]::ReadAllText($pda)
-    if ($p0 -notmatch "CoopPartnerOnMap") { Copy-Item $pda (Join-Path $backup "pda_map.ui") }
+function Patch-Ui($path, $pattern, $insert, $before, $check, $what) {
+    $t = [IO.File]::ReadAllText($path)
+    $t = [regex]::Replace($t, $pattern, { param($m) if ($before) { $insert + $m.Value } else { $m.Value + $insert } })
+    if ($t -notmatch $check) { Say "Could not patch $what (unexpected file)." "Не удалось изменить $what (неожиданный файл)."; exit 1 }
+    [IO.File]::WriteAllText($path, $t, (New-Object Text.UTF8Encoding($false)))
 }
-$pm = [IO.File]::ReadAllText($pda)
-if ($pm -notmatch "CoopPartnerOnMap") {
-    $marker = [IO.File]::ReadAllText((Join-Path $here "ui_pda_partner.txt"))
-    $pm = [regex]::Replace($pm, '(\t\t\t//Allow scrolling around the minimap)', { param($m) $marker + $m.Value })
-    if ($pm -notmatch "CoopPartnerOnMap") { Say "Could not patch the PDA map (unexpected file)." "Не удалось изменить карту КПК (неожиданный файл)."; exit 1 }
-    [IO.File]::WriteAllText($pda, $pm, (New-Object Text.UTF8Encoding($false)))
-}
+# 2a. Difficulty menu: Co-op tab + enemy/anomaly sliders
+Patch-Ui $ui '(setting: "enemy_mutant_damage",\r?\n\t+\},\r?\n)' ([IO.File]::ReadAllText((Join-Path $here "ui_enemies_entries.txt"))) $false "enemy_count_mult" "the difficulty menu"
+Patch-Ui $ui '(\t\tbuild UiBox \{\r?\n\t\t\tsize = \[50, 50\])' ([IO.File]::ReadAllText((Join-Path $here "ui_coop_tab.txt"))) $true "coop\.difficulty\.tab" "the difficulty menu"
+# 2b. PDA map: markers of the other players
+Patch-Ui $pda '(\t\t\t//Allow scrolling around the minimap)' ([IO.File]::ReadAllText((Join-Path $here "ui_pda_partner.txt"))) $true "CoopMateOnMap" "the PDA map"
+# 2c. "Co-op" button in the main menu and in the pause menu (before "Settings")
+$btn = [IO.File]::ReadAllText((Join-Path $here "ui_menu_button.txt"))
+Patch-Ui $mmMain '(\t\tbuild UiTextButton \{\r?\n\t\t\tlabel = "Settings")' $btn $true "CoopOpenPanel" "the main menu"
+Patch-Ui $mmPause '(\t\tbuild UiTextButton \{\r?\n\t\t\tlabel = "Settings")' $btn $true "CoopOpenPanel" "the pause menu"
 
 # 3. Language rows (Russian text for russian, English for every other language)
 $rows = Get-Content (Join-Path $here "lang_rows.tsv") -Encoding UTF8 | Where-Object { $_ -ne "" }
@@ -110,6 +124,9 @@ $num = 90001
 Get-ChildItem $langDir -Directory | ForEach-Object {
     $csv = Join-Path $_.FullName ($_.Name + ".csv")
     if (-not (Test-Path $csv)) { return }
+    # start again from the backup, so an update brings new rows too
+    $bcsv = Join-Path $backup ("languages\" + $_.Name + ".csv")
+    if (Test-Path $bcsv) { Copy-Item $bcsv $csv -Force }
     $text = [IO.File]::ReadAllText($csv, [Text.Encoding]::UTF8)
     if ($text -match "coop\.difficulty\.tab") { return }
     $add = ""
@@ -124,4 +141,4 @@ Get-ChildItem $langDir -Directory | ForEach-Object {
     [IO.File]::WriteAllText($csv, $text + $add, (New-Object Text.UTF8Encoding($true)))
 }
 
-Say "Co-op mod installed. In the bunker or main menu press F7." "Кооп-мод установлен. В бункере или главном меню нажмите F7."
+Say "Co-op mod installed. Main menu or pause menu > Co-op (or F7)." "Кооп-мод установлен. Главное меню или пауза > Кооператив (или F7)."

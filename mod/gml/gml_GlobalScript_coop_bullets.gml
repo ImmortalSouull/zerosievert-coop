@@ -58,11 +58,11 @@ function coop_on_bullet_spawned_inner(_bull)
         buffer_write(_b, buffer_string, variable_instance_exists(id, "shooter_npc_name") ? string(shooter_npc_name) : "");
         buffer_write(_b, buffer_u8, (variable_instance_exists(id, "scoped") && scoped) ? 1 : 0);
         buffer_write(_b, buffer_f32, variable_instance_exists(id, "skill_improvised_sniper_range_max_multiplier") ? skill_improvised_sniper_range_max_multiplier : 1);
-        var _tk = 0; // 0 none, 1 targets the sender's own player, 2 targets the receiver's player
+        var _tk = 255; // homing target: the slot of the targeted player, 255 none
         if (variable_instance_exists(id, "target") && instance_exists(target))
         {
-            if (target.object_index == obj_player) _tk = 1;
-            else if (target.object_index == obj_player_puppet) _tk = 2;
+            if (target.object_index == obj_player) _tk = max(0, _c.slot);
+            else if (target.object_index == obj_player_puppet && variable_instance_exists(target, "coop_slot")) _tk = target.coop_slot;
         }
         buffer_write(_b, buffer_u8, _tk);
     }
@@ -101,7 +101,7 @@ function coop_bullet_on_message(_b)
     var _shooter = -4;
     if (_kind == 0)
     {
-        _shooter = coop_partner();
+        _shooter = coop_puppet_of(_cc.msg_from);
     }
     else
     {
@@ -140,13 +140,13 @@ function coop_bullet_on_message(_b)
             npc_id = _npc_id;
             shooter_npc_name = _npc_name;
         }
-        if (_tk == 1)
+        if (_tk != 255)
         {
-            target = coop_partner(); // the sender's player is our puppet
-        }
-        else if (_tk == 2 && instance_exists(obj_player))
-        {
-            target = obj_player.id;
+            var _tgt = coop_puppet_of(_tk);
+            if (instance_exists(_tgt))
+            {
+                target = _tgt;
+            }
         }
     }
     // Muzzle flash + gunshot at the remote shooter.

@@ -13,40 +13,39 @@ function coop_partner_hit_credit_inner(_bull, _npc)
     {
         exit;
     }
-    var _p = coop_partner();
-    if (_c.test_mode)
+    var _p = _bull.shooter_id;
+    if (!instance_exists(_p) || _p.object_index != obj_player_puppet || !variable_instance_exists(_p, "coop_slot"))
     {
-        coop_log("hit dbg: npc=", object_get_name(_npc.object_index), " hp=", _npc.hp, " shooter=", _bull.shooter_id, " partner=", instance_exists(_p) ? _p.id : -4);
+        exit; // not a remote player's bullet
     }
-    if (!instance_exists(_p) || _bull.shooter_id != _p.id)
-    {
-        exit;
-    }
+    var _slot = _p.coop_slot;
     var _first = false;
     var _killed = false;
+    var _vf = "coop_first_shot_" + string(_slot);
     with (_npc)
     {
-        if (!variable_instance_exists(id, "coop_partner_first_shot"))
+        if (!variable_instance_exists(id, _vf))
         {
-            coop_partner_first_shot = true;
+            variable_instance_set(id, _vf, true);
             _first = true;
         }
-        if (hp <= 0 && !variable_instance_exists(id, "coop_partner_killed"))
+        // one kill credit per NPC, to whoever landed the lethal hit
+        if (hp <= 0 && !variable_instance_exists(id, "coop_kill_credited"))
         {
-            coop_partner_killed = true;
+            coop_kill_credited = true;
             _killed = true;
         }
     }
     if (_killed)
     {
-        coop_log("partner killed ", _npc.npc_id, " - credit sent");
+        coop_log("player slot ", _slot, " killed ", _npc.npc_id, " - credit sent");
     }
     coop_msg_begin(COOP_MSG_CREDIT);
     buffer_write(_c.send_buf, buffer_string, string(_npc.npc_id));
     buffer_write(_c.send_buf, buffer_string, object_get_name(_npc.object_index));
     buffer_write(_c.send_buf, buffer_u8, _first);
     buffer_write(_c.send_buf, buffer_u8, _killed);
-    coop_msg_send(true);
+    coop_msg_send_to(_slot, true);
 }
 
 function coop_credit_on_message(_b)

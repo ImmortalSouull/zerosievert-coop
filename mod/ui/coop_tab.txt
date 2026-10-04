@@ -33,6 +33,14 @@
 						name: Translate("coop.difficulty.friendly_fire"),
 						setting: "coop_friendly_fire",
 					},
+					{
+						name: Translate("coop.difficulty.group_enemies"),
+						setting: "coop_group_enemies",
+					},
+					{
+						name: Translate("coop.difficulty.group_hp"),
+						setting: "coop_group_hp",
+					},
 				]
 				UiReplace("slider frame", "ZS_vanilla/ui/mm_difficulty_settings.ui")
 			}

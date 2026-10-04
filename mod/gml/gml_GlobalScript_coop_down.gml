@@ -23,7 +23,7 @@ function coop_down()
     if (!variable_struct_exists(_c, "down"))
     {
         _c.down = { active: false, count: 0, timer: 0, timer_max: 0, ping_time: -10000, force_death: false };
-        _c.revive = { menu: false, sel: 0, options: [], active: false, t: 0, tmax: 0, opt: undefined, opened_frame: -1 };
+        _c.revive = { menu: false, sel: 0, options: [], active: false, t: 0, tmax: 0, opt: undefined, opened_frame: -1, target: -4 };
     }
     return _c.down;
 }
@@ -50,21 +50,61 @@ function coop_down_is_down()
     return coop_down().active;
 }
 
-function coop_partner_is_down()
+// Another player's character is down (lying, waiting for a revive).
+function coop_puppet_is_down(_p)
 {
-    var _c = coop();
-    if (variable_struct_exists(_c, "revived_at") && current_time - _c.revived_at < 1500)
+    if (!instance_exists(_p) || !variable_instance_exists(_p, "coop_flags"))
+    {
+        return false;
+    }
+    if (variable_instance_exists(_p, "coop_revived_at") && current_time - _p.coop_revived_at < 1500)
     {
         return false; // we just revived them; their state packet may still say "down"
     }
-    var _p = coop_partner();
-    return instance_exists(_p) && variable_instance_exists(_p, "coop_flags") && (_p.coop_flags & 2) != 0;
+    return (_p.coop_flags & 2) != 0;
+}
+
+// Other players in our raid who are still on their feet (they can revive us).
+function coop_others_standing()
+{
+    var _n = 0;
+    with (obj_player_puppet)
+    {
+        if (variable_instance_exists(id, "coop_slot") && !coop_puppet_is_down(id) && !(variable_instance_exists(id, "coop_dead") && coop_dead))
+        {
+            _n++;
+        }
+    }
+    return _n;
+}
+
+// Older call sites: is any other player down?
+function coop_partner_is_down()
+{
+    with (obj_player_puppet)
+    {
+        if (coop_puppet_is_down(id))
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 function coop_down_can_happen()
 {
     var _c = coop();
-    return _c.connected && _c.peer_in_raid && coop_in_raid() && instance_exists(coop_partner()) && coop_setting("revive_enabled");
+    return _c.connected && coop_in_raid() && instance_exists(obj_player_puppet) && coop_setting("revive_enabled");
+}
+
+// A player left the raid, disconnected or died: if we are down and nobody can revive us any more, we die.
+function coop_down_on_player_gone()
+{
+    var _d = coop_down();
+    if (_d.active && coop_others_standing() == 0)
+    {
+        coop_down_force_death("nobody left to revive");
+    }
 }
 
 // Hook: top of player_step_grim_reaper() (runs in obj_player). true = death intercepted.
@@ -96,11 +136,12 @@ function coop_down_grim_reaper_inner()
         coop_log("third down: death");
         return false;
     }
-    if (coop_partner_is_down())
+    if (coop_others_standing() == 0)
     {
+        // everybody else is already down: nobody is left to revive anyone
         coop_down_send(COOP_MSG_DEAD, 1);
-        coop_notify(coop_t("Both of you are down - the raid is over", "Вы оба ранены - рейд окончен"));
-        coop_log("both down: death for both");
+        coop_notify(coop_t("Everyone is down - the raid is over", "Все ранены - рейд окончен"));
+        coop_log("both down: death for both (everyone down)");
         return false;
     }
     _d.count++;
@@ -116,7 +157,7 @@ function coop_down_grim_reaper_inner()
     return true;
 }
 
-function coop_down_send(_type, _arg)
+function coop_down_send(_type, _arg, _to = COOP_ALL)
 {
     var _c = coop();
     if (!_c.connected)
@@ -126,7 +167,7 @@ function coop_down_send(_type, _arg)
     coop_msg_begin(_type);
     buffer_write(_c.send_buf, buffer_u8, _arg);
     buffer_write(_c.send_buf, buffer_f32, 0);
-    coop_msg_send(true);
+    coop_msg_send_to(_to, true);
 }
 
 function coop_down_on_message(_type, _b)
@@ -134,23 +175,33 @@ function coop_down_on_message(_type, _b)
     var _arg = buffer_read(_b, buffer_u8);
     var _val = buffer_read(_b, buffer_f32);
     var _d = coop_down();
+    var _from = coop().msg_from;
+    var _who = coop_peer_name(_from);
     switch (_type)
     {
         case COOP_MSG_DOWN:
-            coop_notify(coop_t(coop().peer_name + " is down! Go to them and press [E]", coop().peer_name + " ранен! Подойдите и нажмите [E]"));
+            coop_notify(coop_t(_who + " is down! Go to them and press [E]", _who + " ранен! Подойдите и нажмите [E]"));
             break;
         case COOP_MSG_DEAD:
-            coop_log("partner death message, both=", _arg);
+            coop_log("partner death message, both=", _arg, " from slot ", _from);
+            var _pd = coop_puppet_of(_from);
+            if (instance_exists(_pd) && _pd.object_index == obj_player_puppet)
+            {
+                _pd.coop_dead = true;
+            }
             if (_arg == 1)
             {
-                // Partner went down while we were down: both die.
-                coop_down_force_death("both down");
-                coop_notify(coop_t("Both of you are down - the raid is over", "Вы оба ранены - рейд окончен"));
+                // the last standing player went down: everybody who is down dies
+                if (_d.active)
+                {
+                    coop_down_force_death("everyone down");
+                }
+                coop_notify(coop_t("Everyone is down - the raid is over", "Все ранены - рейд окончен"));
             }
             else
             {
-                coop_notify(coop_t(coop().peer_name + " died", coop().peer_name + " погиб"));
-                coop_down_force_death("partner died, nobody can revive");
+                coop_notify(coop_t(_who + " died", _who + " погиб"));
+                coop_down_on_player_gone();
             }
             break;
         case COOP_MSG_REVIVE:
@@ -220,7 +271,7 @@ function coop_down_step()
             coop_down_send(COOP_MSG_DEAD, 0);
             coop_down_force_death("down timer expired");
         }
-        else if (!coop().peer_in_raid || !coop().connected)
+        else if (!coop().connected || !instance_exists(obj_player_puppet))
         {
             coop_down_force_death("partner left the raid");
         }
@@ -248,10 +299,12 @@ function coop_down_end_step()
             }
         }
     }
-    var _p = coop_partner();
-    if (instance_exists(_p) && variable_instance_exists(_p, "coop_flags"))
+    with (obj_player_puppet)
     {
-        _p.image_angle = ((_p.coop_flags & 2) != 0) ? 90 : 0;
+        if (variable_instance_exists(id, "coop_flags"))
+        {
+            image_angle = ((coop_flags & 2) != 0) ? 90 : 0;
+        }
     }
 }
 
@@ -279,18 +332,46 @@ function coop_revive_options()
     return _out;
 }
 
+// The nearest downed player within reach (noone if none).
+function coop_revive_target()
+{
+    if (!instance_exists(obj_player) || coop_down_is_down() || !player_state_is(0, scr_player_state_move))
+    {
+        return -4;
+    }
+    var _best = -4;
+    var _bd = COOP_DOWN_REVIVE_RANGE;
+    var _px = obj_player.x;
+    var _py = obj_player.y;
+    with (obj_player_puppet)
+    {
+        if (coop_puppet_is_down(id))
+        {
+            var _dd = point_distance(_px, _py, x, y);
+            if (_dd < _bd)
+            {
+                _bd = _dd;
+                _best = id;
+            }
+        }
+    }
+    return _best;
+}
+
 function coop_revive_in_range()
 {
-    var _p = coop_partner();
-    if (!instance_exists(obj_player) || !instance_exists(_p) || coop_down_is_down())
+    var _r = coop_revive();
+    var _t = coop_revive_target();
+    if (!instance_exists(_t))
     {
         return false;
     }
-    if (!coop_partner_is_down() || !player_state_is(0, scr_player_state_move))
+    // once a revive started, stay on that player
+    if ((_r.active || _r.menu) && variable_struct_exists(_r, "target") && instance_exists(_r.target) && _r.target != _t)
     {
-        return false;
+        return coop_puppet_is_down(_r.target) && point_distance(obj_player.x, obj_player.y, _r.target.x, _r.target.y) < COOP_DOWN_REVIVE_RANGE;
     }
-    return point_distance(obj_player.x, obj_player.y, _p.x, _p.y) < COOP_DOWN_REVIVE_RANGE;
+    return true;
 }
 
 function coop_revive_step()
@@ -299,11 +380,20 @@ function coop_revive_step()
     var _c = coop();
     if (!coop_revive_in_range())
     {
+        if (_r.active && variable_struct_exists(_r, "target") && instance_exists(_r.target))
+        {
+            coop_down_send(COOP_MSG_REVIVE, 2, _r.target.coop_slot);
+        }
         if (_r.active)
         {
-            coop_down_send(COOP_MSG_REVIVE, 2);
             coop_notify(coop_t("Revive interrupted", "Поднятие прервано"));
         }
+        _r.active = false;
+        _r.menu = false;
+        exit;
+    }
+    if ((_r.active || _r.menu) && !instance_exists(_r.target))
+    {
         _r.active = false;
         _r.menu = false;
         exit;
@@ -313,6 +403,10 @@ function coop_revive_step()
     {
         _c.sim_e = false; // test scenario input
         _e = true;
+    }
+    if (!_r.menu && !_r.active)
+    {
+        _r.target = coop_revive_target();
     }
     if (!_r.menu && !_r.active && _e)
     {
@@ -339,7 +433,7 @@ function coop_revive_step()
             _r.active = true;
             _r.t = 0;
             _r.tmax = max(1, _r.opt.time * 60);
-            coop_down_send(COOP_MSG_REVIVE, 0);
+            coop_down_send(COOP_MSG_REVIVE, 0, _r.target.coop_slot);
         }
         exit;
     }
@@ -348,7 +442,7 @@ function coop_revive_step()
         _r.t++;
         if (_r.t mod 10 == 0)
         {
-            coop_down_send(COOP_MSG_REVIVE, 0);
+            coop_down_send(COOP_MSG_REVIVE, 0, _r.target.coop_slot);
         }
         if (_r.t >= _r.tmax)
         {
@@ -363,18 +457,15 @@ function coop_revive_step()
                 }
                 inventory_remove_item(_item, 1);
             }
-            _c.revived_at = current_time;
-            var _pp = coop_partner();
-            if (instance_exists(_pp))
-            {
-                _pp.coop_flags = _pp.coop_flags & ~2;
-            }
+            var _pp = _r.target;
+            _pp.coop_revived_at = current_time;
+            _pp.coop_flags = _pp.coop_flags & ~2;
             coop_msg_begin(COOP_MSG_REVIVE);
             buffer_write(_c.send_buf, buffer_u8, 1);
             buffer_write(_c.send_buf, buffer_f32, _r.opt.hp);
-            coop_msg_send(true);
-            coop_log("revived partner with ", _r.opt.name, " (", _r.opt.hp, " hp)");
-            coop_notify(coop_t("Partner revived", "Напарник поднят"));
+            coop_msg_send_to(_pp.coop_slot, true);
+            coop_log("revived partner with ", _r.opt.name, " (", _r.opt.hp, " hp) slot ", _pp.coop_slot);
+            coop_notify(coop_t(coop_peer_name(_pp.coop_slot) + " revived", coop_peer_name(_pp.coop_slot) + " поднят"));
         }
     }
 }
@@ -403,15 +494,15 @@ function coop_down_draw_gui()
         draw_set_alpha(1);
         draw_rectangle_colour(_W / 2 - 70, 342, _W / 2 - 70 + 140 * _k, 345, c_red, c_red, c_red, c_red, false);
         var _being = current_time - _d.ping_time < 400;
-        var _line = _being ? coop_t("Your partner is helping you...", "Напарник поднимает вас...") : coop_t("Wait for your partner", "Ждите напарника");
+        var _line = _being ? coop_t("You are being revived...", "Вас поднимают...") : coop_t("Wait for help", "Ждите помощи");
         if (_d.count == 1 && !_being)
         {
             _line += coop_t(" · pistol only", " · можно стрелять из пистолета");
         }
         coop_text_outlined(_W / 2, 356, _line, _being ? c_lime : c_ltgray);
     }
-    // Partner position on screen: the prompt / menu / progress sit next to them.
-    var _p = coop_partner();
+    // The downed player's position on screen: the prompt / menu / progress sit next to them.
+    var _p = (variable_struct_exists(_r, "target") && instance_exists(_r.target)) ? _r.target : coop_revive_target();
     var _gx = _W / 2;
     var _gy = _H / 2;
     if (instance_exists(_p))

@@ -2,12 +2,14 @@ if (global.zs_rf) exit; // render-only frame (coop_fps)
 coop_phase("step");
 coop_try(coop_net_step);
 coop_try(coop_ui_register);
+coop_try(coop_update_step);
 coop_try(coop_steam_step);
 coop_try(coop_panel_step);
 coop_try(coop_autopilot_step);
 coop_try(coop_pending_raid_step);
 coop_try(coop_players_step);
 coop_try(coop_down_step);
+coop_try(coop_ping_step);
 coop_try(coop_npc_host_step);
 coop_try(coop_bullets_scan_step);
 coop_try(coop_chest_step);

@@ -74,9 +74,17 @@ function coop_npc_host_step()
     {
         exit;
     }
-    var _partner = coop_partner();
-    var _px = instance_exists(_partner) ? _partner.x : obj_player.x;
-    var _py = instance_exists(_partner) ? _partner.y : obj_player.y;
+    // NPCs near any other player are streamed often, the rest a few times per second
+    var _pts = [];
+    with (obj_player_puppet)
+    {
+        array_push(_pts, x, y);
+    }
+    if (array_length(_pts) == 0 && instance_exists(obj_player))
+    {
+        array_push(_pts, obj_player.x, obj_player.y);
+    }
+    var _npts = array_length(_pts);
     var _far_tick = (_c.frame mod 30 == 0);
     var _near_tick = (_c.frame mod 4 == 0);
     if (!_near_tick && !_far_tick)
@@ -107,7 +115,15 @@ function coop_npc_host_step()
             continue;
         }
         var _nid = coop_nid;
-        var _near = point_distance(x, y, _px, _py) < 720;
+        var _near = false;
+        for (var _k = 0; _k < _npts; _k += 2)
+        {
+            if (point_distance(x, y, _pts[_k], _pts[_k + 1]) < 720)
+            {
+                _near = true;
+                break;
+            }
+        }
         if (!(_near ? _near_tick : _far_tick))
         {
             continue;
@@ -240,12 +256,40 @@ function coop_npc_guest_purge()
 // Disconnected mid-raid: replicas become normal NPCs again so the raid stays playable solo.
 function coop_npc_guest_release()
 {
+    instance_activate_object(obj_npc_parent);
     with (obj_npc_parent)
     {
         if (coop_npc_is_replica())
         {
             coop_replica = false; // AI takes over again, purge leaves it alone (variable still exists)
+            // a state the replica never learned the name of would crash the NPC's state machine
+            if ((is_string(state) && state == "") || is_undefined(state))
+            {
+                state = variable_instance_exists(id, "coop_init_state") ? coop_init_state : state;
+            }
         }
+    }
+}
+
+// Guest: the host is back (reconnected to the same raid): NPCs that ran on our AI meanwhile follow the host
+// again (known ids get its snapshots; ones the host no longer has are removed by NPC_GONE/purge).
+function coop_npc_guest_readopt()
+{
+    var _n = 0;
+    instance_activate_object(obj_npc_parent);
+    with (obj_npc_parent)
+    {
+        if (variable_instance_exists(id, "coop_replica") && !coop_replica && variable_instance_exists(id, "coop_nid"))
+        {
+            coop_replica = true;
+            coop_tx = x;
+            coop_ty = y;
+            _n++;
+        }
+    }
+    if (_n > 0)
+    {
+        coop_log("re-adopted ", _n, " NPCs after reconnecting");
     }
 }
 
@@ -268,6 +312,7 @@ function coop_npc_on_spawn(_b)
     var _inst = instance_create_depth(_x, _y, -_y, _obj, { coop_replica: true, coop_nid: _nid, coop_replica_frame: -1 });
     with (_inst)
     {
+        coop_init_state = state; // the AI's own starting state, used if the host leaves
         var _names = variable_struct_get_names(_data);
         for (var _i = 0; _i < array_length(_names); _i++)
         {
@@ -309,7 +354,7 @@ function coop_npc_on_snap(_b)
             weapon_pointing_direction = _wpd;
             target_for_image_scale = _tfis;
             hp = max(_hp, 1);
-            if (_sid < array_length(_c.npc_state_names))
+            if (_sid < array_length(_c.npc_state_names) && _c.npc_state_names[_sid] != "")
             {
                 state = _c.npc_state_names[_sid];
             }

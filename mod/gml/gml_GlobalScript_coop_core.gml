@@ -1,6 +1,6 @@
 // ZERO Sievert co-op: core state, command line, logging, test-mode helpers.
 
-#macro COOP_VERSION 4
+#macro COOP_VERSION 5
 #macro COOP_PORT 47777
 
 function coop()
@@ -114,6 +114,13 @@ function coop_parse_params()
                 break;
             case "-coop_phase":
                 global.coop_phase_on = true;
+                break;
+            case "-coop_netsim":
+                // test: <latency ms>,<loss %>,<jitter ms> on outgoing UDP
+                var _ns = string_split(_v, ",");
+                // optional 4th/5th: blackout start and duration in seconds after the raid map is ready
+                _c.netsim = { lat: real(_ns[0]), loss: (array_length(_ns) > 1) ? real(_ns[1]) : 0, jitter: (array_length(_ns) > 2) ? real(_ns[2]) : 0, dropped: 0,
+                    black_at: (array_length(_ns) > 4) ? real(_ns[3]) : 0, black_dur: (array_length(_ns) > 4) ? real(_ns[4]) : 0, black_logged: false };
                 break;
             case "-coop_fps":
                 _c.fps_force = real(_v);
@@ -255,7 +262,7 @@ function coop_take_seed()
 }
 
 // The game deactivates everything outside the camera region (and everything when paused).
-// Keep the co-op controller alive, and on the host keep the area around the partner simulated.
+// Keep the co-op controller alive, and on the host keep the areas around the other players simulated.
 function coop_after_culling()
 {
     instance_activate_object(obj_coop);
@@ -263,10 +270,13 @@ function coop_after_culling()
     if (_c.connected)
     {
         instance_activate_object(obj_player_parent);
-        var _p = coop_partner();
-        if (instance_exists(_p) && _c.role == "host")
+        if (_c.role == "host")
         {
-            instance_activate_region(_p.x - 480, _p.y - 270, 960, 540, true);
+            // the world around every other player keeps running on the host
+            with (obj_player_puppet)
+            {
+                instance_activate_region(x - 480, y - 270, 960, 540, true);
+            }
         }
     }
 }

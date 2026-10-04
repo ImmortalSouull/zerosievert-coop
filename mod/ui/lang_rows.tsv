@@ -8,3 +8,6 @@ coop.difficulty.revive_time_medkit	Revive with a medkit (s)	Поднятие с 
 coop.difficulty.friendly_fire	Friendly fire	Огонь по союзнику
 coop.difficulty.enemy_count	Enemy amount	Количество врагов
 coop.difficulty.anomaly_amount	Anomaly amount	Количество аномалий
+coop.difficulty.group_enemies	Extra enemies per extra player	Доп. врагов за каждого игрока
+coop.difficulty.group_hp	Extra enemy HP per extra player	Доп. здоровья врагов за игрока
+coop.menu.button	Co-op	Кооператив

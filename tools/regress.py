@@ -1,0 +1,193 @@
+"""Co-op regression suite: runs every two-instance test scenario and prints a pass/fail table.
+
+usage: python tools/regress.py [name ...]      (no names = all scenarios)
+       python tools/regress.py --list
+Extra args for every launch can be given with env COOP_REGRESS_ARGS (e.g. "-coop_netsim 150,3,40").
+Logs of each run are kept in zerosievert-coop-work/regress/<timestamp>/<scenario>/.
+The data.win under test must already be installed (tools/install_test.sh).
+"""
+import os, re, sys, time, shutil, subprocess
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+WORK = os.path.join(os.path.dirname(ROOT), "zerosievert-coop-work")
+SAVES = os.path.join(os.environ["LOCALAPPDATA"], "ZERO_Sievert")
+BASH = r"C:\Program Files\Git\bin\bash.exe"
+LOGS = {"A": os.path.join(SAVES, "coop_coopA.log"), "B": os.path.join(SAVES, "coop_coopB.log")}
+
+
+def S(name, host, guest, done, checks, minutes=4, timeout=260, custom=None, need_identical=True, tags=""):
+    return dict(name=name, host=host, guest=guest, done=done, checks=checks, minutes=minutes,
+                timeout=timeout, custom=custom, need_identical=need_identical, tags=tags)
+
+
+def chest_md5_equal(logs):
+    """Both players read identical content for the same container."""
+    a = re.findall(r"scenario chest t=420 (\S+) len=\d+ md5=(\w+)", logs["A"])
+    b = re.findall(r"scenario chest t=420 (\S+) len=\d+ md5=(\w+)", logs["B"])
+    if not a or not b:
+        return "no t=420 chest reads"
+    return None if a[0] == b[0] else f"chest differs A={a[0]} B={b[0]}"
+
+
+def livechest_ok(logs):
+    """The open container lost exactly the item the host took, on both machines."""
+    out = []
+    for k in "AB":
+        a = re.findall(r"lc t=160 ui items=(\d+)", logs[k])
+        b = re.findall(r"lc t=280 ui items=(\d+)", logs[k])
+        if not a or not b:
+            return f"{k}: missing lc lines"
+        out.append((int(a[0]), int(b[0])))
+    if out[0] != out[1] or out[0][1] != out[0][0] - 1:
+        return f"live chest counts A={out[0]} B={out[1]}"
+    return None
+
+
+def fps_ok(logs):
+    for k in "AB":
+        m = re.findall(r"fpstest: 300 ticks real_s=([\d.]+)", logs[k])
+        if not m:
+            return f"{k}: no fpstest"
+        bad = [x for x in m if not 4.8 <= float(x) <= 5.6]
+        if bad:
+            return f"{k}: 300 ticks took {bad} s"
+    return None
+
+
+SCENARIOS = [
+    S("fps", "-coop_autoraid 1 -coop_scenario fps", "-coop_scenario fps -coop_fps 60",
+      done=[("A", r"fpstest(.|\n)*fpstest"), ("B", r"fpstest(.|\n)*fpstest")],
+      checks=[], custom=fps_ok),
+    S("anim", "-coop_autoraid 1 -coop_scenario anim", "-coop_scenario anim",
+      done=[("A", r"torch att_1 have=1 on=1")],
+      checks=[("A", r"arms=s_arms_med_bandage", 1), ("A", r"arms=s_arms_eat", 1),
+              ("A", r"psound from partner", 1), ("A", r"puppet footstep", 1)], timeout=300),
+    S("v3", "-coop_autoraid 1 -coop_scenario v3", "-coop_scenario v3",
+      done=[("A", r"v3: done"), ("B", r"v3: done")],
+      checks=[("B", r"kill credited", 1), ("B", r"emission started by host", 1), ("A", r"v3: host unpaused, player exists=1", 1)]),
+    S("revive", "-coop_autoraid 1 -coop_scenario revive", "-coop_scenario revive",
+      done=[("B", r"revived with \d+ hp")],
+      checks=[("A", r"revived partner with", 1), ("B", r"down #1 timer", 1)]),
+    S("both", "-coop_autoraid 1 -coop_scenario both", "-coop_scenario both",
+      done=[("B", r"both down: death for both|partner death message")],
+      checks=[("B", r"down #2|both down|forced death", 1)], timeout=300),
+    S("chest", "-coop_autoraid 1 -coop_scenario chest", "-coop_scenario chest",
+      done=[("A", r"scenario chest t=420"), ("B", r"scenario chest t=420")],
+      checks=[("A", r"scenario: host took first item", 1)], custom=chest_md5_equal),
+    S("livechest", "-coop_autoraid 1 -coop_scenario livechest", "-coop_scenario livechest",
+      done=[("A", r"lc t=280"), ("B", r"lc t=280")],
+      checks=[], custom=livechest_ok),
+    S("join", "-coop_scenario join", "-coop_scenario join",
+      done=[("B", r"maps identical")],
+      checks=[("A", r"join test: host goes into the raid alone", 1)]),
+    S("leave", "-coop_autoraid 1 -coop_scenario leave", "-coop_scenario leave",
+      done=[("B", r"peer_in_raid=0(.|\n)*peer_in_raid=0")],
+      checks=[("A", r"host leaves the extraction screen", 1)], timeout=320, minutes=6),
+    S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
+      done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
+      checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),
+    S("tele", "-coop_autoraid 1", "-coop_scenario tele",
+      done=[("B", r"tele #20 ")], checks=[], timeout=200),
+]
+
+# Every raid map with the v3 scenario (identical map, NPC sync, guest kill credit, emission, co-op pause).
+MAPS = {2: "camp", 3: "industrial", 4: "swamp", 6: "mall", 8: "zakov", 9: "cnpp"}
+for _id, _nm in MAPS.items():
+    SCENARIOS.append(S(f"map{_id}_{_nm}", f"-coop_autoraid {_id} -coop_scenario v3", "-coop_scenario v3",
+                       done=[("A", r"v3: done"), ("B", r"v3: done")],
+                       checks=[("B", r"emission started by host", 1), ("A", r"v3: host unpaused, player exists=1", 1)],
+                       timeout=320, minutes=6, tags="maps"))
+
+
+def read(path):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return f.read()
+    except OSError:
+        return ""
+
+
+def stop():
+    subprocess.run([sys.executable, os.path.join(ROOT, "tools", "game_guard.py"), "stop"], capture_output=True)
+
+
+def run(sc, outdir, extra):
+    stop()
+    for p in LOGS.values():
+        if os.path.exists(p):
+            os.remove(p)
+    cmd = f'bash tools/test2.sh {sc["minutes"]} "regress {sc["name"]}" "{sc["host"]} {extra}" "{sc["guest"]} {extra}"'
+    proc = subprocess.Popen([BASH, "-c", cmd], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    t0 = time.time()
+    status = "timeout"
+    while time.time() - t0 < sc["timeout"]:
+        time.sleep(2)
+        logs = {k: read(p) for k, p in LOGS.items()}
+        if "CRASH" in logs["A"] or "CRASH" in logs["B"]:
+            status = "crash"
+            break
+        if all(re.search(rx, logs[k]) for k, rx in sc["done"]):
+            status = "done"
+            time.sleep(4)  # let late lines land
+            break
+        if proc.poll() is not None and time.time() - t0 > 20:
+            status = "game exited"
+            break
+    logs = {k: read(p) for k, p in LOGS.items()}
+    stop()
+    proc.wait(timeout=30)
+    os.makedirs(outdir, exist_ok=True)
+    for k, p in LOGS.items():
+        if os.path.exists(p):
+            shutil.copy(p, os.path.join(outdir, os.path.basename(p)))
+    problems = []
+    if status != "done":
+        problems.append(status)
+    for k in "AB":
+        for line in logs[k].splitlines():
+            if "CRASH" in line or "ERROR" in line:
+                problems.append(f"{k}: {line[:160]}")
+                break
+    if sc["need_identical"]:
+        for k in "AB":
+            if "maps identical" not in logs[k]:
+                problems.append(f"{k}: maps not confirmed identical")
+            if "MAP MISMATCH" in logs[k] or "maps differ" in logs[k]:
+                problems.append(f"{k}: map mismatch")
+    for k, rx, n in sc["checks"]:
+        c = len(re.findall(rx, logs[k]))
+        if c < n:
+            problems.append(f"{k}: expected /{rx}/ x{n}, got {c}")
+    if sc["custom"] and status == "done":
+        r = sc["custom"](logs)
+        if r:
+            problems.append(r)
+    return time.time() - t0, problems
+
+
+def main():
+    args = sys.argv[1:]
+    if args == ["--list"]:
+        for sc in SCENARIOS:
+            print(sc["name"])
+        return 0
+    pick = [sc for sc in SCENARIOS if (not args and sc["tags"] == "") or sc["name"] in args or sc["tags"] in args or "all" in args]
+    extra = os.environ.get("COOP_REGRESS_ARGS", "")
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    base = os.path.join(WORK, "regress", stamp)
+    results = []
+    for sc in pick:
+        print(f"== {sc['name']} ...", flush=True)
+        secs, problems = run(sc, os.path.join(base, sc["name"]), extra)
+        results.append((sc["name"], secs, problems))
+        print(f"   {'PASS' if not problems else 'FAIL'} in {secs:.0f}s" + "".join(f"\n     - {p}" for p in problems), flush=True)
+    print("\nscenario      result  time")
+    for name, secs, problems in results:
+        print(f"{name:13} {'PASS' if not problems else 'FAIL':6} {secs:4.0f}s")
+    fails = sum(1 for r in results if r[2])
+    print(f"\n{len(results) - fails}/{len(results)} passed{(' (extra args: ' + extra + ')') if extra else ''}; logs: {base}")
+    return 1 if fails else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

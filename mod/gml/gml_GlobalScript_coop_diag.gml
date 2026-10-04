@@ -44,7 +44,7 @@ function coop_diag_step()
         coop_log("status: me=", floor(obj_player.x), ",", floor(obj_player.y),
             " partner=", instance_exists(_p) ? (string(floor(_p.x)) + "," + string(floor(_p.y))) : "none",
             " npcs(active)=", _npcs, " replicas=", _replicas, " known=", ds_map_size(_c.npc_by_nid),
-            " sent=", _c.stats_sent, " recv=", _c.stats_recv, " ping=", _c.ping, " bullets_in=", variable_struct_exists(_c, "bullets_recv") ? _c.bullets_recv : 0);
+            " players=", coop_player_count(), " sent=", _c.stats_sent, " recv=", _c.stats_recv, " ping=", _c.ping, " bullets_in=", variable_struct_exists(_c, "bullets_recv") ? _c.bullets_recv : 0);
     }
 }
 
@@ -85,7 +85,7 @@ function coop_diag_on_fp(_b)
         coop_msg_begin(COOP_MSG_FP);
         buffer_write(_c.send_buf, buffer_string, json_stringify(_c.my_fp));
         buffer_write(_c.send_buf, buffer_f64, _c.gen_seed);
-        coop_msg_send(true);
+        coop_msg_send_to(_c.msg_from, true);
     }
     coop_diag_compare();
 }
@@ -110,7 +110,7 @@ function coop_diag_compare()
     }
     if (_bad == "")
     {
-        coop_log("maps identical with partner");
+        coop_log("maps identical with partner", (_c.role == "host") ? (" " + coop_peer_name(_c.msg_from)) : "");
     }
     else
     {

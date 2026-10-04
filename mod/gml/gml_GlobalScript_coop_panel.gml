@@ -45,6 +45,11 @@ function coop_panel_step()
     {
         exit;
     }
+    var _upd = coop_update_text();
+    if (_upd != "")
+    {
+        coop_text_outlined(240, 214, _upd, c_yellow);
+    }
     if (_c.ip_edit)
     {
         _c.last_ip = string_copy(string_lettersdigits(string_replace_all(keyboard_string, ".", "x")), 1, 40);
@@ -94,7 +99,7 @@ function coop_panel_step()
     var _btn = coop_panel_buttons();
     for (var _i = 0; _i < array_length(_btn); _i++)
     {
-        var _y = 96 + _i * 16;
+        var _y = 106 + _i * 16;
         if (_mx > 120 && _mx < 360 && _my > _y - 7 && _my < _y + 7)
         {
             coop_panel_click(_btn[_i].id);
@@ -154,13 +159,35 @@ function coop_panel_draw()
         exit;
     }
     draw_set_alpha(0.85);
-    draw_rectangle_colour(110, 60, 370, 200, c_black, c_black, c_black, c_black, false);
+    draw_rectangle_colour(100, 56, 380, 222, c_black, c_black, c_black, c_black, false);
     draw_set_alpha(1);
     draw_set_halign(fa_center);
     draw_set_valign(fa_middle);
     coop_text_outlined(240, 72, "ZERO Sievert CO-OP", c_lime);
-    var _status = (_c.role == "none") ? coop_t("Not connected", "Не подключено") : (_c.connected ? (coop_t("Playing with ", "Игра с ") + _c.peer_name) : coop_t("Waiting for partner...", "Ждём напарника..."));
-    coop_text_outlined(240, 84, _status, c_ltgray);
+    var _status = (_c.role == "none") ? coop_t("Not connected", "Не подключено") : (_c.connected ? (coop_t("Players: ", "Игроков: ") + string(coop_player_count()) + "/" + string(COOP_MAX_PLAYERS)) : ((_c.role == "host") ? coop_t("Waiting for players...", "Ждём игроков...") : coop_t("Connecting...", "Подключение...")));
+    coop_text_outlined(240, 82, _status, c_ltgray);
+    if (_c.connected)
+    {
+        // everybody in the session, with ping (the host sees each guest's, a guest sees the host's)
+        var _ps = coop_peers();
+        var _list = "";
+        for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++)
+        {
+            var _pp = _ps[_k];
+            var _nm = (_k == _c.slot) ? coop_my_name() : (is_struct(_pp) && _pp.connected ? _pp.name : "");
+            if (_nm == "")
+            {
+                continue;
+            }
+            if (_list != "") _list += "  ";
+            _list += _nm;
+            if (_k != _c.slot && is_struct(_pp) && (_c.role == "host" || _k == 0))
+            {
+                _list += " (" + string(round(_pp.ping)) + coop_t("ms", "мс") + ")";
+            }
+        }
+        coop_text_outlined(240, 94, _list, c_lime);
+    }
     if (_c.ip_edit)
     {
         coop_text_outlined(240, 110, coop_t("Host IP (Enter to connect, Esc back):", "IP хоста (Enter - подключиться, Esc - назад):"), c_white);
@@ -173,7 +200,7 @@ function coop_panel_draw()
         var _btn = coop_panel_buttons();
         for (var _i = 0; _i < array_length(_btn); _i++)
         {
-            var _y = 96 + _i * 16;
+            var _y = 106 + _i * 16;
             var _hover = _mx > 120 && _mx < 360 && _my > _y - 7 && _my < _y + 7;
             var _moved = !variable_struct_exists(_c, "panel_mx") || abs(_c.panel_mx - _mx) + abs(_c.panel_my - _my) > 0.5;
             if (_hover && _moved)
