@@ -5,7 +5,7 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 
 ## Read first
 - `MODLOG.md` — full journal: every engine fact, gotcha, decision and test result. Read it before changing code.
-- Current release: **v0.3.0**, network protocol `COOP_VERSION 3` (both players must match).
+- Current release: **v0.4.0**, network protocol `COOP_VERSION 4` (both players must match).
 
 ## Layout
 - `mod/gml/*.gml` — all mod code (GML). `gml_GlobalScript_coop_*` = modules, `gml_Object_obj_coop_*` = controller events.
@@ -32,7 +32,11 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 - Logs: `%LOCALAPPDATA%\ZERO_Sievert\coop_<tag>.log` (tag coopA/coopB in tests, `solo` in normal play).
   In-game screenshots: `screen_save()` from GML → same folder.
 - Test scenarios (test mode only, see coop_raid/coop_tests/coop_show): revive, both, chest, livechest, v3,
-  join, show, panel, difficulty, steamhost. Test save roots `coopA`/`coopB` (copies of an old save, Russian UI,
+  join, show, panel, difficulty, steamhost, fps (walk speed at -coop_fps N), anim (partner animations/torch/
+  sounds), tele (long-teleport stress), leave (host extracts). ALWAYS `game_guard.py stop` before test2.sh.
+- Debug: `-coop_prof` (subsystem us/s every 5 s), `-coop_trace`; freeze hunting: build with
+  `COOP_TRACE_EVENTS='<regex of code entries>' bash tools/build.sh`, run with `-coop_phase`, then
+  `python tools/peek.py <pid> <addr from log>` shows the game event a frozen process is stuck in. Test save roots `coopA`/`coopB` (copies of an old save, Russian UI,
   coopB has grass 0.25 + low spec to catch determinism bugs). The user's real saves are never touched.
 
 ## GitHub (private repo https://github.com/ImmortalSouull/zerosievert-coop)
@@ -53,13 +57,17 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 - With a player on the map the OS mouse is locked; use obj_cursor (virtual cursor) for GUI hit tests.
 - Shared maps rely on re-seeding RNG per generation step and per object (coop_gen_reseed, coop_pos_reseed,
   grass reseed, host world settings). Any new generation-time randomness must be made deterministic too.
+- High refresh rate (coop_fps.gml): logic runs 60 ticks/s, rendering at monitor rate. Game logic events get a
+  guard prepended by build.csx; alarms are held via generated scan/hold tables. New mod code in obj_coop
+  Step events must stay after the `if (global.zs_rf) exit;` line; draw-time counters must be tick-gated.
+- The UTMT compiler also miscompiles `struct[$ key]` - use variable_struct_get/set.
 - Wrap new code called from game events in try/catch (see wrapped functions) and new controller
   subsystems via `coop_try(...)` in obj_coop Step.
 - Commit after each working step; end commit messages with
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
 ## Open items / ideas
-- Partner's weapon torch doesn't light on the other machine (only name/hp overlay).
-- If the host leaves the raid, guest NPCs continue on local AI.
+- If the host leaves the raid, the guest continues alone on local AI; far-away NPCs don't patrol (replicas
+  were removed from the off-screen patrol list).
 - Untested: launching the game straight from a Steam invite (+connect_lobby) — needs two accounts.
-- Ideas: shared bunker, 3–4 players, partner footsteps/torch, PDA airdrop markers for the guest, publishing.
+- Ideas: shared bunker, 3–4 players, PDA airdrop markers for the guest, publishing.
