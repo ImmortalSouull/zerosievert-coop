@@ -13,6 +13,7 @@ function coop_test_ext_step()
     }
     coop_test_v3_step();
     coop_test_fps_step();
+    coop_test_anim_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -266,5 +267,98 @@ function coop_test_input()
     if (_c.test_mode && variable_struct_exists(_c, "f_key") && _c.f_key >= 0)
     {
         global.kb_hold[_c.f_key] = true;
+    }
+}
+
+// -coop_scenario anim: the guest bandages itself, eats, toggles torch/laser; the host logs/screenshots the puppet.
+function coop_test_anim_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "anim" || !coop_shared_ready() || !instance_exists(obj_player) || !_c.peer_in_raid)
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "at")) _c.at = 0;
+    _c.at++;
+    var _t = _c.at;
+    if (_c.role == "guest")
+    {
+        var _host = coop_partner();
+        with (obj_player)
+        {
+            if (_t == 150 && instance_exists(_host))
+            {
+                x = _host.x + 24;
+                y = _host.y;
+            }
+            if ((_t == 200 || _t == 700) && arms_holder == undefined && player_state_is(0, scr_player_state_move))
+            {
+                var _item = (_t == 200) ? "bandage" : "bread";
+                var _anim = (_t == 200) ? item_med_get_animation(_item) : item_consumable_get_animation(_item);
+                arms_holder = new class_player_arms(id, _item, _anim);
+                coop_log("anim: guest uses ", _item, " sprite=", sprite_get_name(_anim));
+            }
+            if (_t == 1050)
+            {
+                // moddable rifle with a tactical torch on att_1 (test only)
+                var _loot = player_loadout_get_loot(id, weapon_slot_now);
+                if (is_struct(_loot))
+                {
+                    _loot.item = "ak_74";
+                    var _m = loot_mod_cont_create();
+                    loot_mod_cont_copy_from_default(_m, "ak_74");
+                    loot_mod_cont_set(_m, "handguard", "mod_ak74_handguard_3");
+                    loot_mod_cont_set(_m, "att_1", "mod_torch_1");
+                    _loot.mods = _m;
+                    arma_now = "ak_74";
+                    coop_send_loadout();
+                }
+            }
+            if (_t == 1100)
+            {
+                torch_on_general = true;
+                laser_on_general = true;
+                coop_log("anim: guest torch+laser on, weapon=", arma_now);
+            }
+        }
+        exit;
+    }
+    var _p = coop_partner();
+    if (!instance_exists(_p))
+    {
+        exit;
+    }
+    if (_t == 1000)
+    {
+        with (obj_light_controller)
+        {
+            time_increment_seconds(((23 - time_get_hours() + 24) mod 24) * 3600);
+        }
+    }
+    if (_t mod 30 == 0 && _t > 1000)
+    {
+        var _tc = _p.torch_container_array[_p.weapon_slot_now].data.att_1;
+        coop_log("anim: puppet torch att_1 have=", _tc.have, " on=", _tc.on, " x=", _tc.x, " y=", _tc.y, " arma=", _p.arma_now, " hour=", time_get_hours());
+    }
+    if (_t mod 30 == 0)
+    {
+        var _a = _p.arms_holder;
+        coop_log("anim: puppet arms=", is_struct(_a) ? sprite_get_name(_a.sprite_index) + " img=" + string(_a.image_index) : "none",
+            " state=", script_get_name(_p.state), " torch=", _p.torch_on_general, " laser=", _p.laser_on_general,
+            " w=", _p.weapon_holder.x - _p.x, ",", _p.weapon_holder.y - _p.y, " ang=", _p.weapon_holder.image_angle);
+        if (is_struct(_a) && !variable_struct_exists(_c, "anim_shot_" + sprite_get_name(_a.sprite_index)))
+        {
+            variable_struct_set(_c, "anim_shot_" + sprite_get_name(_a.sprite_index), true);
+            _c.anim_shot_t = _t + 40;
+            _c.anim_shot_n = sprite_get_name(_a.sprite_index);
+        }
+    }
+    if (variable_struct_exists(_c, "anim_shot_t") && _t == _c.anim_shot_t)
+    {
+        screen_save("anim_" + _c.anim_shot_n + ".png");
+    }
+    if (_t == 1500 || _t == 1700)
+    {
+        screen_save("anim_light_" + string(_t) + ".png");
     }
 }

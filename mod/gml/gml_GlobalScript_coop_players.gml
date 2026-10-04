@@ -2,6 +2,7 @@
 // Each client sees itself as player index 0 and the partner as index 1 (the game's own mp_index API).
 
 #macro COOP_PARTNER_INDEX 1
+#macro COOP_MSG_ARMS 12
 
 function coop_state_list()
 {
@@ -75,9 +76,39 @@ function coop_send_pstate()
         var _flags = 0;
         if (aiming) _flags |= 1;
         if (coop_down_is_down()) _flags |= 2;
+        if (torch_on_general) _flags |= 4;
+        if (laser_on_general) _flags |= 8;
         buffer_write(_b, buffer_u8, _flags);
+        // hands animation (meds, food, drinks, smoking, grenade): class_player_arms
+        var _arms = arms_holder;
+        var _has_arms = is_struct(_arms) && !_arms.destroyed;
+        buffer_write(_b, buffer_s32, _has_arms ? real(_arms.sprite_index) : -1);
+        buffer_write(_b, buffer_f32, _has_arms ? _arms.image_index : 0);
+        // weapon as drawn (recoil kick, weapon inspection), relative to the player
+        var _w = weapon_holder;
+        buffer_write(_b, buffer_f32, _w.x - x);
+        buffer_write(_b, buffer_f32, _w.y - y);
+        buffer_write(_b, buffer_f32, _w.image_angle);
+        buffer_write(_b, buffer_f32, _w.image_xscale);
+        buffer_write(_b, buffer_u8, _w.draw_before_follow ? 1 : 0);
+        if (_has_arms && !variable_struct_exists(_arms, "coop_sent"))
+        {
+            _arms.coop_sent = true;
+            coop_arms_started = _arms.item_id;
+        }
     }
     coop_msg_send(false);
+    with (obj_player)
+    {
+        if (variable_instance_exists(id, "coop_arms_started") && coop_arms_started != undefined)
+        {
+            // start of an animation: reliable, so the partner hears the item's sound once
+            var _b2 = coop_msg_begin(COOP_MSG_ARMS);
+            buffer_write(_b2, buffer_string, string(coop_arms_started));
+            coop_msg_send(true);
+            coop_arms_started = undefined;
+        }
+    }
 }
 
 function coop_send_loadout()
@@ -162,6 +193,7 @@ function coop_puppet_ensure(_x, _y)
         hp = 100;
         hp_max = 100;
         coop_flags = 0;
+        coop_lights_were_on = false;
         coop_name = coop().peer_name;
         state = scr_player_state_move;
     }
@@ -200,6 +232,13 @@ function coop_puppet_on_state(_b)
     var _hp = buffer_read(_b, buffer_f32);
     var _hpm = buffer_read(_b, buffer_f32);
     var _flags = buffer_read(_b, buffer_u8);
+    var _arms_spr = buffer_read(_b, buffer_s32);
+    var _arms_img = buffer_read(_b, buffer_f32);
+    var _wdx = buffer_read(_b, buffer_f32);
+    var _wdy = buffer_read(_b, buffer_f32);
+    var _wang = buffer_read(_b, buffer_f32);
+    var _wxs = buffer_read(_b, buffer_f32);
+    var _wbf = buffer_read(_b, buffer_u8);
     var _c = coop();
     if (!_c.peer_in_raid)
     {
@@ -231,7 +270,136 @@ function coop_puppet_on_state(_b)
         hp = _hp;
         coop_flags = _flags;
         aiming = (_flags & 1) != 0;
+        torch_on_general = (_flags & 4) != 0;
+        laser_on_general = (_flags & 8) != 0;
+        coop_w = [_wdx, _wdy, _wang, _wxs, _wbf != 0];
+        coop_puppet_set_arms(_arms_spr, _arms_img);
     }
+}
+
+// ---- partner's hands animation (display only: no healing/eating logic runs on the puppet) ----
+
+function coop_puppet_set_arms(_spr, _img)
+{
+    var _a = arms_holder;
+    if (_spr < 0 || !sprite_exists(_spr))
+    {
+        if (is_struct(_a))
+        {
+            _a.func_destroy();
+        }
+        arms_holder = undefined;
+        exit;
+    }
+    if (!is_struct(_a) || _a.destroyed)
+    {
+        _a = {
+            destroyed: false,
+            follow_id: id,
+            item_id: "no_item",
+            sprite_index: _spr,
+            image_index: _img,
+            image_speed: 0,
+            coop_view: true
+        };
+        _a.func_draw = method(_a, coop_arms_view_draw);
+        _a.func_step = method(_a, coop_arms_view_step);
+        _a.func_destroy = method(_a, coop_arms_view_destroy);
+        arms_holder = _a;
+    }
+    _a.sprite_index = _spr;
+    _a.image_index = _img;
+}
+
+function coop_arms_view_draw()
+{
+    if (destroyed || !instance_exists(follow_id) || !sprite_exists(sprite_index))
+    {
+        exit;
+    }
+    draw_sprite_ext(sprite_index, image_index, follow_id.x, follow_id.y, follow_id.image_xscale, 1, 0, c_white, 1);
+}
+
+// End Step of the puppet: the smoke puff of a cigarette, like class_player_arms.
+function coop_arms_view_step()
+{
+    if (destroyed || !instance_exists(follow_id) || sprite_index != s_arms_smoke || image_index <= 7 || image_index >= 12)
+    {
+        exit;
+    }
+    var _pc = obj_particles_controller;
+    if (!instance_exists(_pc))
+    {
+        exit;
+    }
+    with (follow_id)
+    {
+        if (image_xscale > 0)
+        {
+            part_type_direction(_pc.particles_type[41], -10, 10, 0, 0);
+        }
+        else
+        {
+            part_type_direction(_pc.particles_type[41], 170, 190, 0, 0);
+        }
+        part_emitter_region(_pc.particles_system[41], _pc.partciles_emitter[41], x + (2 * image_xscale), x + (2 * image_xscale), y + 2, y + 2, 0, 1);
+        part_emitter_burst(_pc.particles_system[41], _pc.partciles_emitter[41], _pc.particles_type[41], 1);
+    }
+}
+
+function coop_arms_view_destroy()
+{
+    if (destroyed)
+    {
+        exit;
+    }
+    destroyed = true;
+    with (follow_id)
+    {
+        if (arms_holder == other)
+        {
+            arms_holder = undefined;
+        }
+    }
+}
+
+// Partner started using an item: its sound at the puppet.
+function coop_puppet_on_arms(_b)
+{
+    var _item = buffer_read(_b, buffer_string);
+    var _p = coop_partner();
+    if (!instance_exists(_p) || !item_exists(_item))
+    {
+        exit;
+    }
+    var _snd = item_consumable_get_sound(_item);
+    if (audio_exists(_snd))
+    {
+        with (_p)
+        {
+            audio_emitter_position(emitter_walk, x, y, 0);
+            audio_play_sound_on(emitter_walk, _snd, false, 6);
+        }
+    }
+}
+
+// class_player_weapon End Step on the puppet: the weapon pose comes from the network instead of the local
+// camera (weapon inspection) and local recoil. true = handled.
+function coop_weapon_net_end_step(_w)
+{
+    var _p = _w.follow_id;
+    if (!instance_exists(_p) || _p.object_index != obj_player_puppet || !variable_instance_exists(_p, "coop_w"))
+    {
+        return false;
+    }
+    var _n = _p.coop_w;
+    _w.x = _p.x + _n[0];
+    _w.y = _p.y + _n[1];
+    _w.image_angle = _n[2];
+    _w.image_xscale = _n[3];
+    _w.image_yscale = 0.4;
+    _w.draw_before_follow = _n[4];
+    return true;
 }
 
 function coop_puppet_on_loadout(_b)
@@ -290,6 +458,21 @@ function coop_puppet_step()
     }
     depth = -y;
     player_step_update_building_exit();
+    if (torch_on_general || laser_on_general || coop_lights_were_on)
+    {
+        // torch/laser attachment positions on the partner's own weapon (mods come with the loadout)
+        coop_lights_were_on = torch_on_general || laser_on_general;
+        try
+        {
+            player_update_weapon_torch();
+            player_update_weapon_laser();
+        }
+        catch (_e)
+        {
+            torch_on_general = false;
+            laser_on_general = false;
+        }
+    }
 }
 
 // Name tag + hp bar above the partner (Draw event of obj_coop, world space).

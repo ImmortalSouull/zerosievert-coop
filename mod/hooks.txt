@@ -669,3 +669,37 @@ update_keyboard_input();
 update_keyboard_input();
 coop_test_input();
 <<<END
+
+### findreplace gml_Object_obj_player_parent_Step_2
+<<<FIND
+audio_listener_position(x, y, 0);
+<<<REPLACE
+if (object_index != obj_player_puppet)
+{
+    audio_listener_position(x, y, 0);
+}
+<<<END
+
+### findreplace gml_GlobalScript_class_player_weapon
+<<<FIND
+        if (!(instance_exists(follow_id) && instance_exists(obj_camera)))
+        {
+            exit;
+        }
+<<<REPLACE
+        if (!(instance_exists(follow_id) && instance_exists(obj_camera)))
+        {
+            exit;
+        }
+        if (coop_weapon_net_end_step(self))
+        {
+            exit;
+        }
+<<<END
+
+### findreplace gml_Object_obj_light_controller_Draw_0
+<<<FIND
+with (player_get_local())
+<<<REPLACE
+with (obj_player_parent)
+<<<END

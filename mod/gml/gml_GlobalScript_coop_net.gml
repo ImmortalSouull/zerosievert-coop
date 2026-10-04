@@ -307,6 +307,9 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_PSTATE:
             coop_puppet_on_state(_b);
             break;
+        case COOP_MSG_ARMS:
+            coop_puppet_on_arms(_b);
+            break;
         case COOP_MSG_PLOADOUT:
             coop_puppet_on_loadout(_b);
             break;

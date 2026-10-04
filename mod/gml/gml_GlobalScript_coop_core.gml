@@ -1,6 +1,6 @@
 // ZERO Sievert co-op: core state, command line, logging, test-mode helpers.
 
-#macro COOP_VERSION 3
+#macro COOP_VERSION 4
 #macro COOP_PORT 47777
 
 function coop()
