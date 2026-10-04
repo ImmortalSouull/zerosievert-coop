@@ -928,6 +928,15 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_MARK:
             coop_mark_on_message(_b);
             break;
+        case COOP_MSG_GIVE:
+            coop_give_on_message(_b);
+            break;
+        case COOP_MSG_NPC_CHECK:
+            coop_npc_on_check(_b);
+            break;
+        case COOP_MSG_NPC_MISSING:
+            coop_npc_on_missing(_b);
+            break;
         case COOP_MSG_SETTINGS:
             coop_settings_on_message(_b);
             break;

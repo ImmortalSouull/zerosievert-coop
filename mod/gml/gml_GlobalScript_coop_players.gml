@@ -336,6 +336,12 @@ function coop_puppet_on_state(_b)
         image_index = _img;
         var _list = coop_state_list();
         state = _list[clamp(_st, 0, array_length(_list) - 1)];
+        // took damage on their machine: the same white flash the game gives a hit player
+        if (_hp < coop_hp - 0.5 && !(_flags & 2))
+        {
+            hit_shader = "BULLET_HIT_SHADER_NORMAL";
+            alarm[3] = 3;
+        }
         coop_hp = _hp;
         coop_name = coop_peer_name(_slot);
         coop_hp_max = _hpm;

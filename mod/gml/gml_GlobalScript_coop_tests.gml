@@ -18,6 +18,7 @@ function coop_test_ext_step()
     coop_test_leave_step();
     coop_test_quad_step();
     coop_test_handoff_step();
+    coop_test_soak_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -556,6 +557,18 @@ function coop_test_quad_step()
     {
         _c.sim_ping = true;
     }
+    // slot 3 hands the host an item
+    if (_c.slot == 3 && (_t == 740 || _t == 741 || _t == 742))
+    {
+        var _h = coop_puppet_of(0);
+        if (instance_exists(_h))
+        {
+            obj_player.x = _h.x + 16;
+            obj_player.y = _h.y;
+        }
+        if (_t == 741) _c.sim_give = true;
+        if (_t == 742) _c.sim_give_ok = true;
+    }
     if (_t == 1000)
     {
         coop_log("quad: done");
@@ -667,5 +680,82 @@ function coop_test_handoff_step()
     if (_k == 720)
     {
         coop_log("handoff: done");
+    }
+}
+
+// -coop_scenario soak (tools/soak.py): a long session - everyone walks around, slot 1 keeps shooting NPCs,
+// everyone pings now and then; the NPC consistency check runs as usual.
+function coop_test_soak_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "soak" || !coop_shared_ready() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "st")) _c.st = 0;
+    _c.st++;
+    var _t = _c.st;
+    if (_t mod 3600 == 0)
+    {
+        coop_log("soak: minute ", _t div 3600, " players=", coop_player_count(), " puppets=", array_length(coop_puppets()), " known npcs=", ds_map_size(_c.npc_by_nid));
+    }
+    if (_t mod 1500 == 300 + max(0, _c.slot) * 60)
+    {
+        _c.sim_ping = true;
+    }
+    // walk a slow circle around the start point (each player its own)
+    if (!variable_struct_exists(_c, "so_x"))
+    {
+        _c.so_x = obj_player.x;
+        _c.so_y = obj_player.y;
+    }
+    if (_c.slot != 1)
+    {
+        var _a = _t * 0.6 + max(0, _c.slot) * 90;
+        var _r = 40 + max(0, _c.slot) * 12;
+        with (obj_player)
+        {
+            var _nx = _c.so_x + lengthdir_x(_r, _a);
+            var _ny = _c.so_y + lengthdir_y(_r, _a);
+            if (!place_meeting(_nx, _ny, obj_solid))
+            {
+                x = _nx;
+                y = _ny;
+            }
+        }
+        exit;
+    }
+    // slot 1: hunt NPCs (two shots a second)
+    if (_t mod 30 != 0)
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "so_tg") || !instance_exists(_c.so_tg) || _c.so_tg.hp <= 0)
+    {
+        instance_activate_object(obj_npc_parent);
+        var _best = -4;
+        var _bd = infinity;
+        with (obj_npc_parent)
+        {
+            if (hp > 0 && (coop_npc_is_replica() || coop_is_world_owner()) && object_is_ancestor(object_index, obj_npc_human_parent))
+            {
+                var _d = point_distance(x, y, obj_player.x, obj_player.y);
+                if (_d < _bd) { _bd = _d; _best = id; }
+            }
+        }
+        _c.so_tg = _best;
+    }
+    var _tg = _c.so_tg;
+    if (instance_exists(_tg))
+    {
+        obj_player.x = _tg.x - 50;
+        obj_player.y = _tg.y;
+        with (obj_player)
+        {
+            if (item_exists(arma_now) && item_get_category(arma_now) == "weapon")
+            {
+                scr_shoot(point_direction(x, y, _tg.x, _tg.y), 1, item_weapon_get_damage(arma_now) * 2, 0);
+            }
+        }
     }
 }

@@ -89,6 +89,7 @@ function coop_draw_gui()
             coop_puppet_draw_tag_gui();
         }
         coop_ping_draw_gui();
+        coop_give_draw_gui();
         coop_down_draw_gui();
     }
     else if (_c.role == "none" && (room == r_hub || room == r_menu) && !(variable_struct_exists(_c, "panel") && _c.panel))

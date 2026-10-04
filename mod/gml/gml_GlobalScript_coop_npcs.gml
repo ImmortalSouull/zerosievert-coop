@@ -543,3 +543,123 @@ function coop_npc_on_destroyed()
         coop_report_error(_e);
     }
 }
+
+// ---- consistency check (every 30 s): the owner's list of live NPC ids vs every replica's ----
+
+#macro COOP_MSG_NPC_CHECK 36
+#macro COOP_MSG_NPC_MISSING 37
+
+function coop_npc_check_step()
+{
+    var _c = coop();
+    if (!coop_is_world_owner() || _c.frame mod 1800 != 900)
+    {
+        exit;
+    }
+    var _map = _c.npc_by_nid;
+    var _n = ds_map_size(_map);
+    var _b = coop_msg_begin(COOP_MSG_NPC_CHECK);
+    buffer_write(_b, buffer_u16, _n);
+    var _k = ds_map_find_first(_map);
+    while (_k != undefined)
+    {
+        buffer_write(_b, buffer_u32, _k);
+        _k = ds_map_find_next(_map, _k);
+    }
+    coop_msg_send(true);
+}
+
+function coop_npc_on_check(_b)
+{
+    var _c = coop();
+    var _n = buffer_read(_b, buffer_u16);
+    if (!coop_is_world_replica() || _c.msg_from != coop_raid_owner())
+    {
+        exit;
+    }
+    var _owner = ds_map_create();
+    for (var _i = 0; _i < _n; _i++)
+    {
+        ds_map_set(_owner, buffer_read(_b, buffer_u32), true);
+    }
+    var _map = _c.npc_by_nid;
+    // extras: replicas the owner no longer has (a missed NPC_DIE/GONE)
+    var _extra = 0;
+    var _k = ds_map_find_first(_map);
+    var _drop = [];
+    while (_k != undefined)
+    {
+        if (!ds_map_exists(_owner, _k))
+        {
+            array_push(_drop, _k);
+        }
+        _k = ds_map_find_next(_map, _k);
+    }
+    for (var _i = 0; _i < array_length(_drop); _i++)
+    {
+        var _inst = ds_map_find_value(_map, _drop[_i]);
+        ds_map_delete(_map, _drop[_i]);
+        instance_activate_object(_inst);
+        if (instance_exists(_inst))
+        {
+            instance_destroy(_inst, false);
+        }
+        _extra++;
+    }
+    // missing: NPCs the owner has and we never got (ask for them)
+    var _missing = [];
+    _k = ds_map_find_first(_owner);
+    while (_k != undefined)
+    {
+        if (!ds_map_exists(_map, _k))
+        {
+            array_push(_missing, _k);
+        }
+        _k = ds_map_find_next(_owner, _k);
+    }
+    ds_map_destroy(_owner);
+    if (_extra == 0 && array_length(_missing) == 0)
+    {
+        if (_c.test_mode)
+        {
+            coop_log("npc check ok: ", _n);
+        }
+        exit;
+    }
+    coop_log("NPC DESYNC fixed: owner ", _n, ", removed ", _extra, ", missing ", array_length(_missing));
+    if (array_length(_missing) > 0)
+    {
+        var _mb = coop_msg_begin(COOP_MSG_NPC_MISSING);
+        buffer_write(_mb, buffer_u16, array_length(_missing));
+        for (var _i = 0; _i < array_length(_missing); _i++)
+        {
+            buffer_write(_mb, buffer_u32, _missing[_i]);
+        }
+        coop_msg_send_to(coop_raid_owner(), true);
+    }
+}
+
+// Owner: a replica asks for NPCs it never got.
+function coop_npc_on_missing(_b)
+{
+    var _c = coop();
+    var _n = buffer_read(_b, buffer_u16);
+    if (!coop_is_world_owner())
+    {
+        exit;
+    }
+    _c.msg_dest = _c.msg_from;
+    for (var _i = 0; _i < _n; _i++)
+    {
+        var _inst = ds_map_find_value(_c.npc_by_nid, buffer_read(_b, buffer_u32));
+        if (_inst != undefined)
+        {
+            instance_activate_object(_inst);
+            if (instance_exists(_inst))
+            {
+                coop_npc_send_spawn(_inst);
+            }
+        }
+    }
+    _c.msg_dest = COOP_ALL;
+}

@@ -109,6 +109,7 @@ SCENARIOS = [
       checks=[(k, r"players=4 puppets=3", 1) for k in "ABCD"] + [("A", r"maps identical with partner", 3),
               ("A", r"revived partner .* slot 2", 1), ("B", r"kill credited", 1)]
               + [(k, r"ping mark from slot", 3) for k in "ABCD"],
+      custom=lambda logs: None if (re.search(r"received .* from slot 3", logs["A"]) and any(re.search(r"gave .* to slot 0", logs[k]) for k in "BCD")) else "item give slot 3 -> host failed",
       timeout=420, minutes=7, players=4),
     S("handoff", "-coop_autoraid 1 -coop_scenario handoff -coop_fps 60", "-coop_scenario handoff -coop_fps 60",
       done=[(k, r"handoff: done") for k in "BCD"],
