@@ -9,7 +9,7 @@
 function coop_partner_hit_credit_inner(_bull, _npc)
 {
     var _c = coop();
-    if (_c.role != "host" || !coop_shared_ready() || !instance_exists(_npc))
+    if (!coop_is_world_owner() || !instance_exists(_npc))
     {
         exit;
     }

@@ -9,13 +9,13 @@
 function coop_world_slave()
 {
     var _c = coop();
-    return _c.role == "guest" && _c.connected && _c.peer_in_raid && coop_in_raid();
+    return coop_is_world_replica();
 }
 
 function coop_world_step()
 {
     var _c = coop();
-    if (_c.role != "host" || !coop_shared_ready() || !instance_exists(obj_light_controller))
+    if (!coop_is_world_owner() || !instance_exists(obj_light_controller))
     {
         exit;
     }
@@ -53,7 +53,7 @@ function coop_world_send_weather()
 function coop_world_sync_peer()
 {
     var _c = coop();
-    if (_c.role != "host" || !instance_exists(obj_light_controller))
+    if (!coop_is_world_owner() || !instance_exists(obj_light_controller))
     {
         exit;
     }
@@ -99,7 +99,7 @@ function coop_world_on_weather(_b)
 function coop_world_on_emission_stage()
 {
     var _c = coop();
-    if (_c.role == "host" && coop_shared_ready() && global.state_emission_now == 0)
+    if (coop_is_world_owner() && global.state_emission_now == 0)
     {
         coop_world_send_emission();
     }
@@ -137,5 +137,6 @@ function coop_world_on_emission(_b)
 function coop_world_guest_skips_roll()
 {
     var _c = coop();
-    return _c.role == "guest" && _c.connected && coop_in_raid() && (_c.peer_in_raid || _c.peer_loc == 2);
+    // replicas never roll world events; while the maps are still loading, the session host's raid decides
+    return coop_is_world_replica() || (_c.role == "guest" && _c.connected && coop_in_raid() && !coop_shared_ready() && _c.peer_loc == 2);
 }

@@ -70,7 +70,7 @@ function coop_npc_skip_alarm()
 function coop_npc_host_step()
 {
     var _c = coop();
-    if (_c.role != "host" || !coop_shared_ready())
+    if (!coop_is_world_owner())
     {
         exit;
     }
@@ -222,7 +222,7 @@ function coop_npc_send_spawn(_inst)
 function coop_npc_on_destroyed_inner()
 {
     var _c = coop();
-    if (_c.role != "host" || !_c.connected || !variable_instance_exists(id, "coop_nid"))
+    if (!coop_is_world_owner() || !variable_instance_exists(id, "coop_nid"))
     {
         exit;
     }
@@ -291,6 +291,34 @@ function coop_npc_guest_readopt()
     {
         coop_log("re-adopted ", _n, " NPCs after reconnecting");
     }
+}
+
+// We became the raid owner: replicas run on our AI now and keep their ids, so the others' replicas follow us.
+function coop_npc_take_over()
+{
+    var _c = coop();
+    var _max = 0;
+    var _n = 0;
+    instance_activate_object(obj_npc_parent);
+    with (obj_npc_parent)
+    {
+        if (variable_instance_exists(id, "coop_nid"))
+        {
+            _max = max(_max, coop_nid);
+            coop_spawn_sent = true; // the others already know it
+            if (variable_instance_exists(id, "coop_replica") && coop_replica)
+            {
+                coop_replica = false;
+                if ((is_string(state) && state == "") || is_undefined(state))
+                {
+                    state = variable_instance_exists(id, "coop_init_state") ? coop_init_state : state;
+                }
+                _n++;
+            }
+        }
+    }
+    _c.npc_next_nid = max(_c.npc_next_nid, _max + 1);
+    coop_log("took over ", _n, " NPCs, next id ", _c.npc_next_nid);
 }
 
 function coop_npc_on_spawn(_b)

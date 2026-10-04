@@ -30,7 +30,7 @@ function coop_grenade_step()
         }
         coop_grenade_pending = false;
         // Guest only sends its own throws; NPC grenades come from the host.
-        if (_c.role == "guest" && !thrown_by_player)
+        if (coop_is_world_replica() && !thrown_by_player)
         {
             continue;
         }

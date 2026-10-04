@@ -189,15 +189,11 @@ function coop_peers_refresh()
         _c.peer_hub_ready = (_host_like.loc == 1);
         _c.ping = _host_like.ping;
     }
-    if (_c.role == "guest")
+    // anybody else in our raid (the host may have extracted while other players stay)
+    _c.peer_in_raid = _any_in;
+    _c.peer_ready = _any_ready;
+    if (_c.role == "host")
     {
-        _c.peer_in_raid = (_host_like != undefined) && _host_like.in_raid;
-        _c.peer_ready = (_host_like != undefined) && _host_like.ready;
-    }
-    else
-    {
-        _c.peer_in_raid = _any_in;
-        _c.peer_ready = _any_ready;
         var _all_hub = array_length(_r) > 0;
         for (var _i = 0; _i < array_length(_r); _i++)
         {
@@ -721,7 +717,7 @@ function coop_net_deliver(_p, _b, _size)
             }
             exit;
         }
-        if (_to != 0 && coop_net_relayable(_type))
+        if (_to != 0 && (_to != COOP_ALL || coop_net_relayable(_type)))
         {
             coop_net_relay(_p.slot, _to, _b, _size, (buffer_peek(_b, 0, buffer_u8) == 1) || coop_net_reliable_type(_type));
         }
@@ -1162,10 +1158,10 @@ function coop_net_on_raid_state(_from, _b)
         coop_puppet_remove_slot(_from);
         if (_was)
         {
-            if (_from == 0 && _c.role == "guest")
+            coop_notify(coop_t(_p.name + " left the raid", _p.name + " покинул рейд"));
+            if (!_c.peer_in_raid && coop_in_raid())
             {
-                coop_npc_guest_release();
-                coop_notify(coop_t(_p.name + " left the raid", _p.name + " покинул рейд"));
+                coop_npc_guest_release(); // nobody else is left: our NPCs run on our own AI
             }
             coop_down_on_player_gone();
         }

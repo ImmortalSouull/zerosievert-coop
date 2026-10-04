@@ -45,11 +45,6 @@ function coop_panel_step()
     {
         exit;
     }
-    var _upd = coop_update_text();
-    if (_upd != "")
-    {
-        coop_text_outlined(240, 214, _upd, c_yellow);
-    }
     if (_c.ip_edit)
     {
         _c.last_ip = string_copy(string_lettersdigits(string_replace_all(keyboard_string, ".", "x")), 1, 40);
@@ -73,7 +68,7 @@ function coop_panel_step()
         }
         exit;
     }
-    if (keyboard_check_pressed(vk_escape))
+    if (keyboard_check_pressed(vk_escape) || coop_pad_pressed(gp_face2))
     {
         _c.panel = false;
         keyboard_clear(vk_escape);
@@ -83,9 +78,9 @@ function coop_panel_step()
     var _nb = array_length(_btns);
     if (!variable_struct_exists(_c, "panel_sel")) _c.panel_sel = 0;
     _c.panel_sel = clamp(_c.panel_sel, 0, _nb - 1);
-    if (keyboard_check_pressed(vk_up)) _c.panel_sel = (_c.panel_sel - 1 + _nb) mod _nb;
-    if (keyboard_check_pressed(vk_down)) _c.panel_sel = (_c.panel_sel + 1) mod _nb;
-    if (keyboard_check_pressed(vk_enter))
+    if (keyboard_check_pressed(vk_up) || coop_pad_pressed(gp_padu)) _c.panel_sel = (_c.panel_sel - 1 + _nb) mod _nb;
+    if (keyboard_check_pressed(vk_down) || coop_pad_pressed(gp_padd)) _c.panel_sel = (_c.panel_sel + 1) mod _nb;
+    if (keyboard_check_pressed(vk_enter) || coop_pad_pressed(gp_face1))
     {
         coop_panel_click(_btns[_c.panel_sel].id);
         exit;
@@ -188,6 +183,11 @@ function coop_panel_draw()
         }
         coop_text_outlined(240, 94, _list, c_lime);
     }
+    var _upd = coop_update_text();
+    if (_upd != "")
+    {
+        coop_text_outlined(240, 214, _upd, c_yellow);
+    }
     if (_c.ip_edit)
     {
         coop_text_outlined(240, 110, coop_t("Host IP (Enter to connect, Esc back):", "IP хоста (Enter - подключиться, Esc - назад):"), c_white);
@@ -250,4 +250,18 @@ function coop_panel_begin_step()
     {
         obj_player.shooting = true;
     }
+}
+
+// A gamepad button pressed this step on any connected gamepad.
+function coop_pad_pressed(_btn)
+{
+    var _n = gamepad_get_device_count();
+    for (var _d = 0; _d < _n; _d++)
+    {
+        if (gamepad_is_connected(_d) && gamepad_button_check_pressed(_d, _btn))
+        {
+            return true;
+        }
+    }
+    return false;
 }

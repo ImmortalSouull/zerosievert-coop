@@ -102,7 +102,7 @@ function coop_autopilot_step()
     }
     if (_c.autoraid >= 0 && !_c.autoraid_done && _c.role == "host" && _c.connected && is_in_hub() && instance_exists(obj_player) && _c.ap_timer > 120)
     {
-        if (variable_struct_exists(_c, "peer_hub_ready") && _c.peer_hub_ready)
+        if (variable_struct_exists(_c, "peer_hub_ready") && _c.peer_hub_ready && coop_player_count() >= (variable_struct_exists(_c, "expect") ? _c.expect : 2))
         {
             _c.autoraid_done = true;
             coop_log("autopilot: starting raid ", _c.autoraid);
@@ -373,13 +373,14 @@ function coop_on_join_request(_from)
     coop_log("join request of slot ", _from, " accepted: map ", obj_map_generator.area, " seed ", _c.gen_seed);
 }
 
-// Host: a guest's copy of our raid finished generating (fresh start or late join): stream everything to it.
+// Raid owner: another player's copy of our raid finished generating (fresh start or late join): stream
+// everything to it.
 function coop_on_peer_ready(_slot)
 {
     var _c = coop();
-    if (_c.role != "host" || !coop_raid_ready())
+    if (!coop_raid_ready() || coop_raid_owner() != max(0, _c.slot))
     {
-        exit;
+        exit; // the raid owner streams the world to newcomers
     }
     instance_activate_object(obj_npc_parent);
     with (obj_npc_parent)

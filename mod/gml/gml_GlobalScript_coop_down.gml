@@ -398,7 +398,8 @@ function coop_revive_step()
         _r.menu = false;
         exit;
     }
-    var _e = keyboard_check_pressed(ord("E"));
+    // E, or the gamepad's interact button
+    var _e = keyboard_check_pressed(ord("E")) || (instance_exists(obj_gamepad) && !obj_gamepad.last_input_keyboard && obj_gamepad.action[6].pressed);
     if (variable_struct_exists(_c, "sim_e") && _c.sim_e)
     {
         _c.sim_e = false; // test scenario input
@@ -419,9 +420,9 @@ function coop_revive_step()
     if (_r.menu)
     {
         var _n = array_length(_r.options);
-        if (mouse_wheel_up() || keyboard_check_pressed(vk_up)) _r.sel = (_r.sel - 1 + _n) mod _n;
-        if (mouse_wheel_down() || keyboard_check_pressed(vk_down)) _r.sel = (_r.sel + 1) mod _n;
-        if (keyboard_check_pressed(vk_backspace) || keyboard_check_pressed(vk_escape))
+        if (mouse_wheel_up() || keyboard_check_pressed(vk_up) || coop_pad_pressed(gp_padu)) _r.sel = (_r.sel - 1 + _n) mod _n;
+        if (mouse_wheel_down() || keyboard_check_pressed(vk_down) || coop_pad_pressed(gp_padd)) _r.sel = (_r.sel + 1) mod _n;
+        if (keyboard_check_pressed(vk_backspace) || keyboard_check_pressed(vk_escape) || coop_pad_pressed(gp_face2))
         {
             _r.menu = false;
             exit;

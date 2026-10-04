@@ -10,6 +10,7 @@ coop_try(coop_pending_raid_step);
 coop_try(coop_players_step);
 coop_try(coop_down_step);
 coop_try(coop_ping_step);
+coop_try(coop_owner_step);
 coop_try(coop_npc_host_step);
 coop_try(coop_bullets_scan_step);
 coop_try(coop_chest_step);

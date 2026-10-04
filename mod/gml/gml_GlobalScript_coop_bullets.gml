@@ -25,7 +25,7 @@ function coop_on_bullet_spawned_inner(_bull)
         {
             _kind = 0;
         }
-        else if (_c.role == "host" && object_is_ancestor(_shooter.object_index, obj_npc_parent))
+        else if (coop_is_world_owner() && object_is_ancestor(_shooter.object_index, obj_npc_parent))
         {
             _kind = 1;
             _ref = coop_npc_get_nid(_shooter);
@@ -201,7 +201,7 @@ function coop_var(_inst, _name, _default)
 function coop_bullets_scan_step()
 {
     var _c = coop();
-    if (_c.role != "host" || !coop_shared_ready())
+    if (!coop_is_world_owner())
     {
         exit;
     }

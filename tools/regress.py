@@ -43,6 +43,24 @@ def livechest_ok(logs):
     return None
 
 
+def handoff_ok(logs):
+    """Whoever got slot 2 killed NPCs after the host left and got the credit from the new owner (slot 1)."""
+    by_slot = {}
+    for k in "ABCD":
+        m = re.search(r"handoff: t=\d+ slot (\d)", logs[k])
+        if m:
+            by_slot[int(m.group(1))] = k
+    if 1 not in by_slot or 2 not in by_slot:
+        return f"slots seen: {by_slot}"
+    if not re.search(r"raid owner: slot 1 \(me\)", logs[by_slot[1]]) or not re.search(r"took over \d+ NPCs", logs[by_slot[1]]):
+        return "slot 1 did not take the raid over"
+    if not re.search(r"player slot 2 killed", logs[by_slot[1]]):
+        return "the new owner credited no kill to slot 2"
+    if not re.search(r"kill credited", logs[by_slot[2]]):
+        return "slot 2 got no kill credit"
+    return None
+
+
 def fps_ok(logs):
     for k in "AB":
         m = re.findall(r"fpstest: 300 ticks real_s=([\d.]+)", logs[k])
@@ -92,6 +110,10 @@ SCENARIOS = [
               ("A", r"revived partner .* slot 2", 1), ("B", r"kill credited", 1)]
               + [(k, r"ping mark from slot", 3) for k in "ABCD"],
       timeout=420, minutes=7, players=4),
+    S("handoff", "-coop_autoraid 1 -coop_scenario handoff -coop_fps 60", "-coop_scenario handoff -coop_fps 60",
+      done=[(k, r"handoff: done") for k in "BCD"],
+      checks=[(k, r"raid owner: slot 1", 1) for k in "BCD"] + [("A", r"handoff: host leaves", 1)], custom=handoff_ok,
+      timeout=480, minutes=8, players=4),
     S("tele", "-coop_autoraid 1", "-coop_scenario tele",
       done=[("B", r"tele #20 ")], checks=[], timeout=200),
 ]

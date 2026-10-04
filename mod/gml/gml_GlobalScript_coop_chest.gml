@@ -323,7 +323,7 @@ function coop_chest_announce_pending()
         }
         // Dropped bags exist only on the dropper's side: both announce them. Corpses and air drops are created on
         // both sides (or only on the host): the host's content is the truth.
-        if (_inst.tipo != "discard" && _c.role != "host")
+        if (_inst.tipo != "discard" && !coop_is_world_owner())
         {
             continue;
         }

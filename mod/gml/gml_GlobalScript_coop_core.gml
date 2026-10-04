@@ -100,6 +100,9 @@ function coop_parse_params()
             case "-coop_autoraid":
                 _c.autoraid = real(_v);
                 break;
+            case "-coop_expect":
+                _c.expect = real(_v); // test: the autopilot starts the raid only with this many players
+                break;
             case "-coop_bot":
                 _c.bot = true;
                 break;
@@ -173,11 +176,72 @@ function coop_active()
     return _c.role != "none" && _c.connected;
 }
 
-// Guest in a shared raid: NPCs are replicas driven by the host.
-function coop_guest_in_raid()
+// The raid owner simulates the shared world (NPC AI, time, weather, emissions, kill credit): the player with
+// the lowest slot among those in this raid - the host while it is there, otherwise the next player, so the
+// raid keeps one world when the host extracts.
+function coop_raid_owner()
 {
     var _c = coop();
-    return _c.role == "guest" && coop_shared_ready();
+    if (!coop_in_raid())
+    {
+        return -1;
+    }
+    var _best = (instance_exists(obj_player) || _c.local_paused) ? max(0, _c.slot) : COOP_MAX_PLAYERS;
+    var _ps = coop_peers();
+    for (var _i = 0; _i < COOP_MAX_PLAYERS; _i++)
+    {
+        var _p = _ps[_i];
+        if (_i != _c.slot && is_struct(_p) && _p.connected && _p.in_raid && _i < _best)
+        {
+            _best = _i;
+        }
+    }
+    return (_best >= COOP_MAX_PLAYERS) ? -1 : _best;
+}
+
+function coop_is_world_owner()
+{
+    return coop_shared_ready() && coop_raid_owner() == max(0, coop().slot);
+}
+
+// Someone else owns the shared raid we are in: our NPCs are replicas driven by them.
+function coop_is_world_replica()
+{
+    return coop_shared_ready() && coop_raid_owner() != max(0, coop().slot);
+}
+
+// Older name.
+function coop_guest_in_raid()
+{
+    return coop_is_world_replica();
+}
+
+// obj_coop Step: when the owner changes (the host extracted), the new owner takes the NPCs over.
+function coop_owner_step()
+{
+    var _c = coop();
+    var _o = coop_shared_ready() ? coop_raid_owner() : -1;
+    if (!variable_struct_exists(_c, "owner_last"))
+    {
+        _c.owner_last = -1;
+    }
+    if (_o == _c.owner_last)
+    {
+        exit;
+    }
+    var _was = _c.owner_last;
+    _c.owner_last = _o;
+    if (_o < 0)
+    {
+        exit;
+    }
+    coop_log("raid owner: slot ", _o, (_o == max(0, _c.slot)) ? " (me)" : "", " (was ", _was, ")");
+    if (_o == max(0, _c.slot) && _was >= 0)
+    {
+        // we drive the world from now on: our replicas become real NPCs, keep their ids
+        coop_npc_take_over();
+        coop_notify(coop_t("You now run the raid's world", "Теперь мир рейда считается у вас"));
+    }
 }
 
 function coop_in_raid()
@@ -191,7 +255,7 @@ function coop_raid_ready()
     return coop_in_raid() && obj_map_generator.state == 21;
 }
 
-// Both players are in the same raid and both maps are finished.
+// We and at least one other player are in the same raid and the maps are finished.
 function coop_shared_ready()
 {
     var _c = coop();
@@ -270,9 +334,9 @@ function coop_after_culling()
     if (_c.connected)
     {
         instance_activate_object(obj_player_parent);
-        if (_c.role == "host")
+        if (coop_raid_owner() == max(0, _c.slot))
         {
-            // the world around every other player keeps running on the host
+            // the world around every other player keeps running on the raid owner
             with (obj_player_puppet)
             {
                 instance_activate_region(x - 480, y - 270, 960, 540, true);

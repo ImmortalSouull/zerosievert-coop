@@ -17,6 +17,7 @@ function coop_test_ext_step()
     coop_test_tele_step();
     coop_test_leave_step();
     coop_test_quad_step();
+    coop_test_handoff_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -558,5 +559,113 @@ function coop_test_quad_step()
     if (_t == 1000)
     {
         coop_log("quad: done");
+    }
+}
+
+// -coop_scenario handoff (tools/test4.sh): the host extracts while the three guests stay; slot 1 becomes the raid
+// owner and keeps the world shared; slot 2 kills NPCs and gets the credit from the new owner.
+function coop_test_handoff_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "handoff")
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "ht")) _c.ht = 0;
+    if (_c.slot == 0)
+    {
+        if (instance_exists(obj_exit_screen) && obj_exit_screen.can_go_hub && !variable_struct_exists(_c, "ho_gone"))
+        {
+            _c.ho_gone = true;
+            coop_log("handoff: host leaves the extraction screen");
+            instance_activate_all();
+            obj_controller.disattiva = false;
+            __uiGlobal().__defaultOnion.Clear();
+            room_goto(r_hub);
+        }
+        if (coop_shared_ready() && instance_exists(obj_player))
+        {
+            _c.ht++;
+            if (_c.ht >= 300 && _c.ht mod 60 == 0)
+            {
+                if (!variable_struct_exists(_c, "ho_x"))
+                {
+                    instance_activate_object(obj_extraction_point); // found from the next step on
+                    with (obj_extraction_point) { _c.ho_x = x; _c.ho_y = y; }
+                    if (variable_struct_exists(_c, "ho_x")) coop_log("handoff: host walks to the extraction at ", _c.ho_x, ",", _c.ho_y);
+                }
+                if (variable_struct_exists(_c, "ho_x"))
+                {
+                    obj_player.x = _c.ho_x + 8;
+                    obj_player.y = _c.ho_y + 8;
+                }
+            }
+        }
+        exit;
+    }
+    if (!coop_in_raid() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    _c.ht++;
+    var _t = _c.ht;
+    var _hp0 = coop_peer(0);
+    var _host_gone = !is_struct(_hp0) || !_hp0.in_raid;
+    if (_t mod 300 == 0)
+    {
+        var _r = 0;
+        var _n = 0;
+        with (obj_npc_parent) { _n++; if (coop_npc_is_replica()) _r++; }
+        coop_log("handoff: t=", _t, " slot ", _c.slot, " host_gone=", _host_gone, " owner=", coop_raid_owner(), " shared=", coop_shared_ready(), " npcs=", _n, " replicas=", _r, " puppets=", array_length(coop_puppets()));
+    }
+    if (!_host_gone)
+    {
+        _c.h_seen = true;
+        exit;
+    }
+    if (!variable_struct_exists(_c, "h_seen"))
+    {
+        exit; // the host has not shown up in the raid yet
+    }
+    if (!variable_struct_exists(_c, "h_gone_t"))
+    {
+        _c.h_gone_t = _t;
+        coop_log("handoff: host gone at t=", _t);
+    }
+    var _k = _t - _c.h_gone_t;
+    if (_c.slot == 2 && _k >= 180 && _k <= 600 && _k mod 12 == 0)
+    {
+        if (!variable_struct_exists(_c, "h_tg") || !instance_exists(_c.h_tg) || _c.h_tg.hp <= 0)
+        {
+            instance_activate_object(obj_npc_parent);
+            var _best = -4;
+            var _bd = infinity;
+            with (obj_npc_parent)
+            {
+                if (coop_npc_is_replica() && hp > 0 && object_is_ancestor(object_index, obj_npc_human_parent))
+                {
+                    var _d = point_distance(x, y, obj_player.x, obj_player.y);
+                    if (_d < _bd) { _bd = _d; _best = id; }
+                }
+            }
+            _c.h_tg = _best;
+        }
+        var _tg = _c.h_tg;
+        if (instance_exists(_tg))
+        {
+            obj_player.x = _tg.x - 50;
+            obj_player.y = _tg.y;
+            with (obj_player)
+            {
+                if (item_exists(arma_now) && item_get_category(arma_now) == "weapon")
+                {
+                    scr_shoot(point_direction(x, y, _tg.x, _tg.y), 1, item_weapon_get_damage(arma_now) * 3, 0);
+                }
+            }
+        }
+    }
+    if (_k == 720)
+    {
+        coop_log("handoff: done");
     }
 }
