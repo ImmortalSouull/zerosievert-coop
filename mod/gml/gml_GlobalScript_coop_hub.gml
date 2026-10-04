@@ -10,9 +10,11 @@
 #macro COOP_MSG_VISIT 18
 #macro COOP_BUNKER_Y 1146
 
+// In the hub with our character, settled (not on the way to a raid: creating a character then fails half way).
 function coop_hub_ready()
 {
-    return is_in_hub() && instance_exists(obj_player);
+    var _c = coop();
+    return is_in_hub() && instance_exists(obj_player) && variable_struct_exists(_c, "hub_frames") && _c.hub_frames >= 30 && !_c.hub_leaving;
 }
 
 // The player in _slot is in their hub while we are in ours: shown in the lobby.
@@ -297,6 +299,23 @@ function coop_visit_blocks()
 function coop_hub_step()
 {
     var _c = coop();
+    if (!variable_struct_exists(_c, "hub_frames"))
+    {
+        _c.hub_frames = 0;
+        _c.hub_leaving = false;
+    }
+    if (is_in_hub() && instance_exists(obj_player) && !_c.hub_leaving)
+    {
+        _c.hub_frames++;
+    }
+    else
+    {
+        _c.hub_frames = 0;
+    }
+    if (!is_in_hub())
+    {
+        _c.hub_leaving = false;
+    }
     var _v = coop_visit();
     if (_v.slot >= 0)
     {
@@ -369,4 +388,17 @@ function coop_is_base_decor(_i)
         }
     }
     return _r;
+}
+
+// go_to_map (hook): on the way out of the hub - our modules back, no new puppets until the next room.
+function coop_hub_leave()
+{
+    var _c = coop();
+    _c.hub_leaving = true;
+    _c.hub_frames = 0;
+    coop_visit_end("raid");
+    if (is_in_hub())
+    {
+        coop_puppet_remove_all();
+    }
 }

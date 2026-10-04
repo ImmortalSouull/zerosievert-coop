@@ -18,6 +18,7 @@ function coop_test_ext_step()
     coop_test_leave_step();
     coop_test_quad_step();
     coop_test_handoff_step();
+    coop_test_ownerjoin_step();
     coop_test_soak_step();
     coop_test_menus_step();
     coop_test_treefade_step();
@@ -582,7 +583,7 @@ function coop_test_quad_step()
 function coop_test_handoff_step()
 {
     var _c = coop();
-    if (!_c.test_mode || _c.scenario != "handoff")
+    if (!_c.test_mode || !(_c.scenario == "handoff" || (_c.scenario == "ownerjoin" && _c.slot <= 1)))
     {
         exit;
     }
@@ -994,5 +995,44 @@ function coop_test_lobby2_step(_t)
         coop_base_apply(_c.lobby_orig);
         coop_base_rebuild();
         coop_log("lobby2: done");
+    }
+}
+
+// -coop_scenario ownerjoin (3 players): host and slot 1 raid (the handoff scenario: the host extracts),
+// slot 2 stays in the hub and joins the raid slot 1 owns after the host left.
+function coop_test_ownerjoin_step()
+{
+    var _c = coop();
+    if (_c.scenario != "ownerjoin" || _c.slot != 2)
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "oj_t")) _c.oj_t = 0;
+    _c.oj_t++;
+    var _t = _c.oj_t;
+    if (!variable_struct_exists(_c, "oj_asked"))
+    {
+        if (_t mod 120 == 0)
+        {
+            var _p0 = coop_peer(0);
+            var _p1 = coop_peer(1);
+            coop_log("ownerjoin: t=", _t, " target=", coop_join_target(), " host loc=", is_struct(_p0) ? _p0.loc : -1, " slot1 loc=", is_struct(_p1) ? _p1.loc : -1);
+            // once the host is back in its hub (and not before it has been in the raid)
+            if (is_struct(_p0) && _p0.loc == 2) _c.oj_host_raided = true;
+            if (variable_struct_exists(_c, "oj_host_raided") && coop_join_target() == 1)
+            {
+                _c.oj_asked = true;
+                coop_panel_click("join_raid");
+            }
+        }
+        exit;
+    }
+    if (coop_shared_ready() && instance_exists(obj_player))
+    {
+        if (!variable_struct_exists(_c, "oj_in")) _c.oj_in = _t;
+        if (_t - _c.oj_in == 600)
+        {
+            coop_log("ownerjoin: done owner=", coop_raid_owner(), " puppets=", array_length(coop_puppets()));
+        }
     }
 }

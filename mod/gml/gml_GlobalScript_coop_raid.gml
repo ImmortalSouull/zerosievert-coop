@@ -33,6 +33,11 @@ function coop_on_raid_start(_map, _seed)
     {
         exit;
     }
+    if (_c.test_mode && _c.scenario == "ownerjoin" && _c.slot == 2 && !variable_struct_exists(_c, "oj_asked"))
+    {
+        coop_log("ownerjoin: stays in the hub");
+        exit;
+    }
     coop_log("host started raid map ", _map, " seed ", _seed);
     _c.pending_raid = { map: _map, seed: _seed, time: current_time };
     if (is_in_hub() && instance_exists(obj_player) && player_state_is(0, scr_player_state_move))
@@ -54,6 +59,8 @@ function coop_on_room_start()
     coop_npc_reset_room();
     if (room == room1)
     {
+        // what this raid is generated with, for players joining it from us later (coop_on_join_request)
+        _c.raid_settings_json = json_stringify(variable_struct_exists(_c, "host_settings") ? _c.host_settings : {});
         coop_down_reset();
         coop_chest_reset_room();
         _c.my_fp = undefined;
@@ -363,29 +370,72 @@ function coop_bot_step()
 
 // ---- joining a raid in progress ----
 
-function coop_can_join_host_raid()
+// The player to ask for a running raid (-1: none we may join). It is the raid's owner, the lowest slot in
+// it - the host's raid, or after the host extracted the next player's. The owner never changes to a player
+// who joins later (a fresh copy of the map must not drive the world), so only higher slots may join.
+function coop_join_target()
 {
     var _c = coop();
-    return _c.role == "guest" && _c.connected && _c.peer_loc == 2 && is_in_hub() && instance_exists(obj_player);
+    if (_c.role != "guest" || !_c.connected || !is_in_hub() || !instance_exists(obj_player))
+    {
+        return -1;
+    }
+    var _ps = coop_peers();
+    for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++)
+    {
+        var _p = _ps[_k];
+        if (_k != _c.slot && is_struct(_p) && _p.connected && _p.loc == 2)
+        {
+            return (_k < _c.slot) ? _k : -1;
+        }
+    }
+    return -1;
 }
 
-// Guest (F7 panel): ask the host for its raid.
+function coop_can_join_host_raid()
+{
+    return coop_join_target() >= 0;
+}
+
+// Guest (co-op panel): ask the raid owner for its raid.
 function coop_request_join()
 {
     var _c = coop();
+    var _t = coop_join_target();
+    if (_t < 0)
+    {
+        exit;
+    }
+    _c.join_target = _t;
     coop_msg_begin(COOP_MSG_JOIN_REQ);
-    coop_msg_send(true);
-    coop_notify(coop_t("Asking " + _c.peer_name + " to join the raid...", "Запрос на вход в рейд " + _c.peer_name + "..."));
-    coop_log("join request sent");
+    coop_msg_send_to(_t, true);
+    var _name = coop_peer_name(_t);
+    coop_notify(coop_t("Asking " + _name + " to join the raid...", "Запрос на вход в рейд " + _name + "..."));
+    coop_log("join request sent to slot ", _t);
 }
 
-// Host: send the running raid (settings + map + seed) to a guest standing in the bunker.
+// Raid owner: send the running raid (settings + map + seed) to a player standing in the bunker.
 function coop_on_join_request(_from)
 {
     var _c = coop();
-    if (_c.role != "host" || !coop_raid_ready() || _c.gen_seed == undefined)
+    if (!coop_raid_ready() || _c.gen_seed == undefined || coop_raid_owner() != max(0, _c.slot))
     {
-        coop_log("join request ignored (not in a raid)");
+        coop_log("join request ignored (not owning a raid)");
+        exit;
+    }
+    if (_c.role != "host")
+    {
+        // the settings this raid was generated with (the host may have changed its own since)
+        _c.msg_dest = _from;
+        coop_msg_begin(COOP_MSG_SETTINGS);
+        buffer_write(_c.send_buf, buffer_string, _c.raid_settings_json);
+        coop_msg_send(true);
+        coop_msg_begin(COOP_MSG_RAID_START);
+        buffer_write(_c.send_buf, buffer_u8, obj_map_generator.area);
+        buffer_write(_c.send_buf, buffer_f64, _c.gen_seed);
+        coop_msg_send(true);
+        _c.msg_dest = COOP_ALL;
+        coop_log("join request of slot ", _from, " accepted (raid owner): map ", obj_map_generator.area, " seed ", _c.gen_seed);
         exit;
     }
     _c.msg_dest = _from;

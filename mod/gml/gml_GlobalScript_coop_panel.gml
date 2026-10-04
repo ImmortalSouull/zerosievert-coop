@@ -15,7 +15,8 @@ function coop_panel_buttons()
     {
         if (coop_can_join_host_raid())
         {
-            array_push(_b, { id: "join_raid", label: coop_t("Join " + _c.peer_name + "'s raid", "Присоединиться к рейду " + _c.peer_name) });
+            var _jn = coop_peer_name(coop_join_target());
+            array_push(_b, { id: "join_raid", label: coop_t("Join " + _jn + "'s raid", "Присоединиться к рейду " + _jn) });
         }
         // visits: the bunker of a friend who sent theirs (lobby in the hub)
         if (coop_visit_active())

@@ -849,7 +849,7 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_RAID_START:
             var _map = buffer_read(_b, buffer_u8);
             var _seed = buffer_read(_b, buffer_f64);
-            if (_from == 0)
+            if (_from == 0 || (variable_struct_exists(_c, "join_target") && _from == _c.join_target))
             {
                 coop_on_raid_start(_map, _seed);
             }

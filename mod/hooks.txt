@@ -913,7 +913,7 @@ function go_to_map(arg0, arg1 = false)
 <<<REPLACE
 function go_to_map(arg0, arg1 = false)
 {
-    coop_visit_end("raid");
+    coop_hub_leave();
 <<<END
 
 ### findreplace gml_Object_obj_vertex_props_Step_0
@@ -956,4 +956,11 @@ with (obj_solid)
     {
         continue;
     }
+<<<END
+
+### prepend gml_Object_obj_player_parent_CleanUp_0
+if (!variable_instance_exists(id, "weapon_holder") || !variable_instance_exists(id, "emitter_shoot"))
+{
+    exit; // a puppet whose Create failed half way (co-op): nothing to free
+}
 <<<END

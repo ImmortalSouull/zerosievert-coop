@@ -29,6 +29,19 @@ def chest_md5_equal(logs):
     return None if a[0] == b[0] else f"chest differs A={a[0]} B={b[0]}"
 
 
+def ownerjoin_ok(logs):
+    """Slot 2 (whichever instance got it) stayed in the hub, then joined the raid slot 1 owns."""
+    j = [k for k in "BC" if "ownerjoin: stays in the hub" in logs[k]]
+    if len(j) != 1:
+        return "no single player stayed in the hub"
+    j = j[0]
+    o = "C" if j == "B" else "B"
+    need = [(j, r"join request sent to slot 1"), (o, r"join request of slot 2 accepted"),
+            (j, r"maps identical with partner"), (j, r"ownerjoin: done owner=1 puppets=1")]
+    miss = [f"{k}: /{rx}/" for k, rx in need if not re.search(rx, logs[k])]
+    return ("missing " + ", ".join(miss)) if miss else None
+
+
 def livechest_ok(logs):
     """The open container lost exactly the item the host took, on both machines."""
     out = []
@@ -130,6 +143,10 @@ SCENARIOS = [
       done=[(k, r"handoff: done") for k in "BC"],
       checks=[(k, r"raid owner: slot 1", 1) for k in "BC"] + [("A", r"handoff: host leaves", 1)], custom=handoff_ok,
       timeout=480, minutes=8, players=3),
+    # slot 2 joins the raid slot 1 owns after the host extracted (join request goes to the raid owner)
+    S("ownerjoin", "-coop_autoraid 1 -coop_scenario ownerjoin -coop_fps 60", "-coop_scenario ownerjoin -coop_fps 60",
+      done=[("BC", r"ownerjoin: done")], checks=[], custom=ownerjoin_ok,
+      need_identical=False, timeout=600, minutes=10, players=3),
     # the hub as a lobby: both players see each other; a visit shows the friend's bunker modules and saves ours
     S("lobby", "-coop_scenario lobby", "-coop_scenario lobby",
       done=[("B", r"lobby: restored")],
@@ -184,7 +201,7 @@ def run(sc, outdir, extra):
         if any("CRASH" in logs[k] for k in logs):
             status = "crash"
             break
-        if all(re.search(rx, logs[k]) for k, rx in sc["done"]):
+        if all(any(re.search(rx, logs[x]) for x in k) for k, rx in sc["done"]):
             status = "done"
             time.sleep(4)  # let late lines land
             break

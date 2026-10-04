@@ -97,7 +97,9 @@ function coop_npc_host_step()
         if (hp > 0)
         {
             coop_npc_get_nid(id);
-            if (!coop_spawn_sent)
+            // (an NPC that got its id as a replica and became ours when the owner left has no flag yet: a spawn
+            // the others already know is ignored by them)
+            if (!variable_instance_exists(id, "coop_spawn_sent") || !coop_spawn_sent)
             {
                 coop_npc_send_spawn(id);
                 coop_spawn_sent = true;
