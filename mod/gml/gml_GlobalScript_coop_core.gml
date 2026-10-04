@@ -65,7 +65,7 @@ function coop_init_globals()
         log_lines: []
     };
     global.coop_trace = false; // test: log every subsystem call (-coop_trace) to find hangs
-    global.coop_phase = false; // test: log frame phases (-coop_phase)
+    global.coop_phase_on = false; // test: log frame phases (-coop_phase)
     coop_parse_params();
 }
 
@@ -110,7 +110,7 @@ function coop_parse_params()
                 global.coop_trace = true;
                 break;
             case "-coop_phase":
-                global.coop_phase = true;
+                global.coop_phase_on = true;
                 break;
             case "-coop_fps":
                 _c.fps_force = real(_v);
@@ -357,7 +357,7 @@ function coop_report_error(_e)
 // Test: frame phase marker (-coop_phase), to locate a freeze.
 function coop_phase(_name)
 {
-    if (variable_global_exists("coop_phase") && global.coop_phase && coop_shared_ready())
+    if (variable_global_exists("coop_phase_on") && global.coop_phase_on && coop_shared_ready())
     {
         // the current event's name sits in a buffer whose address is logged once: tools/peek.py reads it
         // from the frozen process
