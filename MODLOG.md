@@ -212,3 +212,31 @@ Freeze (also in v0.3.0 and probably vanilla): obj_fog_setup Alarm_1 vertex_freez
   (show_debug_message does not reach OutputDebugString; per-line file logging is far too slow.)
 Test hygiene: ALWAYS `python tools/game_guard.py stop` before a new tools/test2.sh, or the new run does
   not start and the old instances keep writing the (deleted) logs.
+
+## 2026-10-04 evening: road to v1.0 (protocol 5) - up to 4 players
+Regression: `python tools/regress.py [names|maps|all]` runs scenarios on two (test2.sh) or four (test4.sh)
+instances, checks logs, keeps them in work/regress/<ts>/. COOP_REGRESS_ARGS adds args to every launch
+(e.g. "-coop_netsim 150,3,40"). Baseline on v0.4.0 found a real crash: when the host leaves, guest replicas
+with an empty state string ("" placeholder before NPC_STATESTR arrived) crashed obj_npc_parent's state machine.
+Net core rewrite (coop_net.gml):
+- Packet = [u8 kind][u16 seq][u8 from][u8 to][u8 0] + payload. kind 0 unreliable, 1 reliable (UDP only:
+  per-peer seq, cumulative acks, resend with RTO ~1.5*ping, in-order delivery with a reorder buffer),
+  2 ack. Steam uses its own reliable mode (always kind 0). UDP previously had NO reliability at all.
+- Slots 0..3 (host 0). Star topology: guests talk to the host; the host relays guest broadcasts (and any
+  targeted message) to the other guests. coop().msg_from = sender slot; coop_msg_send_to(slot) / msg_dest.
+- Puppet of slot s = mp_index (s - my_slot + 4) mod 4 (game's player API supports any index).
+- UTMT compiler: no `f()[i]` (index on a call result) and no `struct[$ key]` - use a temp var / variable_struct_*.
+- Group rules: down possible while another player stands; everyone down -> all die; a death only kills
+  downed players nobody can revive. Revive targets the nearest downed player.
+- Raid owner = lowest slot among players in that raid (host while there). Owner runs NPC AI, world
+  time/weather/emissions, kill credit, late-joiner sync; on owner change the new owner takes the replicas
+  over (keeps nids). The session host keeps relaying from the bunker.
+- Reconnect: host answers packets from a dropped endpoint with REJOIN; guest resets and says hello again,
+  re-adopts its locally released NPCs when the owner's map is ready. -coop_netsim lat,loss,jitter[,at,dur].
+- Map fingerprint per peer, without dynamic containers (corpses arrive at different moments -> false mismatch).
+Also: ping markers (middle mouse / right stick), group scaling (coop_group_enemies/hp, fixed by the host
+at raid start and sent with the settings), update check (GitHub API, silent), Co-op button in main/pause
+menu, installer restores UI/lang files from backups before patching (updates used to skip new UI rows),
+gamepad in the F7 panel and the revive menu (game interact = action 6, default key F; revive stays on E).
+Results: 10/10 core scenarios, quad (4 players) and all 6 other maps (camp, industrial, swamp, mall, Zakov,
+CNPP) pass; reconnect after a 20 s blackout passes.
