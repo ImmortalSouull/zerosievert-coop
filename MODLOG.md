@@ -254,3 +254,15 @@ Later the same evening (v1.0 hardening):
 - Give item (X): the stack leaves the giver's inventory db and appears in a "discard" bag at the
   receiver's feet (existing bag sync); no direct insertion into another player's inventory grid.
 - regress.py: extra args go first so a scenario's own args (e.g. its blackout netsim) win.
+- Bad network also found: a raid the host started ALONE generated with group scaling for 1 player, but a
+  guest joining later got the scaling recomputed for 2 -> different map. Group scaling is now fixed in
+  coop_hook_go_to_map (coop_group_fix) and never recomputed during the raid. Test: latejoin
+  (-coop_delay_join 25 keeps the guest offline until the host is in its raid).
+- The installer now patches mm_sidebar_main.ui / mm_sidebar_pause.ui ("Co-op" button -> Catspeak
+  CoopOpenPanel) and blanks the game's hard-placed "New" tag (fixed y next to "Mods"). Verified live:
+  screenshot of both menus, a real mouse click via `um win drive --proc "ZERO Sievert" "focus" "click x y"`
+  opened the panel; reinstall is idempotent; update path restores UI/lang files from coop_backup first.
+- PC freeze during a long 4-instance regression: 15 GB RAM, ~2.4 GB per instance -> swap. 3-instance
+  variants (trio, handoff3) cover the same group logic.
+- v1.0.0 released 2026-10-04 (protocol 5): final dist = build d77d504..., regression green on 2/3/4 instances,
+  bad network, all maps, 21-min soak.

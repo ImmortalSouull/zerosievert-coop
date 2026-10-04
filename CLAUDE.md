@@ -27,7 +27,12 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   (`powershell -NoProfile -ExecutionPolicy Bypass -File ...`). Copy the zip into the repo root for the user.
 - Regression (use it before every release): `python tools/regress.py` (core), `python tools/regress.py all`
   (+ every map), `COOP_REGRESS_ARGS="-coop_netsim 120,3,40" python tools/regress.py` (bad network);
-  4 players: `tools/test4.sh` (coopA..coopD), soak: `python tools/soak.py <minutes>`.
+  4 players: `tools/test4.sh` (coopA..coopD; env COOP_PLAYERS=3 for three), soak: `python tools/soak.py <minutes>`.
+  RAM: the laptop has 15 GB and each game instance takes ~2.4 GB - 4 instances swap and froze the PC once.
+  Prefer 2-instance runs and the 3-instance scenarios (trio, handoff3); run quad/handoff/soak rarely, after
+  closing heavy apps (the user allows closing RazerAppEngine, CurseForge, NitroSense; keep Steam and Claude).
+  Multi-player scenarios: quad/trio (see each other, credit, revive, ping, give), handoff/handoff3 (host
+  extracts, next slot owns the world), latejoin (-coop_delay_join), reconnect (blackout), menus (UI buttons).
 - Two-instance local test (host coopA left, guest coopB right, UDP 127.0.0.1):
   `bash tools/test2.sh <minutes> "<note>" "<host args>" "<guest args>"`, e.g.
   `bash tools/test2.sh 3 "x" "-coop_autoraid 1 -coop_scenario livechest" "-coop_scenario livechest"`.
