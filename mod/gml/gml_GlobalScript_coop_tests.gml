@@ -15,6 +15,7 @@ function coop_test_ext_step()
     coop_test_fps_step();
     coop_test_anim_step();
     coop_test_tele_step();
+    coop_test_leave_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -402,4 +403,69 @@ function coop_test_tele_step()
     coop_log("tele #", _c.tt div 60, " to ", object_get_name(_tg.object_index), " at ", floor(_tg.x), ",", floor(_tg.y), " from ", floor(obj_player.x), ",", floor(obj_player.y));
     obj_player.x = _tg.x - 50;
     obj_player.y = _tg.y;
+}
+
+// -coop_scenario leave: the host walks onto an extraction point and leaves; the guest carries on alone.
+function coop_test_leave_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "leave")
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "lv")) _c.lv = 0;
+    if (_c.role == "host" && coop_shared_ready() && instance_exists(obj_player))
+    {
+        _c.lv++;
+        if (_c.lv == 300 || (_c.lv > 300 && _c.lv mod 60 == 0 && coop_in_raid()))
+        {
+            instance_activate_object(obj_extraction_point);
+            var _ex = undefined;
+            var _ey = undefined;
+            with (obj_extraction_point)
+            {
+                _ex = x;
+                _ey = y;
+            }
+            if (variable_struct_exists(_c, "lv_x"))
+            {
+                _ex = _c.lv_x;
+                _ey = _c.lv_y;
+            }
+            if (_ex != undefined)
+            {
+                _c.lv_x = _ex;
+                _c.lv_y = _ey;
+                obj_player.x = _ex + 8;
+                obj_player.y = _ey + 8;
+                coop_log("leave: host on extraction point at ", _ex, ",", _ey);
+            }
+        }
+    }
+    if (_c.role == "host" && instance_exists(obj_exit_screen) && obj_exit_screen.can_go_hub && !variable_struct_exists(_c, "lv_gone"))
+    {
+        // the "next" button of the extraction screen, minus the save bookkeeping (test saves only)
+        _c.lv_gone = true;
+        coop_log("leave: host leaves the extraction screen for the hub");
+        instance_activate_all();
+        obj_controller.disattiva = false;
+        __uiGlobal().__defaultOnion.Clear();
+        room_goto(r_hub);
+    }
+    if (_c.role == "guest" && coop_in_raid() && instance_exists(obj_player))
+    {
+        _c.lv++;
+        if (_c.lv mod 300 == 0)
+        {
+            var _active = 0;
+            var _repl = 0;
+            with (obj_npc_parent)
+            {
+                _active++;
+                if (coop_npc_is_replica()) _repl++;
+            }
+            coop_log("leave: guest t=", _c.lv, " peer_in_raid=", _c.peer_in_raid, " peer_loc=", _c.peer_loc, " npcs=", _active, " replicas=", _repl,
+                " slaved=", coop_world_guest_skips_roll(), " hp=", obj_player.hp);
+        }
+    }
 }

@@ -76,6 +76,31 @@ function coop_draw_gui()
         coop_text_outlined(474, 4, coop_t("[F7] Co-op", "[F7] Кооператив"), c_lime);
         draw_set_halign(fa_left);
     }
+    draw_set_font(-1);
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+    display_set_gui_size(1920, 1080);
+}
+
+// Draw GUI End: the F7 panel goes over everything the game draws in its GUI (interaction prompts...).
+function coop_draw_gui_end()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "panel") || !_c.panel)
+    {
+        exit;
+    }
+    display_set_gui_size(480, 270);
+    if (variable_global_exists("language_fonts") && is_array(global.language_fonts) && font_exists(global.language_fonts[1]))
+    {
+        language_set_font(1);
+    }
+    else
+    {
+        draw_set_font(-1);
+    }
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
     coop_panel_draw();
     draw_set_font(-1);
     draw_set_halign(fa_left);
