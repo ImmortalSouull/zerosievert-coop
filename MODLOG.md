@@ -240,3 +240,17 @@ menu, installer restores UI/lang files from backups before patching (updates use
 gamepad in the F7 panel and the revive menu (game interact = action 6, default key F; revive stays on E).
 Results: 10/10 core scenarios, quad (4 players) and all 6 other maps (camp, industrial, swamp, mall, Zakov,
 CNPP) pass; reconnect after a 20 s blackout passes.
+Later the same evening (v1.0 hardening):
+- Raid owner handoff verified with 4 instances (scenario handoff): the new owner must also keep the regions
+  around the other players active (coop_after_culling) or NPCs near them sleep on its machine.
+- tools/soak.py: 21 min, 4 players, 0 errors, 44 NPC checks ok per replica, +7..20 MB per process.
+- NPC consistency check every 30 s (owner sends its live nid list; replicas drop extras, request missing).
+- Bad network (-coop_netsim 120,3,40) found two real bugs:
+  * live chest ping-pong: after a UI rebuild the next read of the grid differs (layout/fields), each side
+    re-sent its view, and with lag an old echo restored an item already taken (duplication). Fix: content
+    revisions (apply only newer; tie -> lower slot) + change detection on normalized content.
+  * PSTATE before PLOADOUT: a puppet with an unknown weapon crashed class_player_weapon.func_draw
+    (outline_start with an undefined sprite). Puppet weapon hidden until arma_now is a real weapon.
+- Give item (X): the stack leaves the giver's inventory db and appears in a "discard" bag at the
+  receiver's feet (existing bag sync); no direct insertion into another player's inventory grid.
+- regress.py: extra args go first so a scenario's own args (e.g. its blackout netsim) win.
