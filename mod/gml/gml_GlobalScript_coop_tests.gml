@@ -559,7 +559,7 @@ function coop_test_quad_step()
         _c.sim_ping = true;
     }
     // the last slot hands the host an item
-    if (_c.slot == coop_player_count() - 1 && _c.slot >= 2 && (_t == 740 || _t == 741 || _t == 742))
+    if (_c.slot == coop_player_count() - 1 && _c.slot >= 2 && (_t == 940 || _t == 941 || _t == 942))
     {
         var _h = coop_puppet_of(0);
         if (instance_exists(_h))
@@ -567,8 +567,8 @@ function coop_test_quad_step()
             obj_player.x = _h.x + 16;
             obj_player.y = _h.y;
         }
-        if (_t == 741) _c.sim_give = true;
-        if (_t == 742) _c.sim_give_ok = true;
+        if (_t == 941) _c.sim_give = true;
+        if (_t == 942) _c.sim_give_ok = true;
     }
     if (_t == 1000)
     {
