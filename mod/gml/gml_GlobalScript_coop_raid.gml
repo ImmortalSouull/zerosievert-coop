@@ -117,6 +117,13 @@ function coop_autopilot_step()
             go_to_map(_c.autoraid);
         }
     }
+    // solo play with the mod (no co-op session): the same raid start, then coop_test_solo_step
+    if (_c.autoraid >= 0 && !_c.autoraid_done && _c.role == "none" && _c.scenario == "solo" && is_in_hub() && instance_exists(obj_player) && _c.ap_timer > 120)
+    {
+        _c.autoraid_done = true;
+        coop_log("autopilot: solo raid ", _c.autoraid);
+        go_to_map(_c.autoraid);
+    }
     coop_test_press_space();
     coop_bot_step();
     coop_scenario_step();

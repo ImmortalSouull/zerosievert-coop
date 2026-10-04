@@ -38,6 +38,17 @@ def chest3_equal(logs):
     return None if len(set(vals.values())) == 1 else f"chest differs {vals}"
 
 
+def grouphp_ok(logs):
+    """Group hp scaling doubles the enemies' hp on the host and the guest's replicas carry the same."""
+    a = re.findall(r"v3: group hp factor=(\S+) npc hp sum=(\d+)", logs["A"])
+    b = re.findall(r"v3: group hp factor=(\S+) npc hp sum=(\d+)", logs["B"])
+    if not a or not b:
+        return "no hp lines"
+    if a[0][0] != "2" or b[0][0] != "2":
+        return f"factor A={a[0][0]} B={b[0][0]}"
+    return None if a[0][1] == b[0][1] else f"hp sum differs A={a[0][1]} B={b[0][1]}"
+
+
 def ownerjoin_ok(logs):
     """Slot 2 (whichever instance got it) stayed in the hub, then joined the raid slot 1 owns."""
     j = [k for k in "BC" if "ownerjoin: stays in the hub" in logs[k]]
@@ -158,6 +169,9 @@ SCENARIOS = [
       done=[("A", r"scenario chest t=420"), ("B", r"scenario chest t=420"), ("C", r"scenario chest t=420")],
       checks=[("A", r"scenario: host took first item", 1)], custom=chest3_equal,
       need_identical=False, timeout=420, minutes=7, players=3),
+    # enemy hp for the group (+100% per extra player): scaled on the host, the same on the guest
+    S("grouphp", "-coop_autoraid 1 -coop_scenario v3 -coop_diff coop_group_hp=1", "-coop_scenario v3",
+      done=[("A", r"v3: group hp"), ("B", r"v3: group hp")], checks=[], custom=grouphp_ok, timeout=260),
     # three players: both guests go down, then the host - everybody dies
     S("both3", "-coop_autoraid 1 -coop_scenario both -coop_fps 60", "-coop_scenario both -coop_fps 60",
       done=[(k, r"forced death: everyone down|both down: death for both") for k in "ABC"],

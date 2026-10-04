@@ -80,6 +80,10 @@ function coop_is_world_setting(_key)
 function coop_difficulty_override(_key)
 {
     var _c = coop();
+    if (variable_struct_exists(_c, "test_diff") && variable_struct_exists(_c.test_diff, _key))
+    {
+        return variable_struct_get(_c.test_diff, _key); // -coop_diff (tests)
+    }
     if (variable_struct_exists(_c, "coop_hp_guard") && _c.coop_hp_guard)
     {
         return undefined;

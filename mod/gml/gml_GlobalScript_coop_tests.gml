@@ -19,6 +19,7 @@ function coop_test_ext_step()
     coop_test_quad_step();
     coop_test_handoff_step();
     coop_test_ownerjoin_step();
+    coop_test_solo_step();
     coop_test_soak_step();
     coop_test_menus_step();
     coop_test_treefade_step();
@@ -173,6 +174,22 @@ function coop_test_v3_step()
     if (!variable_struct_exists(_c, "v3t")) _c.v3t = 0;
     _c.v3t++;
     var _t = _c.v3t;
+    if (_t == 120)
+    {
+        // group scaling: the NPCs the host made (and the guest's replicas of them) carry the same hp
+        var _sum = 0;
+        var _n = 0;
+        instance_activate_object(obj_npc_parent);
+        with (obj_npc_parent)
+        {
+            if (variable_instance_exists(id, "coop_nid") && coop_nid < 40 && object_is_ancestor(object_index, obj_npc_human_parent))
+            {
+                _sum += hp; // nobody has shot yet
+                _n++;
+            }
+        }
+        coop_log("v3: group hp factor=", coop_group_factor("hp"), " npc hp sum=", _sum, " n=", _n);
+    }
     if (_c.role == "guest" && instance_exists(obj_player) && _t >= 150 && _t <= 600)
     {
         if (!variable_struct_exists(_c, "v3_target") || !instance_exists(_c.v3_target))
@@ -1059,5 +1076,67 @@ function coop_test_ownerjoin_step()
         {
             coop_log("ownerjoin: done owner=", coop_raid_owner(), " puppets=", array_length(coop_puppets()));
         }
+    }
+}
+
+// -coop_scenario solo (one instance, no session): a plain raid with the mod installed - shoot at the nearest
+// NPC, pause/unpause, open the inventory; the log must stay free of errors.
+function coop_test_solo_step()
+{
+    var _c = coop();
+    if (_c.scenario != "solo")
+    {
+        exit;
+    }
+    // solo pause deactivates the whole raid: count the paused frames here
+    if (variable_struct_exists(_c, "so_pause") && _c.so_pause >= 0)
+    {
+        _c.so_pause++;
+        if (_c.so_pause == 100)
+        {
+            _c.so_pause = -1;
+            game_unpause();
+            coop_log("solo: unpaused, player=", instance_exists(obj_player));
+        }
+        exit;
+    }
+    if (!coop_raid_ready() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "so_t")) _c.so_t = 0;
+    _c.so_t++;
+    var _t = _c.so_t;
+    if (_t >= 120 && _t <= 900 && _t mod 20 == 0 && instance_exists(obj_player))
+    {
+        instance_activate_object(obj_npc_parent);
+        var _tg = instance_nearest(obj_player.x, obj_player.y, obj_npc_human_parent);
+        if (instance_exists(_tg))
+        {
+            if (_t mod 200 == 0)
+            {
+                obj_player.x = _tg.x - 60;
+                obj_player.y = _tg.y;
+            }
+            with (obj_player)
+            {
+                if (item_exists(arma_now) && item_get_category(arma_now) == "weapon")
+                {
+                    scr_shoot(point_direction(x, y, _tg.x, _tg.y), 1, item_weapon_get_damage(arma_now), 0);
+                }
+            }
+        }
+    }
+    if (_t == 1000)
+    {
+        _c.so_pause = 0;
+        game_pause();
+        coop_log("solo: paused");
+    }
+    if (_t == 1300)
+    {
+        var _n = 0;
+        with (obj_npc_parent) _n++;
+        coop_log("solo: done, npcs=", _n, " hp=", obj_player.hp, " fps=", fps);
     }
 }

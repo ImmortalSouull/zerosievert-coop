@@ -100,6 +100,16 @@ function coop_parse_params()
             case "-coop_autoraid":
                 _c.autoraid = real(_v);
                 break;
+            case "-coop_diff":
+                // test: difficulty values without touching the save, e.g. coop_group_hp=1,enemy_count_mult=2
+                _c.test_diff = {};
+                var _kv = string_split(_v, ",");
+                for (var _q = 0; _q < array_length(_kv); _q++)
+                {
+                    var _pair = string_split(_kv[_q], "=");
+                    if (array_length(_pair) == 2) variable_struct_set(_c.test_diff, _pair[0], real(_pair[1]));
+                }
+                break;
             case "-coop_name":
                 _c.name_override = string_replace_all(_v, "_", " "); // test: a (long) player name
                 break;
