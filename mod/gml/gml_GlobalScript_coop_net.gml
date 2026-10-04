@@ -135,7 +135,8 @@ function coop_remote_peers()
 
 function coop_player_count()
 {
-    return array_length(coop_remote_peers()) + 1;
+    var _c = coop();
+    return variable_struct_exists(_c, "player_count") ? _c.player_count : 1; // kept by coop_peers_refresh
 }
 
 function coop_peer_name(_slot)
@@ -163,6 +164,7 @@ function coop_peers_refresh()
     var _c = coop();
     var _r = coop_remote_peers();
     _c.connected = array_length(_r) > 0;
+    _c.player_count = array_length(_r) + 1;
     var _any_in = false;
     var _any_ready = false;
     var _host_like = undefined;
@@ -307,6 +309,7 @@ function coop_net_stop()
     _c.slot = -1;
     _c.peer_in_raid = false;
     _c.peer_ready = false;
+    _c.player_count = 1;
     coop_log("network stopped");
 }
 

@@ -5,7 +5,8 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 
 ## Read first
 - `MODLOG.md` — full journal: every engine fact, gotcha, decision and test result. Read it before changing code.
-- Current release: **v0.4.0**, network protocol `COOP_VERSION 4` (both players must match).
+- Current release: **v1.0.0** (up to 4 players), network protocol `COOP_VERSION 5` (all players must match).
+  `COOP_MOD_VERSION` in coop_update.gml must equal the release version (update check compares GitHub tags).
 
 ## Layout
 - `mod/gml/*.gml` — all mod code (GML). `gml_GlobalScript_coop_*` = modules, `gml_Object_obj_coop_*` = controller events.
@@ -24,6 +25,9 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 - Quick test install (data.win only): `bash tools/install_test.sh`.
 - Release: `bash tools/make_dist.sh <ver>` then run `dist/ZS-Coop-v<ver>/installer.ps1 install`
   (`powershell -NoProfile -ExecutionPolicy Bypass -File ...`). Copy the zip into the repo root for the user.
+- Regression (use it before every release): `python tools/regress.py` (core), `python tools/regress.py all`
+  (+ every map), `COOP_REGRESS_ARGS="-coop_netsim 120,3,40" python tools/regress.py` (bad network);
+  4 players: `tools/test4.sh` (coopA..coopD), soak: `python tools/soak.py <minutes>`.
 - Two-instance local test (host coopA left, guest coopB right, UDP 127.0.0.1):
   `bash tools/test2.sh <minutes> "<note>" "<host args>" "<guest args>"`, e.g.
   `bash tools/test2.sh 3 "x" "-coop_autoraid 1 -coop_scenario livechest" "-coop_scenario livechest"`.
@@ -57,6 +61,10 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 - Launch needs env SteamAppId/SteamGameId + `-no_gpu_pref` (guard handles it).
 - The game deactivates instances outside the camera and on pause — keep obj_coop alive (coop_ensure_alive).
 - With a player on the map the OS mouse is locked; use obj_cursor (virtual cursor) for GUI hit tests.
+- Networking (coop_net.gml): slots 0..3, star topology through the host, reliable UDP layer, raid owner =
+  lowest slot in the raid runs NPC AI/world (coop_is_world_owner / coop_is_world_replica - never test
+  `role == "host"` for world authority). Messages: coop_msg_begin + coop_msg_send / coop_msg_send_to(slot);
+  handlers read coop().msg_from.
 - Shared maps rely on re-seeding RNG per generation step and per object (coop_gen_reseed, coop_pos_reseed,
   grass reseed, host world settings). Any new generation-time randomness must be made deterministic too.
 - High refresh rate (coop_fps.gml): logic runs 60 ticks/s, rendering at monitor rate. Game logic events get a
