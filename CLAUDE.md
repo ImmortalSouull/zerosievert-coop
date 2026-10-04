@@ -41,7 +41,9 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 
 ## GitHub (private repo https://github.com/ImmortalSouull/zerosievert-coop)
 - gh CLI: `"/c/Program Files/GitHub CLI/gh.exe"` (logged in as ImmortalSouull). Ask the user before publishing.
-- Every release: write `docs/releases/v<ver>.md` (Russian): what's new, "Исправлено (относительно v<prev>)",
+- Every release: write `docs/releases/v<ver>.md` in Russian AND English (title "RU / EN", a
+  "**Русский** · [English](#english)" line, Russian part, then `<a name="english"></a>` + full English
+  translation incl. install steps; README.md and dist_src/README.txt are bilingual too): what's new, "Исправлено (относительно v<prev>)",
   "Известные баги" — carry over the previous list, move fixed bugs into "Исправлено", add newly found ones.
   Also update the bug list of the previous release notes if a bug is found later. Then tag the release commit,
   `git push origin main --tags`, and `gh release create v<ver> <zip> README_v<ver>.md --title "<first line>"
