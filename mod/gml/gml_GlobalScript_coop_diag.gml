@@ -64,7 +64,18 @@ function coop_diag_fingerprint()
 {
     var _s = coop_diag_hash(obj_solid);
     var _d = coop_diag_hash(obj_decor_parent);
-    var _ch = coop_diag_hash(obj_chest_general);
+    // generated containers only: corpses, air drops and dropped bags appear at different moments
+    var _n = 0;
+    var _h = 0;
+    with (obj_chest_general)
+    {
+        if (!variable_instance_exists(id, "coop_dynamic") && !variable_instance_exists(id, "coop_net_spawned"))
+        {
+            _n++;
+            _h = (_h + floor(x) * 31 + floor(y) * 17 + real(object_index) * 7) mod 1000000007;
+        }
+    }
+    var _ch = [_n, _h];
     var _af = coop_diag_hash(obj_anomaly_emitter_parent);
     return { solids: _s, decor: _d, chests: _ch, anomalies: _af };
 }
@@ -78,7 +89,12 @@ function coop_diag_on_fp(_b)
     {
         exit; // different raid
     }
-    _c.peer_fp = json_parse(_json);
+    var _p = coop_peer(_c.msg_from);
+    if (!is_struct(_p))
+    {
+        exit;
+    }
+    _p.fp = json_parse(_json);
     if (_c.role == "host" && variable_struct_exists(_c, "my_fp") && _c.my_fp != undefined)
     {
         // a late joiner never got ours: answer so both sides can compare
@@ -90,32 +106,42 @@ function coop_diag_on_fp(_b)
     coop_diag_compare();
 }
 
+// Compare our map fingerprint with every fingerprint received so far (each one once).
 function coop_diag_compare()
 {
     var _c = coop();
-    if (!variable_struct_exists(_c, "my_fp") || !variable_struct_exists(_c, "peer_fp") || _c.my_fp == undefined || _c.peer_fp == undefined)
+    if (!variable_struct_exists(_c, "my_fp") || _c.my_fp == undefined)
     {
         exit;
     }
-    var _bad = "";
-    var _keys = ["solids", "decor", "chests", "anomalies"];
-    for (var _i = 0; _i < 4; _i++)
+    var _ps = coop_peers();
+    for (var _s = 0; _s < COOP_MAX_PLAYERS; _s++)
     {
-        var _a = variable_struct_get(_c.my_fp, _keys[_i]);
-        var _p = variable_struct_get(_c.peer_fp, _keys[_i]);
-        if (_a[0] != _p[0] || _a[1] != _p[1])
+        var _p = _ps[_s];
+        if (!is_struct(_p) || _p.fp == undefined)
         {
-            _bad += _keys[_i] + " " + string(_a[0]) + "/" + string(_p[0]) + " ";
+            continue;
         }
+        var _bad = "";
+        var _keys = ["solids", "decor", "chests", "anomalies"];
+        for (var _i = 0; _i < 4; _i++)
+        {
+            var _a = variable_struct_get(_c.my_fp, _keys[_i]);
+            var _o = variable_struct_get(_p.fp, _keys[_i]);
+            if (_a[0] != _o[0] || _a[1] != _o[1])
+            {
+                _bad += _keys[_i] + " " + string(_a[0]) + "/" + string(_o[0]) + " ";
+            }
+        }
+        if (_bad == "")
+        {
+            coop_log("maps identical with partner ", _p.name, " (slot ", _s, ")");
+        }
+        else
+        {
+            coop_log("MAP MISMATCH with partner ", _p.name, " (slot ", _s, "): ", _bad);
+            coop_notify(coop_t("Warning: your map differs from " + _p.name + "'s (send the coop log)", "Внимание: карта отличается от карты " + _p.name + " (пришлите coop-лог)"));
+        }
+        _p.fp = undefined;
     }
-    if (_bad == "")
-    {
-        coop_log("maps identical with partner", (_c.role == "host") ? (" " + coop_peer_name(_c.msg_from)) : "");
-    }
-    else
-    {
-        coop_log("MAP MISMATCH with partner: ", _bad);
-        coop_notify(coop_t("Warning: your maps differ (send coop log)", "Внимание: карты у вас различаются (пришлите coop-лог)"));
-    }
-    _c.peer_fp = undefined;
 }

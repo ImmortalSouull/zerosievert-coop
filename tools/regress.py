@@ -12,12 +12,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORK = os.path.join(os.path.dirname(ROOT), "zerosievert-coop-work")
 SAVES = os.path.join(os.environ["LOCALAPPDATA"], "ZERO_Sievert")
 BASH = r"C:\Program Files\Git\bin\bash.exe"
-LOGS = {"A": os.path.join(SAVES, "coop_coopA.log"), "B": os.path.join(SAVES, "coop_coopB.log")}
+LOGS = {k: os.path.join(SAVES, f"coop_coop{k}.log") for k in "ABCD"}
 
 
-def S(name, host, guest, done, checks, minutes=4, timeout=260, custom=None, need_identical=True, tags=""):
+def S(name, host, guest, done, checks, minutes=4, timeout=260, custom=None, need_identical=True, tags="", players=2):
     return dict(name=name, host=host, guest=guest, done=done, checks=checks, minutes=minutes,
-                timeout=timeout, custom=custom, need_identical=need_identical, tags=tags)
+                timeout=timeout, custom=custom, need_identical=need_identical, tags=tags, players=players)
 
 
 def chest_md5_equal(logs):
@@ -86,6 +86,12 @@ SCENARIOS = [
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),
+    S("quad", "-coop_autoraid 1 -coop_scenario quad -coop_fps 60", "-coop_scenario quad -coop_fps 60",
+      done=[(k, r"quad: done") for k in "ABCD"],
+      checks=[(k, r"players=4 puppets=3", 1) for k in "ABCD"] + [("A", r"maps identical with partner", 3),
+              ("A", r"revived partner .* slot 2", 1), ("B", r"kill credited", 1)]
+              + [(k, r"ping mark from slot", 3) for k in "ABCD"],
+      timeout=420, minutes=7, players=4),
     S("tele", "-coop_autoraid 1", "-coop_scenario tele",
       done=[("B", r"tele #20 ")], checks=[], timeout=200),
 ]
@@ -116,14 +122,15 @@ def run(sc, outdir, extra):
     for p in LOGS.values():
         if os.path.exists(p):
             os.remove(p)
-    cmd = f'bash tools/test2.sh {sc["minutes"]} "regress {sc["name"]}" "{sc["host"]} {extra}" "{sc["guest"]} {extra}"'
+    script = "tools/test4.sh" if sc["players"] == 4 else "tools/test2.sh"
+    cmd = f'bash {script} {sc["minutes"]} "regress {sc["name"]}" "{sc["host"]} {extra}" "{sc["guest"]} {extra}"'
     proc = subprocess.Popen([BASH, "-c", cmd], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     t0 = time.time()
     status = "timeout"
     while time.time() - t0 < sc["timeout"]:
         time.sleep(2)
         logs = {k: read(p) for k, p in LOGS.items()}
-        if "CRASH" in logs["A"] or "CRASH" in logs["B"]:
+        if any("CRASH" in logs[k] for k in logs):
             status = "crash"
             break
         if all(re.search(rx, logs[k]) for k, rx in sc["done"]):
@@ -143,13 +150,14 @@ def run(sc, outdir, extra):
     problems = []
     if status != "done":
         problems.append(status)
-    for k in "AB":
+    keys = "ABCD"[:sc["players"]]
+    for k in keys:
         for line in logs[k].splitlines():
             if "CRASH" in line or "ERROR" in line:
                 problems.append(f"{k}: {line[:160]}")
                 break
     if sc["need_identical"]:
-        for k in "AB":
+        for k in keys:
             if "maps identical" not in logs[k]:
                 problems.append(f"{k}: maps not confirmed identical")
             if "MAP MISMATCH" in logs[k] or "maps differ" in logs[k]:

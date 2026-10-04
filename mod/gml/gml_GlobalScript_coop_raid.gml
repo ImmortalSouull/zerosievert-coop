@@ -56,7 +56,11 @@ function coop_on_room_start()
         coop_down_reset();
         coop_chest_reset_room();
         _c.my_fp = undefined;
-        _c.peer_fp = undefined;
+        var _ps = coop_peers();
+        for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++)
+        {
+            if (is_struct(_ps[_k])) _ps[_k].fp = undefined;
+        }
         _c.ready_time = 0;
     }
     if (_c.connected)

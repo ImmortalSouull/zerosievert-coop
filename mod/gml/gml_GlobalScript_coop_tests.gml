@@ -551,6 +551,10 @@ function coop_test_quad_step()
             }
         }
     }
+    if (_t == 420 + max(0, _c.slot) * 20)
+    {
+        _c.sim_ping = true;
+    }
     if (_t == 1000)
     {
         coop_log("quad: done");
