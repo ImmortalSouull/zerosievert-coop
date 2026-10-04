@@ -93,12 +93,16 @@ function coop_draw_gui()
         }
         coop_ui_begin(COOP_F_SMALL);
     }
+    if (instance_exists(obj_player) && (coop_in_raid() || is_in_hub()))
+    {
+        coop_puppet_draw_tag_gui();
+    }
+    if (is_in_hub())
+    {
+        coop_hub_draw_gui();
+    }
     if (coop_in_raid())
     {
-        if (instance_exists(obj_player))
-        {
-            coop_puppet_draw_tag_gui();
-        }
         coop_ping_draw_gui();
         coop_give_draw_gui();
         coop_down_draw_gui();

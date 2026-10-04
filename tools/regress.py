@@ -130,6 +130,17 @@ SCENARIOS = [
       done=[(k, r"handoff: done") for k in "BC"],
       checks=[(k, r"raid owner: slot 1", 1) for k in "BC"] + [("A", r"handoff: host leaves", 1)], custom=handoff_ok,
       timeout=480, minutes=8, players=3),
+    # the hub as a lobby: both players see each other; a visit shows the friend's bunker modules and saves ours
+    S("lobby", "-coop_scenario lobby", "-coop_scenario lobby",
+      done=[("B", r"lobby: restored")],
+      checks=[("B", r"lobby: puppets=1 together=1", 1), ("A", r"puppet of slot 1 created", 1),
+              ("B", r"save during visit wrote own modules=1", 1), ("B", r"lobby: restored=1", 1)],
+      need_identical=False, timeout=200, minutes=3),
+    # own module furniture there from the start: gone during the visit of an empty bunker, back after
+    S("lobby2", "-coop_scenario lobby", "-coop_scenario lobby2",
+      done=[("B", r"lobby2: done")],
+      checks=[("B", r"lobby2: visiting decor=[01]", 1), ("B", r"lobby2: back decor=40", 1)],
+      need_identical=False, timeout=200, minutes=3),
     S("tele", "-coop_autoraid 1", "-coop_scenario tele",
       done=[("B", r"tele #20 ")], checks=[], timeout=200),
 ]

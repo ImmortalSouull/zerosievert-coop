@@ -842,3 +842,118 @@ else if (xprevious < x)
 <<<REPLACE
 else if (zs_prev_x() < zs_live_x())
 <<<END
+
+### findreplace gml_GlobalScript_scr_save_skill_and_base
+<<<FIND
+function scr_save_skill_and_base()
+{
+<<<REPLACE
+function scr_save_skill_and_base()
+{
+    if (coop_visit_save_guard())
+    {
+        exit;
+    }
+<<<END
+
+### findreplace gml_GlobalScript_base_install
+<<<FIND
+function base_install(arg0, arg1, arg2 = true)
+{
+<<<REPLACE
+function base_install(arg0, arg1, arg2 = true)
+{
+    if (coop_visit_blocks())
+    {
+        return false;
+    }
+<<<END
+
+### findreplace gml_GlobalScript_base_uninstall
+<<<FIND
+function base_uninstall(arg0)
+{
+<<<REPLACE
+function base_uninstall(arg0)
+{
+    if (coop_visit_blocks())
+    {
+        exit;
+    }
+<<<END
+
+### findreplace gml_GlobalScript_loot_action_use_now
+<<<FIND
+                var get_base_id = base_name_to_component(item_base_upgrade_get_id(_item));
+<<<REPLACE
+                if (coop_visit_blocks())
+                {
+                    exit;
+                }
+                var get_base_id = base_name_to_component(item_base_upgrade_get_id(_item));
+<<<END
+
+### findreplace gml_GlobalScript_player_action_interact
+<<<FIND
+            var closer = instance_place(x, y, obj_base_parent);
+            var base_slot_ = closer.slot;
+<<<REPLACE
+            if (coop_visit_blocks())
+            {
+                break;
+            }
+            var closer = instance_place(x, y, obj_base_parent);
+            var base_slot_ = closer.slot;
+<<<END
+
+### findreplace gml_GlobalScript_go_to_map
+<<<FIND
+function go_to_map(arg0, arg1 = false)
+{
+<<<REPLACE
+function go_to_map(arg0, arg1 = false)
+{
+    coop_visit_end("raid");
+<<<END
+
+### findreplace gml_Object_obj_vertex_props_Step_0
+<<<FIND
+with (obj_decor_parent)
+{
+    if (!visible)
+    {
+        continue;
+    }
+<<<REPLACE
+with (obj_decor_parent)
+{
+    if (!visible)
+    {
+        continue;
+    }
+    if (coop_is_base_decor(id))
+    {
+        continue;
+    }
+<<<END
+
+### findreplace gml_Object_obj_vertex_props_Step_0
+<<<FIND
+with (obj_solid)
+{
+    if (!visible)
+    {
+        continue;
+    }
+<<<REPLACE
+with (obj_solid)
+{
+    if (!visible)
+    {
+        continue;
+    }
+    if (coop_is_base_decor(id))
+    {
+        continue;
+    }
+<<<END

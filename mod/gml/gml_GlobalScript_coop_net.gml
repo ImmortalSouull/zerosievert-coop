@@ -860,6 +860,12 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_PSTATE:
             coop_puppet_on_state(_b);
             break;
+        case COOP_MSG_BASE:
+            coop_base_on_msg(_b);
+            break;
+        case COOP_MSG_VISIT:
+            coop_visit_on_msg(_b);
+            break;
         case COOP_MSG_PSND:
             coop_puppet_on_sound(_b);
             break;
@@ -1167,7 +1173,10 @@ function coop_net_on_raid_state(_from, _b)
     }
     if (!_in)
     {
-        coop_puppet_remove_slot(_from);
+        if (!coop_hub_peer_here(_from))
+        {
+            coop_puppet_remove_slot(_from);
+        }
         if (_was)
         {
             coop_notify(coop_t(_p.name + " left the raid", _p.name + " покинул рейд"));
@@ -1329,6 +1338,7 @@ function coop_on_connected(_slot)
 {
     var _c = coop();
     _c.last_recv_time = current_time;
+    _c.base_sig = ""; // the new player gets our bunker modules (coop_hub_step)
     coop_send_raid_state();
     coop_settings_send();
     coop_send_loadout();

@@ -77,13 +77,20 @@ function coop_partner()
 function coop_players_step()
 {
     var _c = coop();
-    if (!_c.connected || !coop_in_raid() || !instance_exists(obj_player))
+    var _raid = coop_in_raid();
+    var _hub = !_raid && is_in_hub();
+    if (!_c.connected || !(_raid || _hub) || !instance_exists(obj_player))
     {
         exit;
     }
-    if (_c.frame mod 2 == 0 && _c.peer_in_raid)
+    // in a raid: to the players in it; in the hub (lobby): to the players in their hub
+    if (_c.frame mod 2 == 0 && (_raid ? _c.peer_in_raid : coop_hub_together()))
     {
         coop_send_pstate();
+    }
+    if (_c.frame mod 30 == 0)
+    {
+        coop_puppets_prune();
     }
     // Loadout changes (weapon swap, armor change): checked a few times per second.
     if (_c.frame mod 10 != 0)
@@ -224,11 +231,18 @@ function coop_puppet_ensure(_slot, _x, _y)
     {
         return _p;
     }
-    if (!coop_raid_ready() || !instance_exists(obj_player))
+    if (!(coop_raid_ready() || coop_hub_ready()) || !instance_exists(obj_player))
     {
         return -4;
     }
+    // obj_player_parent Create reloads the bunker modules from the save (lista_base): keep what is shown now
+    // (a visit shows a friend's modules)
+    var _base = is_in_hub() ? coop_base_capture() : undefined;
     _p = player_create(_x, _y, coop_mp_of(_slot));
+    if (_base != undefined)
+    {
+        coop_base_apply(_base);
+    }
     with (_p)
     {
         coop_slot = _slot;
@@ -309,7 +323,7 @@ function coop_puppet_on_state(_b)
     var _c = coop();
     var _slot = _c.msg_from;
     var _peer = coop_peer(_slot);
-    if (!is_struct(_peer) || !_peer.in_raid)
+    if (!is_struct(_peer) || !(_peer.in_raid || coop_hub_peer_here(_slot)))
     {
         exit;
     }
@@ -318,7 +332,7 @@ function coop_puppet_on_state(_b)
     {
         exit;
     }
-    if (_slot == 0)
+    if (_slot == 0 && coop_in_raid())
     {
         coop_spawn_sync(_x, _y);
     }
@@ -704,7 +718,7 @@ function coop_psound_send(_snd)
     try
     {
         var _c = coop();
-        if (_c.connected && _c.peer_in_raid && coop_in_raid() && audio_exists(_snd))
+        if (_c.connected && ((_c.peer_in_raid && coop_in_raid()) || coop_hub_together()) && audio_exists(_snd))
         {
             var _b = coop_msg_begin(COOP_MSG_PSND);
             buffer_write(_b, buffer_u32, real(_snd));

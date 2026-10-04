@@ -120,7 +120,7 @@ function coop_autopilot_step()
 function coop_scenario_hub_step()
 {
     var _c = coop();
-    if ((_c.scenario != "steamhost" && _c.scenario != "difficulty" && _c.scenario != "show" && _c.scenario != "panel") || !is_in_hub() || !instance_exists(obj_player))
+    if ((_c.scenario != "steamhost" && _c.scenario != "difficulty" && _c.scenario != "show" && _c.scenario != "panel" && _c.scenario != "lobby" && _c.scenario != "lobby2") || !is_in_hub() || !instance_exists(obj_player))
     {
         exit;
     }
@@ -133,6 +133,11 @@ function coop_scenario_hub_step()
     if (_c.scenario == "show")
     {
         coop_show_hub_step(_t);
+        exit;
+    }
+    if (_c.scenario == "lobby" || _c.scenario == "lobby2")
+    {
+        coop_test_lobby_step(_t);
         exit;
     }
     if (_c.scenario == "panel")

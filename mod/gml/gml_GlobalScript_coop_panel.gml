@@ -17,6 +17,22 @@ function coop_panel_buttons()
         {
             array_push(_b, { id: "join_raid", label: coop_t("Join " + _c.peer_name + "'s raid", "Присоединиться к рейду " + _c.peer_name) });
         }
+        // visits: the bunker of a friend who sent theirs (lobby in the hub)
+        if (coop_visit_active())
+        {
+            array_push(_b, { id: "visit_end", label: coop_t("Go back to your bunker", "Вернуться в свой бункер") });
+        }
+        else if (coop_hub_ready())
+        {
+            var _ps = coop_peers();
+            for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++)
+            {
+                if (coop_visit_can(_k))
+                {
+                    array_push(_b, { id: "visit_" + string(_k), label: coop_t("Visit " + _ps[_k].name + "'s bunker", "В гости к " + _ps[_k].name) });
+                }
+            }
+        }
         if (_c.role == "host" && _c.transport == "steam")
         {
             array_push(_b, { id: "steam_invite", label: coop_t("Invite friend again", "Пригласить друга ещё раз") });
@@ -100,6 +116,18 @@ function coop_panel_step()
 function coop_panel_click(_id)
 {
     var _c = coop();
+    if (_id == "visit_end")
+    {
+        coop_visit_end("panel");
+        _c.panel = false;
+        exit;
+    }
+    if (string_copy(_id, 1, 6) == "visit_")
+    {
+        coop_visit_start(real(string_delete(_id, 1, 6)));
+        _c.panel = false;
+        exit;
+    }
     switch (_id)
     {
         case "steam_host":
@@ -202,6 +230,15 @@ function coop_panel_draw()
             if (_k == 0)
             {
                 _nm += coop_t("  - host", "  - хост");
+            }
+            var _where = _me ? (coop_in_raid() ? 2 : (coop_hub_ready() ? 1 : 0)) : _pp.loc;
+            if (_where == 1)
+            {
+                _nm += coop_t("  · in the hub", "  · в бункере");
+            }
+            else if (_where == 2)
+            {
+                _nm += coop_t("  · in a raid", "  · в рейде");
             }
             if (!_me && is_struct(_pp) && (_c.role == "host" || _k == 0))
             {

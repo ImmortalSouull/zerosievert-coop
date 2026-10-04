@@ -8,6 +8,7 @@ coop_try(coop_panel_step);
 coop_try(coop_autopilot_step);
 coop_try(coop_pending_raid_step);
 coop_try(coop_players_step);
+coop_try(coop_hub_step);
 coop_try(coop_down_step);
 coop_try(coop_ping_step);
 coop_try(coop_give_step);

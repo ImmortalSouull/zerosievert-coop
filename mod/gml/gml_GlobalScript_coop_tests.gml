@@ -842,3 +842,157 @@ function coop_test_treefade_step()
     if (_c.tf == 120) _c.f_key = 3; // walk left through the canopy
     if (_c.tf == 300) _c.f_key = -1;
 }
+
+// Lobby + visit (both players in the hub): the guest walks next to the host, then visits the host's bunker,
+// whose modules the test changes on the guest's side (both test saves have the same bunker).
+function coop_test_lobby_step(_t)
+{
+    var _c = coop();
+    var _tag = _c.tag;
+    if (_t == 200)
+    {
+        coop_log("lobby: puppets=", array_length(coop_puppets()), " together=", coop_hub_together());
+        screen_save("hub_lobby_" + _tag + ".png");
+    }
+    if (_c.role != "guest")
+    {
+        if (_t == 1200) game_end();
+        exit;
+    }
+    var _host = coop_peer(0);
+    if (_c.scenario == "lobby2")
+    {
+        coop_test_lobby2_step(_t);
+        exit;
+    }
+    if (_t == 220)
+    {
+        coop_visit_place_player();
+    }
+    if (_t == 250)
+    {
+        screen_save("hub_room_" + _tag + ".png");
+    }
+    if (_t == 260 && is_struct(_host) && variable_struct_exists(_host, "base"))
+    {
+        // a different bunker: every free slot gets the next module not installed yet, at level 1
+        var _d = _host.base;
+        var _used = array_create(array_length(_d.lvl), false);
+        for (var _i = 0; _i < array_length(_d.sb); _i++)
+        {
+            if (_d.sb[_i] >= 0 && _d.sb[_i] < array_length(_used)) _used[_d.sb[_i]] = true;
+        }
+        // and the modules of slots 0/4 and 1/5 swapped, all at level 2
+        var _tmp = _d.sb[0]; _d.sb[0] = _d.sb[4]; _d.sb[4] = _tmp;
+        _tmp = _d.sb[1]; _d.sb[1] = _d.sb[5]; _d.sb[5] = _tmp;
+        for (var _i = 0; _i < array_length(_d.sb); _i++)
+        {
+            if (_d.sb[_i] >= 0) _d.lvl[_d.sb[_i]] = max(2, _d.lvl[_d.sb[_i]]);
+        }
+        coop_log("lobby: test bunker ", json_stringify(_d));
+        _c.lobby_own = json_stringify(coop_base_capture());
+        coop_visit_start(0);
+        coop_log("lobby: visiting=", coop_visit_active(), " player at ", obj_player.x, ",", obj_player.y, " own ", _c.lobby_own);
+    }
+    if (_t == 300 || _t == 380)
+    {
+        coop_log("lobby: player at ", obj_player.x, ",", obj_player.y, " inside=", is_inside_bunker());
+    }
+    if (_t == 340)
+    {
+        screen_save("hub_visit_" + _tag + ".png");
+        scr_save_skill_and_base(); // must write our own modules
+        db_open("general");
+        var _ok = true;
+        for (var _i = 0; _i < array_length(global.sl_id); _i++)
+        {
+            var _own = json_parse(_c.lobby_own);
+            if (db_read("Base slot", string(global.sl_id[_i]), -99) != _own.sb[global.sl_id[_i]]) _ok = false;
+        }
+        db_close();
+        coop_log("lobby: save during visit wrote own modules=", _ok, " modules now=", json_stringify(global.sl_base_id));
+    }
+    if (_t == 420)
+    {
+        coop_visit_end("panel");
+        coop_log("lobby: restored=", json_stringify(coop_base_capture()) == _c.lobby_own);
+    }
+    if (_t == 480)
+    {
+        screen_save("hub_back_" + _tag + ".png");
+    }
+    if (_t == 1200) game_end();
+}
+
+// Furniture of our own modules that is there from the start (vertex batching runs ~8 frames into the hub):
+// it must disappear while visiting a friend without modules and come back after. The modules are raised in
+// memory only and put back at the end (nothing of it is saved).
+function coop_lobby_count_decor()
+{
+    var _n = 0;
+    with (obj_decor_parent)
+    {
+        if (coop_is_base_decor(id)) _n++;
+    }
+    return _n;
+}
+
+function coop_lobby_dump(_what)
+{
+    var _s = "";
+    with (obj_base_parent)
+    {
+        _s += " [" + string(slot) + ":" + string(id_base) + "@" + string(lvl_now) + "]";
+    }
+    var _names = {};
+    with (obj_decor_parent)
+    {
+        if (coop_is_base_decor(id))
+        {
+            var _on = object_get_name(object_index) + (visible ? "" : "(inv)");
+            variable_struct_set(_names, _on, (variable_struct_exists(_names, _on) ? variable_struct_get(_names, _on) : 0) + 1);
+        }
+    }
+    coop_log("lobby2 ", _what, ": decor ", json_stringify(_names));
+    coop_log("lobby2 ", _what, ": slots", _s, " sb=", json_stringify(global.sl_base_id), " lvl=", json_stringify(global.base_lvl), " decor=", coop_lobby_count_decor());
+}
+
+function coop_test_lobby2_step(_t)
+{
+    var _c = coop();
+    if (_t == 229 || _t == 299 || _t == 369) coop_lobby_dump(string(_t));
+    if (_t == 1)
+    {
+        _c.lobby_orig = coop_base_capture();
+        for (var _i = 0; _i < array_length(global.sl_base_id); _i++)
+        {
+            if (global.sl_base_id[_i] >= 0 && global.sl_free[_i] == 2) global.base_lvl[global.sl_base_id[_i]] = 2;
+        }
+        coop_base_rebuild();
+        coop_log("lobby2: own modules raised");
+    }
+    if (_t == 200)
+    {
+        coop_visit_place_player();
+    }
+    if (_t == 230)
+    {
+        coop_log("lobby2: own decor=", coop_lobby_count_decor(), " host base ", json_stringify(coop_peer(0).base));
+        screen_save("hub2_own_" + _c.tag + ".png");
+        coop_visit_start(0);
+    }
+    if (_t == 300)
+    {
+        coop_log("lobby2: visiting decor=", coop_lobby_count_decor());
+        screen_save("hub2_visit_" + _c.tag + ".png");
+        coop_visit_end("panel");
+    }
+    if (_t == 370)
+    {
+        coop_log("lobby2: back decor=", coop_lobby_count_decor());
+        screen_save("hub2_back_" + _c.tag + ".png");
+        coop_base_apply(_c.lobby_orig);
+        coop_base_rebuild();
+        coop_log("lobby2: done");
+    }
+}
