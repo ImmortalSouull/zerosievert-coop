@@ -304,3 +304,7 @@ Later the same evening (v1.0 hardening):
 - New tests: lobby, lobby2, ownerjoin (3), chest3, both3, grouphp (-coop_diff key=val overrides difficulty
   without touching the save), solo (one instance: game_guard run with -coop_autoraid 1 -coop_scenario solo),
   -coop_name for long names. Protocol 6.
+- Regression (2/3 instances, 17 scenarios): one v3 run ended with the host's game gone right after
+  "raid start sent", no GML error logged. The only new code on that path destroyed the hub puppets inside
+  go_to_map (which then runs the game's save code over the players) -> puppets are no longer destroyed
+  there (hub_leaving blocks new ones; they are pruned at the next room start).
