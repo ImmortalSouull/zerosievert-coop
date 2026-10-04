@@ -1,4 +1,5 @@
 if (global.zs_rf) exit; // render-only frame (coop_fps)
+coop_phase("step");
 coop_try(coop_net_step);
 coop_try(coop_ui_register);
 coop_try(coop_steam_step);

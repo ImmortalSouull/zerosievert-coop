@@ -126,6 +126,24 @@ foreach (var code in Data.Code.ToList())
 }
 Console.WriteLine($"fps: guarded {guarded} logic events");
 
+// Debug builds only: COOP_TRACE_EVENTS=<regex over code entry names> prepends a phase marker (logged with
+// -coop_phase) to those game events, to find where a freeze happens.
+string traceRx = Environment.GetEnvironmentVariable("COOP_TRACE_EVENTS");
+if (!string.IsNullOrEmpty(traceRx))
+{
+    var trx = new System.Text.RegularExpressions.Regex(traceRx);
+    int traced = 0;
+    foreach (var code in Data.Code.ToList())
+    {
+        if (code.ParentEntry != null) continue;
+        string cname = code.Name.Content;
+        if (!cname.StartsWith("gml_Object_") || cname.Contains("obj_coop") || sources.ContainsKey(cname) || !trx.IsMatch(cname)) continue;
+        group.QueuePrepend(cname, "coop_phase(\"" + cname.Substring(11) + "\");");
+        traced++;
+    }
+    Console.WriteLine($"TRACE BUILD: {traced} events instrumented");
+}
+
 group.Import(true);
 
 var coopObj = Data.GameObjects.ByName("obj_coop");

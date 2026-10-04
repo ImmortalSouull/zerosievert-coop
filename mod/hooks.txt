@@ -788,3 +788,10 @@ coop_psound(sound_shell_in, 10);
                     audio_play_sound_on(_player.emitter_walk, _sound, false, 18);
                     coop_psound_send(_sound);
 <<<END
+
+### findreplace gml_Object_obj_fog_setup_Alarm_1
+<<<FIND
+    vertex_freeze(vb);
+<<<REPLACE
+    coop_fog_freeze(vb);
+<<<END

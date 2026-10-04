@@ -14,6 +14,7 @@ function coop_test_ext_step()
     coop_test_v3_step();
     coop_test_fps_step();
     coop_test_anim_step();
+    coop_test_tele_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -368,4 +369,37 @@ function coop_test_anim_step()
     {
         screen_save("anim_light_" + string(_t) + ".png");
     }
+}
+
+// -coop_scenario tele: the guest jumps to a far NPC every second (hunting a freeze seen after long teleports).
+function coop_test_tele_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "tele" || _c.role != "guest" || !coop_shared_ready() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "tt")) _c.tt = 0;
+    _c.tt++;
+    if (_c.tt < 120 || _c.tt mod 60 != 0)
+    {
+        exit;
+    }
+    var _list = [];
+    instance_activate_object(obj_npc_parent);
+    with (obj_npc_parent)
+    {
+        if (point_distance(x, y, obj_player.x, obj_player.y) > 700)
+        {
+            array_push(_list, id);
+        }
+    }
+    if (array_length(_list) == 0)
+    {
+        exit;
+    }
+    var _tg = _list[irandom(array_length(_list) - 1)];
+    coop_log("tele #", _c.tt div 60, " to ", object_get_name(_tg.object_index), " at ", floor(_tg.x), ",", floor(_tg.y), " from ", floor(obj_player.x), ",", floor(obj_player.y));
+    obj_player.x = _tg.x - 50;
+    obj_player.y = _tg.y;
 }

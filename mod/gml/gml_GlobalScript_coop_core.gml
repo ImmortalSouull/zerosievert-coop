@@ -64,6 +64,8 @@ function coop_init_globals()
         notes: [],
         log_lines: []
     };
+    global.coop_trace = false; // test: log every subsystem call (-coop_trace) to find hangs
+    global.coop_phase = false; // test: log frame phases (-coop_phase)
     coop_parse_params();
 }
 
@@ -103,6 +105,12 @@ function coop_parse_params()
                 break;
             case "-coop_quiet":
                 _c.overlay = false;
+                break;
+            case "-coop_trace":
+                global.coop_trace = true;
+                break;
+            case "-coop_phase":
+                global.coop_phase = true;
                 break;
             case "-coop_fps":
                 _c.fps_force = real(_v);
@@ -322,6 +330,10 @@ function coop_try(_f)
 {
     try
     {
+        if (variable_global_exists("coop_trace") && global.coop_trace)
+        {
+            coop_log("T ", script_get_name(_f));
+        }
         _f();
     }
     catch (_e)
@@ -340,4 +352,42 @@ function coop_report_error(_e)
         _c.err_last = _msg;
         coop_log("ERROR (recovered): ", _msg);
     }
+}
+
+// Test: frame phase marker (-coop_phase), to locate a freeze.
+function coop_phase(_name)
+{
+    if (variable_global_exists("coop_phase") && global.coop_phase && coop_shared_ready())
+    {
+        // the current event's name sits in a buffer whose address is logged once: tools/peek.py reads it
+        // from the frozen process
+        if (!variable_global_exists("coop_phase_buf"))
+        {
+            global.coop_phase_buf = buffer_create(256, buffer_fixed, 1);
+            global.coop_phase_n = 0;
+            coop_log("phase buffer at ", string(int64(buffer_get_address(global.coop_phase_buf))));
+        }
+        global.coop_phase_n++;
+        var _b = global.coop_phase_buf;
+        buffer_seek(_b, buffer_seek_start, 0);
+        buffer_write(_b, buffer_u32, global.coop_phase_n);
+        buffer_write(_b, buffer_string, string_copy(_name, 1, 200));
+    }
+}
+
+// Hook: obj_fog_setup Alarm_1. vertex_freeze() of an EMPTY vertex buffer never returns (the runner spins
+// forever). The fog mesh is empty when it was rebuilt (Alarm_0) less than 5 steps before the freeze in a
+// place with no walls nearby - after a teleport or entering/leaving a building. Game bug, also solo.
+function coop_fog_freeze(_vb)
+{
+    var _n = vertex_get_number(_vb);
+    if (_n <= 0)
+    {
+        if (coop().test_mode)
+        {
+            coop_log("fog freeze skipped: empty mesh");
+        }
+        exit;
+    }
+    vertex_freeze(_vb);
 }
