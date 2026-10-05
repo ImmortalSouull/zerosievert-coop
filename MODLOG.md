@@ -308,3 +308,16 @@ Later the same evening (v1.0 hardening):
   "raid start sent", no GML error logged. The only new code on that path destroyed the hub puppets inside
   go_to_map (which then runs the game's save code over the players) -> puppets are no longer destroyed
   there (hub_leaving blocks new ones; they are pruned at the next room start).
+- Friend's report (after the 1.1.0 build): Russian UI showed English tooltips on the Co-op difficulty tab
+  (game descriptions are plain strings - vanilla ones too; ours are now keys translated in a
+  difficulty_get_description hook) and "Co-op" as the tab label (vanilla labels are translated through
+  language_alias by their English text; ours uses Translate). Wish: the mod in the Mods menu - the menu
+  lists workshop/installed mods only, so the installer inserts a static row into mm_mods.ui. It must go
+  before `data.modding_menu_current = UiModMapIDtoOrder(0)`: with no mods that call fails and nothing
+  below it in the scroll box is built. Catspeak addGlobalFunction takes at most 16 arguments (a third
+  pair -> "Invalid callv target #2" and none of the functions registered).
+- Raid owner's obj_controller "dynamic NPC" sim walks NPCs outside ITS view along patrol paths and rolls
+  abstract fights between them - also NPCs next to another player (live there). Hooks skip NPCs within
+  480x270 of any puppet (coop_near_other_player).
+- Clicking real UI in tests: `um win drive --proc "ZERO Sievert" "focus" "click x y"` (window coords of
+  the 1280x720 test window); Mods = 895,541 in the main menu.
