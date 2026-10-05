@@ -5,17 +5,47 @@
 // Hook: in __difficulty_init, before the presets are built.
 function coop_difficulty_define()
 {
-    __difficulty_define_toggle("coop_revive_enabled", true, "coop.difficulty.revive_enabled", "Co-op: lethal damage puts you down instead of killing you while your partner is in the raid.");
-    __difficulty_define_range("coop_down_seconds", 60, 10, 180, "coop.difficulty.down_seconds", "Co-op: seconds before a downed player dies (halved on the second down).");
-    __difficulty_define_range("coop_second_down_hp", 0.6, 0.1, 1, "coop.difficulty.second_down_hp", "Co-op: multiplier on revive HP after the second down.");
-    __difficulty_define_range("coop_revive_time_none", 10, 1, 30, "coop.difficulty.revive_time_none", "Co-op: seconds to revive without items.");
-    __difficulty_define_range("coop_revive_time_bandage", 7, 1, 30, "coop.difficulty.revive_time_bandage", "Co-op: seconds to revive with a bandage.");
-    __difficulty_define_range("coop_revive_time_medkit", 5, 1, 30, "coop.difficulty.revive_time_medkit", "Co-op: seconds to revive with a medkit.");
-    __difficulty_define_toggle("coop_friendly_fire", false, "coop.difficulty.friendly_fire", "Co-op: your bullets can hurt your partner.");
-    __difficulty_define_range("coop_group_enemies", 0.25, 0, 1, "coop.difficulty.group_enemies", "Co-op: extra enemies for every additional player (0.25 = +25% per player).");
-    __difficulty_define_range("coop_group_hp", 0, 0, 0.5, "coop.difficulty.group_hp", "Co-op: extra enemy health for every additional player (0.1 = +10% per player).");
-    __difficulty_define_range("enemy_count_mult", 1, 0, 3, "coop.difficulty.enemy_count", "Multiplier on how many enemies spawn in a raid.");
-    __difficulty_define_range("anomaly_mult", 1, 0, 3, "coop.difficulty.anomaly_amount", "Multiplier on how many anomalies are generated in a raid.");
+    __difficulty_define_toggle("coop_revive_enabled", true, "coop.difficulty.revive_enabled", "coop.desc.revive_enabled");
+    __difficulty_define_range("coop_down_seconds", 60, 10, 180, "coop.difficulty.down_seconds", "coop.desc.down_seconds");
+    __difficulty_define_range("coop_second_down_hp", 0.6, 0.1, 1, "coop.difficulty.second_down_hp", "coop.desc.second_down_hp");
+    __difficulty_define_range("coop_revive_time_none", 10, 1, 30, "coop.difficulty.revive_time_none", "coop.desc.revive_time_none");
+    __difficulty_define_range("coop_revive_time_bandage", 7, 1, 30, "coop.difficulty.revive_time_bandage", "coop.desc.revive_time_bandage");
+    __difficulty_define_range("coop_revive_time_medkit", 5, 1, 30, "coop.difficulty.revive_time_medkit", "coop.desc.revive_time_medkit");
+    __difficulty_define_toggle("coop_friendly_fire", false, "coop.difficulty.friendly_fire", "coop.desc.friendly_fire");
+    __difficulty_define_range("coop_group_enemies", 0.25, 0, 1, "coop.difficulty.group_enemies", "coop.desc.group_enemies");
+    __difficulty_define_range("coop_group_hp", 0, 0, 0.5, "coop.difficulty.group_hp", "coop.desc.group_hp");
+    __difficulty_define_range("enemy_count_mult", 1, 0, 3, "coop.difficulty.enemy_count", "coop.desc.enemy_count");
+    __difficulty_define_range("anomaly_mult", 1, 0, 3, "coop.difficulty.anomaly_amount", "coop.desc.anomaly_amount");
+}
+
+// Hook: difficulty_get_description. Our settings keep a translation key (coop.desc.*) as their description;
+// the game shows descriptions as they are, so translate here (English if the language has no row).
+function coop_difficulty_description(_d)
+{
+    if (!is_string(_d) || string_pos("coop.desc.", _d) != 1)
+    {
+        return _d;
+    }
+    var _t = language_get_string(_d);
+    if (is_string(_t) && _t != "" && _t != _d)
+    {
+        return _t;
+    }
+    switch (_d)
+    {
+        case "coop.desc.revive_enabled": return "Lethal damage downs you instead of killing you while a teammate on their feet is in the raid.";
+        case "coop.desc.down_seconds": return "Seconds a downed player waits for help before dying (half as long on the second down).";
+        case "coop.desc.second_down_hp": return "Multiplier on the health you get back when revived from the second down.";
+        case "coop.desc.revive_time_none": return "Seconds to revive a teammate without items.";
+        case "coop.desc.revive_time_bandage": return "Seconds to revive a teammate with a bandage.";
+        case "coop.desc.revive_time_medkit": return "Seconds to revive a teammate with a medkit.";
+        case "coop.desc.friendly_fire": return "Your bullets can hurt your teammates.";
+        case "coop.desc.group_enemies": return "Extra enemies for every player beyond the first (0.25 = +25% per player).";
+        case "coop.desc.group_hp": return "Extra enemy health for every player beyond the first (0.1 = +10% per player).";
+        case "coop.desc.enemy_count": return "Multiplier on how many enemies spawn in a raid.";
+        case "coop.desc.anomaly_amount": return "Multiplier on how many anomalies are generated in a raid.";
+    }
+    return "";
 }
 
 // Raid-wide rules come from the host while connected.

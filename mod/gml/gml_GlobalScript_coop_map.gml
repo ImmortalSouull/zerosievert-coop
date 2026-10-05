@@ -1,6 +1,18 @@
 // ZERO Sievert co-op: markers of the other players on the PDA map (pda_map.ui is patched by the installer to
 // call these; CoopMate*(i) for i = 0..2, the older CoopPartner* = the nearest one).
 
+// The co-op entry in the game's Mods menu (mm_mods.ui, patched by the installer).
+function coop_mod_version_label()
+{
+    var _upd = coop_update_text();
+    return "v" + COOP_MOD_VERSION + ((_upd != "") ? coop_t("  (update available)", "  (есть обновление)") : "");
+}
+
+function coop_mod_subheader()
+{
+    return coop_t("ImmortalSouull, co-op for up to 4 players", "ImmortalSouull, кооператив до 4 игроков");
+}
+
 function coop_ui_register()
 {
     var _c = coop();
@@ -15,6 +27,8 @@ function coop_ui_register()
     uiCatspeakGetEnvironment().addGlobalFunction("CoopPartnerOnMap", coop_minimap_partner_on_map, "CoopPartnerX", coop_minimap_partner_x, "CoopPartnerY", coop_minimap_partner_y,
         "CoopMateOnMap", coop_minimap_mate_on_map, "CoopMateX", coop_minimap_mate_x, "CoopMateY", coop_minimap_mate_y,
         "CoopOpenPanel", coop_panel_open_from_menu);
+    // (one call takes at most 16 arguments)
+    uiCatspeakGetEnvironment().addGlobalFunction("CoopModVersion", coop_mod_version_label, "CoopModSubHeader", coop_mod_subheader);
     _c.ui_registered = true;
     coop_log("ui functions registered");
 }

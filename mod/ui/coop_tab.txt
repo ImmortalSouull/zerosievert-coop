@@ -1,5 +1,5 @@
 		build UiTextButton {
-			label = "Co-op"
+			label = Translate("coop.difficulty.tab")
 			captureClick = "action"
 			click = fn {
 				CallInherited()

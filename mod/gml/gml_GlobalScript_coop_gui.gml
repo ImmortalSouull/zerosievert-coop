@@ -14,6 +14,7 @@ function coop_draw_gui()
         exit;
     }
     coop_ui_begin(COOP_F_SMALL);
+    _c.frame_draw = (variable_struct_exists(_c, "frame_draw") ? _c.frame_draw : 0) + 1; // one per drawn frame
     var _x = 16;
     var _y = 128;
     if (_c.role != "none")

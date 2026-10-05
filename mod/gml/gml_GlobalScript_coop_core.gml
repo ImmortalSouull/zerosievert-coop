@@ -532,3 +532,22 @@ function coop_fog_freeze(_vb)
     }
     vertex_freeze(_vb);
 }
+
+// obj_controller (raid owner) simulates NPCs out of its view: walking them along their patrol paths and
+// rolling fights between them. Near another player those NPCs are live (see coop_after_culling): leave them
+// to their own AI.
+function coop_near_other_player(_x, _y)
+{
+    if (!coop().connected)
+    {
+        return false;
+    }
+    with (obj_player_puppet)
+    {
+        if (abs(x - _x) < 480 && abs(y - _y) < 270)
+        {
+            return true;
+        }
+    }
+    return false;
+}

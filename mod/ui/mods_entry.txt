@@ -1,0 +1,52 @@
+		build UiRectangle {	// ZERO Sievert CO-OP: a patch of the game itself, listed here for information
+			fillColor = c_black
+			fillAlpha = 0.6
+			borderAlpha = 0
+			width = 1000
+			height = 100
+			_running_height += height
+
+			build UiText {
+				label = "ZERO Sievert CO-OP"
+				vAlign = "top"
+				hAlign = "left"
+				color = c_lime
+				x = 20
+			}
+			build UiText {
+				label = CoopModSubHeader()
+				color = c_grey
+				vAlign = "top"
+				hAlign = "left"
+				x = 20
+				y = 45
+			}
+			build UiText {
+				label = CoopModVersion()
+				vAlign = "top"
+				hAlign = "right"
+				color = c_grey
+				x = 985
+				y = 45
+			}
+			build UiButton {
+				color = HexToDec("2f6b2f")
+				x = 878
+				y = 25
+				width = 216
+				height = 30
+				hoverAlpha = 0.7
+				captureClick = "action"
+				click = fn {
+					CallInherited()
+					CoopOpenPanel()
+				}
+				build UiText {
+					vAlign = "middle"
+					hAlign = "centre"
+					label = Translate("coop.menu.button")
+					xy = ["50%","50%"]
+				}
+			}
+		}
+

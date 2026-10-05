@@ -654,8 +654,11 @@ function coop_puppet_draw_tag_gui()
 // An arrow at the screen edge pointing at an off-screen spot, with a label (partners, ping marks).
 function coop_ui_edge_arrow(_gx, _gy, _label, _col)
 {
+    // keep off the game's HUD: health/status/notes top left, ammo bottom left, hotbar bottom middle
     var _cx = clamp(_gx, 40, COOP_GW - 40);
-    var _cy = clamp(_gy, 150, COOP_GH - 140);
+    var _ymin = (_cx < 800) ? 330 : 120;
+    var _ymax = (_cx < 220) ? COOP_GH - 300 : COOP_GH - 150;
+    var _cy = clamp(_gy, _ymin, _ymax);
     var _dir = point_direction(COOP_GW / 2, COOP_GH / 2, _gx, _gy);
     var _x1 = _cx + lengthdir_x(22, _dir);
     var _y1 = _cy + lengthdir_y(22, _dir);
@@ -668,7 +671,35 @@ function coop_ui_edge_arrow(_gx, _gy, _label, _col)
     draw_set_halign(fa_center);
     draw_set_valign(fa_middle);
     var _w = string_width(_label) / 2 + 8;
-    coop_ui_text_ol(clamp(_cx - lengthdir_x(50, _dir), _w, COOP_GW - _w), _cy - lengthdir_y(34, _dir), _label, _col);
+    var _h = string_height("A") / 2 + 4;
+    var _lx = clamp(_cx - lengthdir_x(50, _dir), _w, COOP_GW - _w);
+    var _ly = _cy - lengthdir_y(34, _dir);
+    // several arrows on the same edge: move the label until it no longer overlaps one drawn this frame
+    var _c = coop();
+    if (!variable_struct_exists(_c, "ui_labels") || _c.ui_labels_frame != _c.frame_draw)
+    {
+        _c.ui_labels = [];
+        _c.ui_labels_frame = _c.frame_draw;
+    }
+    var _tries = 0;
+    var _hit = true;
+    while (_hit && _tries < 8)
+    {
+        _hit = false;
+        for (var _i = 0; _i < array_length(_c.ui_labels); _i++)
+        {
+            var _r = _c.ui_labels[_i];
+            if (abs(_r[0] - _lx) < _r[2] + _w && abs(_r[1] - _ly) < _r[3] + _h)
+            {
+                _ly += (_ly > COOP_GH / 2) ? -(_r[3] + _h + 2) : (_r[3] + _h + 2);
+                _hit = true;
+                break;
+            }
+        }
+        _tries++;
+    }
+    array_push(_c.ui_labels, [_lx, _ly, _w, _h]);
+    coop_ui_text_ol(_lx, _ly, _label, _col);
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
 }

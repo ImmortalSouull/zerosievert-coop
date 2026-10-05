@@ -964,3 +964,39 @@ if (!variable_instance_exists(id, "weapon_holder") || !variable_instance_exists(
     exit; // a puppet whose Create failed half way (co-op): nothing to free
 }
 <<<END
+
+### findreplace gml_Object_obj_controller_Step_0
+<<<FIND
+                                if (_size_path > 0 && _inside_map == true)
+                                {
+                                    if (!point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270))
+<<<REPLACE
+                                if (_size_path > 0 && _inside_map == true)
+                                {
+                                    if (!point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id.x, _id.y))
+<<<END
+
+### findreplace gml_Object_obj_controller_Step_0
+<<<FIND
+                                if (!point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270))
+                                {
+                                    for (var j = 0; j < _size; j++)
+<<<REPLACE
+                                if (!point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id.x, _id.y))
+                                {
+                                    for (var j = 0; j < _size; j++)
+<<<END
+
+### findreplace gml_Object_obj_controller_Step_0
+<<<FIND
+if (!point_in_rectangle(_id_fight.x, _id_fight.y, x - 480, y - 270, x + 480, y + 270))
+<<<REPLACE
+if (!point_in_rectangle(_id_fight.x, _id_fight.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id_fight.x, _id_fight.y))
+<<<END
+
+### findreplace gml_GlobalScript_difficulty_get_description
+<<<FIND
+    return _difficulty_def.__description;
+<<<REPLACE
+    return coop_difficulty_description(_difficulty_def.__description);
+<<<END

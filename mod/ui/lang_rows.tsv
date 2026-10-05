@@ -11,3 +11,14 @@ coop.difficulty.anomaly_amount	Anomaly amount	Количество аномал�
 coop.difficulty.group_enemies	Extra enemies per extra player	Доп. врагов за каждого игрока
 coop.difficulty.group_hp	Extra enemy HP per extra player	Доп. здоровья врагов за игрока
 coop.menu.button	Co-op	Кооператив
+coop.desc.revive_enabled	Lethal damage downs you instead of killing you while a teammate on their feet is in the raid.	Смертельный урон роняет вас вместо смерти - пока в рейде есть напарник на ногах.
+coop.desc.down_seconds	Seconds a downed player waits for help before dying (half as long on the second down).	Сколько секунд раненый ждёт помощи до смерти (при втором ранении - вдвое меньше).
+coop.desc.second_down_hp	Multiplier on the health you get back when revived from the second down.	Множитель здоровья после поднятия со второго ранения.
+coop.desc.revive_time_none	Seconds to revive a teammate without items.	Сколько секунд поднимать напарника без предметов.
+coop.desc.revive_time_bandage	Seconds to revive a teammate with a bandage.	Сколько секунд поднимать напарника бинтом.
+coop.desc.revive_time_medkit	Seconds to revive a teammate with a medkit.	Сколько секунд поднимать напарника аптечкой.
+coop.desc.friendly_fire	Your bullets can hurt your teammates.	Ваши пули могут ранить напарников.
+coop.desc.group_enemies	Extra enemies for every player beyond the first (0.25 = +25% per player).	Дополнительные враги за каждого игрока сверх одного (0.25 = +25% за игрока).
+coop.desc.group_hp	Extra enemy health for every player beyond the first (0.1 = +10% per player).	Дополнительное здоровье врагов за каждого игрока сверх одного (0.1 = +10% за игрока).
+coop.desc.enemy_count	Multiplier on how many enemies spawn in a raid.	Множитель количества врагов в рейде.
+coop.desc.anomaly_amount	Multiplier on how many anomalies are generated in a raid.	Множитель количества аномалий в рейде.

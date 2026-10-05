@@ -577,6 +577,10 @@ function coop_test_quad_step()
     {
         _c.sim_ping = true;
     }
+    if (_t == 490)
+    {
+        screen_save("quad_ui_" + _c.tag + ".png"); // name tags, ping marks, arrows to teammates off screen
+    }
     // the last slot hands the host an item
     if (_c.slot == coop_player_count() - 1 && _c.slot >= 2 && (_t == 940 || _t == 941 || _t == 942))
     {
@@ -797,6 +801,11 @@ function coop_test_menus_step()
         {
             screen_save("menu_main.png");
             coop_log("menus: main menu shot");
+            coop_log("menus: description ", coop_difficulty_description("coop.desc.down_seconds"), " | tab ", language_get_string("coop.difficulty.tab"));
+        }
+        if (_c.mt == 600 && !_c.connected)
+        {
+            screen_save("menu_mods.png"); // the tester clicks "Mods" meanwhile (um win drive)
         }
         if (_c.mt > 240 && _c.panel && !variable_struct_exists(_c, "m_panel"))
         {

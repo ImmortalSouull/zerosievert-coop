@@ -33,12 +33,14 @@ $ui = Join-Path $game "ZS_vanilla\ui\mm_difficulty.ui"
 $pda = Join-Path $game "ZS_vanilla\ui\pda_map.ui"
 $mmMain = Join-Path $game "ZS_vanilla\ui\mm_sidebar_main.ui"
 $mmPause = Join-Path $game "ZS_vanilla\ui\mm_sidebar_pause.ui"
+$mmMods = Join-Path $game "ZS_vanilla\ui\mm_mods.ui"
 # game UI files the mod patches, with a text that only a patched file contains
 $uiFiles = @(
     @{ path = $ui; name = "mm_difficulty.ui"; mark = "coop\.difficulty\.tab" },
     @{ path = $pda; name = "pda_map.ui"; mark = "CoopPartnerOnMap|CoopMateOnMap" },
     @{ path = $mmMain; name = "mm_sidebar_main.ui"; mark = "CoopOpenPanel" },
-    @{ path = $mmPause; name = "mm_sidebar_pause.ui"; mark = "CoopOpenPanel" }
+    @{ path = $mmPause; name = "mm_sidebar_pause.ui"; mark = "CoopOpenPanel" },
+    @{ path = $mmMods; name = "mm_mods.ui"; mark = "CoopModVersion" }
 )
 $langDir = Join-Path $game "ZS_vanilla\languages"
 $backup = Join-Path $game "coop_backup"
@@ -117,6 +119,9 @@ Patch-Ui $pda '(\t\t\t//Allow scrolling around the minimap)' ([IO.File]::ReadAll
 $btn = [IO.File]::ReadAllText((Join-Path $here "ui_menu_button.txt"))
 Patch-Ui $mmMain '(\t\tbuild UiTextButton \{\r?\n\t\t\tlabel = "Settings")' $btn $true "CoopOpenPanel" "the main menu"
 Patch-Ui $mmPause '(\t\tbuild UiTextButton \{\r?\n\t\t\tlabel = "Settings")' $btn $true "CoopOpenPanel" "the pause menu"
+# 2d. The co-op entry at the top of the Mods menu (the mod is a patch: the game itself does not list it)
+# (before the game's own list: with no mods installed UiModMapIDtoOrder(0) fails and the rest is not built)
+Patch-Ui $mmMods '(\t\tdata\.modding_menu_current = UiModMapIDtoOrder\(0\))' ([IO.File]::ReadAllText((Join-Path $here "ui_mods_entry.txt"))) $true "CoopModVersion" "the mods menu"
 # the game's "New" tag sits at a fixed height next to "Mods": with one more button it would point at another row
 $t = [IO.File]::ReadAllText($mmMain)
 [IO.File]::WriteAllText($mmMain, $t.Replace('label = "New"', 'label = ""'), (New-Object Text.UTF8Encoding($false)))
