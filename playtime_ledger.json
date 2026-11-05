@@ -490,9 +490,200 @@
     {
       "start": 1793897359.6387343,
       "deadline": 1793897599.6387343,
-      "end": null,
+      "end": 1793897402.65285,
       "note": "regress both",
-      "started": "2026-11-05T17:49:19"
+      "started": "2026-11-05T17:49:19",
+      "minutes": 0.72,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897403.0849278,
+      "deadline": 1793897643.0849278,
+      "end": 1793897437.6496434,
+      "note": "regress chest",
+      "started": "2026-11-05T17:50:03",
+      "minutes": 0.58,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897438.0795743,
+      "deadline": 1793897678.0795743,
+      "end": 1793897469.4746847,
+      "note": "regress livechest",
+      "started": "2026-11-05T17:50:38",
+      "minutes": 0.52,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897469.9023066,
+      "deadline": 1793897709.9023066,
+      "end": 1793897494.9738398,
+      "note": "regress join",
+      "started": "2026-11-05T17:51:09",
+      "minutes": 0.42,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897495.397059,
+      "deadline": 1793897735.397059,
+      "end": 1793897540.464465,
+      "note": "regress latejoin",
+      "started": "2026-11-05T17:51:35",
+      "minutes": 0.75,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897540.9064183,
+      "deadline": 1793897900.9064183,
+      "end": 1793897585.9721072,
+      "note": "regress leave",
+      "started": "2026-11-05T17:52:20",
+      "minutes": 0.75,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897586.3988023,
+      "deadline": 1793897886.3988023,
+      "end": 1793897647.2798593,
+      "note": "regress reconnect",
+      "started": "2026-11-05T17:53:06",
+      "minutes": 1.01,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897647.6739807,
+      "deadline": 1793898067.6739807,
+      "end": 1793897710.77427,
+      "note": "regress quad",
+      "started": "2026-11-05T17:54:07",
+      "minutes": 1.05,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897711.185833,
+      "deadline": 1793898191.185833,
+      "end": 1793897766.8819964,
+      "note": "regress handoff",
+      "started": "2026-11-05T17:55:11",
+      "minutes": 0.93,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897767.2908747,
+      "deadline": 1793898187.2908747,
+      "end": 1793897816.6022785,
+      "note": "regress trio",
+      "started": "2026-11-05T17:56:07",
+      "minutes": 0.82,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897817.0315545,
+      "deadline": 1793898297.0315545,
+      "end": 1793897870.6269157,
+      "note": "regress handoff3",
+      "started": "2026-11-05T17:56:57",
+      "minutes": 0.89,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897871.0676742,
+      "deadline": 1793898291.0676742,
+      "end": 1793897909.8728945,
+      "note": "regress chest3",
+      "started": "2026-11-05T17:57:51",
+      "minutes": 0.65,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897910.2905147,
+      "deadline": 1793898150.2905147,
+      "end": 1793897939.5867488,
+      "note": "regress grouphp",
+      "started": "2026-11-05T17:58:30",
+      "minutes": 0.49,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897940.0230987,
+      "deadline": 1793898360.0230987,
+      "end": 1793897980.885173,
+      "note": "regress both3",
+      "started": "2026-11-05T17:59:00",
+      "minutes": 0.68,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897981.3118694,
+      "deadline": 1793898581.3118694,
+      "end": 1793898035.8656774,
+      "note": "regress ownerjoin",
+      "started": "2026-11-05T17:59:41",
+      "minutes": 0.91,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793898036.2856266,
+      "deadline": 1793898216.2856266,
+      "end": 1793898065.5663521,
+      "note": "regress lobby",
+      "started": "2026-11-05T18:00:36",
+      "minutes": 0.49,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793898065.9894416,
+      "deadline": 1793898245.9894416,
+      "end": 1793898093.1901095,
+      "note": "regress lobby2",
+      "started": "2026-11-05T18:01:05",
+      "minutes": 0.45,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793898093.617771,
+      "deadline": 1793898333.617771,
+      "end": 1793898140.7951384,
+      "note": "regress tele",
+      "started": "2026-11-05T18:01:33",
+      "minutes": 0.79,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793898196.84602,
+      "deadline": 1793898376.84602,
+      "end": 1793898226.1902382,
+      "note": "regress lobby",
+      "started": "2026-11-05T18:03:16",
+      "minutes": 0.49,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793898226.6253457,
+      "deadline": 1793898406.6253457,
+      "end": 1793898253.8760536,
+      "note": "regress lobby2",
+      "started": "2026-11-05T18:03:46",
+      "minutes": 0.45,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793898313.6326506,
+      "deadline": 1793898493.6326506,
+      "end": 1793898340.9981842,
+      "note": "regress lobby2",
+      "started": "2026-11-05T18:05:13",
+      "minutes": 0.46,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793898348.9393208,
+      "deadline": 1793898528.9393208,
+      "end": 1793898376.2001953,
+      "note": "regress lobby2",
+      "started": "2026-11-05T18:05:48",
+      "minutes": 0.45,
+      "result": "all instances exited"
     }
   ],
   "note": "2026-10-03: user lifted the playtime limit (no refund planned)"

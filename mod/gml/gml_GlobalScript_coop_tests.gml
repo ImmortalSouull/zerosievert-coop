@@ -1025,6 +1025,24 @@ function coop_test_lobby2_step(_t)
         {
             if (global.sl_base_id[_i] >= 0 && global.sl_free[_i] == 2) global.base_lvl[global.sl_base_id[_i]] = 2;
         }
+        // whatever the test save holds: bedroom (3) and kitchen (4) at level 2 in the first two empty slots
+        // (both build furniture; module 2 for example builds none)
+        var _want = [3, 4];
+        var _k = 0;
+        for (var _i = 0; _i < array_length(global.sl_base_id) && _k < array_length(_want); _i++)
+        {
+            var _m = _want[_k];
+            var _used = false;
+            for (var _j = 0; _j < array_length(global.sl_base_id); _j++) if (global.sl_base_id[_j] == _m) _used = true;
+            if (_used) { _k++; _i--; continue; }
+            if (global.sl_base_id[_i] < 0)
+            {
+                global.sl_base_id[_i] = _m;
+                global.sl_free[global.sl_id[_i]] = 2;
+                global.base_lvl[_m] = 2;
+                _k++;
+            }
+        }
         coop_base_rebuild();
         coop_log("lobby2: own modules raised");
     }
@@ -1034,7 +1052,13 @@ function coop_test_lobby2_step(_t)
     }
     if (_t == 230)
     {
-        coop_log("lobby2: own decor=", coop_lobby_count_decor(), " host base ", json_stringify(coop_peer(0).base));
+        // the visit must show an EMPTY bunker whatever the test saves hold (both roots may be copies of one save):
+        // the host's base is replaced in memory by the same layout without modules
+        var _hb = coop_peer(0).base;
+        for (var _i = 0; _i < array_length(_hb.sb); _i++) _hb.sb[_i] = -1;
+        for (var _i = 0; _i < array_length(_hb.lvl); _i++) _hb.lvl[_i] = 0;
+        _c.lobby2_own = coop_lobby_count_decor();
+        coop_log("lobby2: own decor=", _c.lobby2_own, " host base ", json_stringify(_hb));
         screen_save("hub2_own_" + _c.tag + ".png");
         coop_visit_start(0);
     }
@@ -1046,7 +1070,8 @@ function coop_test_lobby2_step(_t)
     }
     if (_t == 370)
     {
-        coop_log("lobby2: back decor=", coop_lobby_count_decor());
+        var _back = coop_lobby_count_decor();
+        coop_log("lobby2: back decor=", _back, " own=", _c.lobby2_own, " matches=", _back == _c.lobby2_own && _back > 0);
         screen_save("hub2_back_" + _c.tag + ".png");
         coop_base_apply(_c.lobby_orig);
         coop_base_rebuild();

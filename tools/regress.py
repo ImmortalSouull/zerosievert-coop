@@ -192,7 +192,7 @@ SCENARIOS = [
     # own module furniture there from the start: gone during the visit of an empty bunker, back after
     S("lobby2", "-coop_scenario lobby", "-coop_scenario lobby2",
       done=[("B", r"lobby2: done")],
-      checks=[("B", r"lobby2: visiting decor=[01]", 1), ("B", r"lobby2: back decor=40", 1)],
+      checks=[("B", r"lobby2: visiting decor=[01]", 1), ("B", r"lobby2: back decor=\d+ own=\d+ matches=1", 1)],
       need_identical=False, timeout=200, minutes=3),
     S("tele", "-coop_autoraid 1", "-coop_scenario tele",
       done=[("B", r"tele #20 ")], checks=[], timeout=200),
