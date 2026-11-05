@@ -9,7 +9,7 @@ Steam или по IP, общий мир, ранения и поднятие на
 > (CABO Studio / Modern Wolf). Файлы игры здесь не хранятся и не распространяются: релиз содержит
 > патч и установщик, которые применяются к вашей собственной копии игры.
 
-**Текущая версия: v1.1.0** — скачать в разделе [Releases](../../releases). Описания всех версий,
+**Текущая версия: v1.2.0** — скачать в разделе [Releases](../../releases). Описания всех версий,
 списки исправлений и известных багов — в [docs/releases](docs/releases).
 
 ## Возможности
@@ -32,7 +32,7 @@ Steam или по IP, общий мир, ранения и поднятие на
 - Геймпад в меню кооператива и при поднятии; проверка обновлений мода.
 
 ## Установка
-1. Нужна ZERO Sievert 1.3.3 (Steam build 25269476). Закройте игру.
+1. Нужна ZERO Sievert 1.4.13 (Steam build 26317366). Закройте игру.
 2. Скачайте `ZS-Coop-v<версия>.zip` из последнего [релиза](../../releases/latest), распакуйте и запустите
    `install.bat` — он сам найдёт игру, сделает резервную копию и пропатчит вашу копию игры.
 3. Удаление: `uninstall.bat` или Steam → «Проверить целостность файлов».
@@ -65,7 +65,7 @@ IP, a shared world, getting downed and reviving teammates, extended difficulty s
 > (CABO Studio / Modern Wolf). No game files are stored or distributed here: a release contains a patch and
 > an installer that are applied to your own copy of the game.
 
-**Current version: v1.1.0** — download it from [Releases](../../releases). Notes for every version (what's
+**Current version: v1.2.0** — download it from [Releases](../../releases). Notes for every version (what's
 new, fixes, known bugs; Russian and English) are in [docs/releases](docs/releases).
 
 ## Features
@@ -88,7 +88,7 @@ new, fixes, known bugs; Russian and English) are in [docs/releases](docs/release
 - Gamepad support in the co-op menu and when reviving; mod update check.
 
 ## Installation
-1. ZERO Sievert 1.3.3 (Steam build 25269476) is required. Close the game.
+1. ZERO Sievert 1.4.13 (Steam build 26317366) is required. Close the game.
 2. Download `ZS-Coop-v<version>.zip` from the latest [release](../../releases/latest), unpack it and run
    `install.bat` — it finds the game by itself, makes a backup and patches your own copy of the game.
 3. Uninstall: `uninstall.bat` or Steam → "Verify integrity of game files".
