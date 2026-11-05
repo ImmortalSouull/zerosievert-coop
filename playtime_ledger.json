@@ -697,9 +697,18 @@
     {
       "start": 1793898435.1327293,
       "deadline": 1793898675.1327293,
-      "end": null,
+      "end": 1793898482.3482747,
       "note": "regress anim",
-      "started": "2026-11-05T18:07:15"
+      "started": "2026-11-05T18:07:15",
+      "minutes": 0.79,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793898482.7789202,
+      "deadline": 1793898722.7789202,
+      "end": null,
+      "note": "regress v3",
+      "started": "2026-11-05T18:08:02"
     }
   ],
   "note": "2026-10-03: user lifted the playtime limit (no refund planned)"
