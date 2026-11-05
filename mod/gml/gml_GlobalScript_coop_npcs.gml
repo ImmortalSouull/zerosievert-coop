@@ -546,6 +546,101 @@ function coop_npc_on_destroyed()
     }
 }
 
+// ---- callouts ("Contact!", "Reloading!", "Grenade!"): text bubbles over enemies ----
+// WORKAROUND (no source access): the 1.4 AI shows its callouts as obj_npc_draw_text bubbles created inside the
+// AI, which only runs on the raid owner, so nobody else saw them. The natural hook point (ai_compat) can't be
+// patched: its decompiled code uses a field named `until`, a reserved word for UTMT's compiler. So the owner
+// scans for new callout bubbles every tick and sends them; receivers create the same bubble on their replica.
+// Behaviour-tree barks carry the language key (npc.ai_bark_last_line), so every player reads it in their own
+// language; legacy callouts carry the game's text id.
+
+#macro COOP_MSG_NPC_BARK 38
+#macro COOP_BARK_LEGACY_TEXTS [6, 8, 12, 16, 17]
+
+// Owner, every tick in a shared raid.
+function coop_npc_bark_scan()
+{
+    if (!coop_shared_ready() || !coop_is_world_owner())
+    {
+        exit;
+    }
+    var _legacy = COOP_BARK_LEGACY_TEXTS;
+    with (obj_npc_draw_text)
+    {
+        if (variable_instance_exists(id, "coop_bark_sent") || !variable_instance_exists(id, "id_npc") || !instance_exists(id_npc) || !variable_instance_exists(id_npc, "coop_nid"))
+        {
+            continue;
+        }
+        var _kind = variable_instance_exists(id, "bark_kind") ? bark_kind : "";
+        var _text = -1;
+        var _line = "";
+        if (_kind != "")
+        {
+            _line = variable_instance_exists(id_npc, "ai_bark_last_line") ? string(id_npc.ai_bark_last_line) : "";
+            if (_line == "") continue; // set by the game right after the bubble: try again next tick
+        }
+        else if (array_contains(_legacy, text_id))
+        {
+            _text = text_id;
+        }
+        coop_bark_sent = true;
+        if (_kind == "" && _text < 0) continue; // dialogue, not a callout
+        var _b = coop_msg_begin(COOP_MSG_NPC_BARK);
+        buffer_write(_b, buffer_u32, id_npc.coop_nid);
+        buffer_write(_b, buffer_s16, _text);
+        buffer_write(_b, buffer_string, _kind);
+        buffer_write(_b, buffer_string, _line);
+        buffer_write(_b, buffer_string, variable_instance_exists(id_npc, "faction") ? string(id_npc.faction) : "");
+        coop_msg_send(true);
+    }
+}
+
+function coop_npc_on_bark(_b)
+{
+    var _nid = buffer_read(_b, buffer_u32);
+    var _text = buffer_read(_b, buffer_s16);
+    var _kind = buffer_read(_b, buffer_string);
+    var _line = buffer_read(_b, buffer_string);
+    var _faction = buffer_read(_b, buffer_string);
+    if (!coop_is_world_replica())
+    {
+        exit;
+    }
+    var _npc = coop_npc_find(_nid);
+    if (!instance_exists(_npc) || _npc.hp <= 0)
+    {
+        exit;
+    }
+    if (_text >= 0)
+    {
+        scr_draw_npc_text(_npc, _text);
+    }
+    else
+    {
+        // same steps as the game's __ai_compat_show_bark
+        scr_draw_npc_text(_npc, 6);
+        var _shout = ai_barks_is_heard_through_walls(_faction, _kind);
+        var _radius = ai_barks_speaking_rule(_faction, "hearing_radius_px");
+        var _alpha = ai_barks_speaking_rule(_faction, "unseen_alpha");
+        with (obj_npc_draw_text)
+        {
+            if (!variable_instance_exists(id, "id_npc") || id_npc != _npc) continue;
+            alarm[1] = -1;
+            t = language_get_string(_line);
+            bark_kind = _kind;
+            x = _npc.x;
+            y = _npc.y;
+            bark_heard_through_walls = _shout;
+            bark_hearing_radius_px = _radius;
+            bark_unseen_alpha = _alpha;
+        }
+    }
+    if (coop().test_mode)
+    {
+        coop_log("npc bark from owner: ", _kind, " ", _line, " ", _text);
+    }
+}
+
 // ---- consistency check (every 30 s): the owner's list of live NPC ids vs every replica's ----
 
 #macro COOP_MSG_NPC_CHECK 36

@@ -14,6 +14,7 @@ coop_try(coop_ping_step);
 coop_try(coop_give_step);
 coop_try(coop_owner_step);
 coop_try(coop_npc_host_step);
+coop_try(coop_npc_bark_scan);
 coop_try(coop_npc_check_step);
 coop_try(coop_bullets_scan_step);
 coop_try(coop_chest_step);

@@ -130,6 +130,8 @@ function coop_send_pstate()
         if (coop_down_is_down()) _flags |= 2;
         if (torch_on_general) _flags |= 4;
         if (laser_on_general) _flags |= 8;
+        // sprint key held while moving: the raid owner's AI hears running footsteps from further away
+        if ((hspd != 0 || vspd != 0) && max(global.kb_hold[4], obj_gamepad.action[4].value) > 0) _flags |= 16;
         buffer_write(_b, buffer_u8, _flags);
         // hands animation (meds, food, drinks, smoking, grenade): class_player_arms
         var _arms = arms_holder;
@@ -781,6 +783,38 @@ function coop_puppet_on_sound(_b)
     }
 }
 
+// WORKAROUND (no source access): the 1.4 AI hears footsteps through ai_hearing_emit(), which only
+// scr_player_movement calls, i.e. only for the LOCAL player. On the raid owner the other players are puppets,
+// so enemies that lost sight of a guest could never follow them by ear. Emit the puppet's footsteps on the
+// owner with the same cadence (every 28 ticks while walking). ai_hearing_emit requires a moving player
+// (hspd/vspd != 0), so the puppet's movement is set for the call and restored after it.
+function coop_puppet_hearing_emit()
+{
+    if (!coop_is_world_owner() || !coop_in_raid())
+    {
+        exit;
+    }
+    try
+    {
+        var _h = hspd, _v = vspd;
+        hspd = coop_net_x - x;
+        vspd = coop_net_y - y;
+        if (hspd == 0 && vspd == 0) hspd = 1;
+        var _run = variable_instance_exists(id, "coop_flags") && (coop_flags & 16) != 0;
+        var _ok = ai_hearing_emit(id, _run);
+        hspd = _h;
+        vspd = _v;
+        if (coop().test_mode && _ok)
+        {
+            coop().hearing_emits = (variable_struct_exists(coop(), "hearing_emits") ? coop().hearing_emits : 0) + 1;
+        }
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+}
+
 // Puppet footsteps: same cadence and ground sounds as the local player (scr_player_movement).
 function coop_puppet_footsteps()
 {
@@ -798,6 +832,7 @@ function coop_puppet_footsteps()
         coop_walk_time = 0;
         audio_emitter_position(emitter_walk, x, y, 0);
         scr_choose_footstep_sound(1);
+        coop_puppet_hearing_emit();
         if (coop().test_mode && coop().scenario == "anim")
         {
             coop_log("puppet footstep");

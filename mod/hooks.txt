@@ -997,6 +997,27 @@ if (!instance_exists(_id_fight) && !point_in_rectangle(_id_fight.x, _id_fight.y,
         if (ai_human_migrated(id) && (arg4 || ((bbox_right < arg0 || bbox_left > arg2 || bbox_bottom < arg1 || bbox_top > arg3) && !coop_keep_ai_awake(id))))
 <<<END
 
+### findreplace gml_GlobalScript_ai_roaming
+<<<FIND
+        if (!is_undefined(arg0.player_x) && point_distance(_try_x, _try_y, arg0.player_x, arg0.player_y) < _min_player_distance_px)
+<<<REPLACE
+        if ((!is_undefined(arg0.player_x) && point_distance(_try_x, _try_y, arg0.player_x, arg0.player_y) < _min_player_distance_px) || coop_other_player_within(_try_x, _try_y, _min_player_distance_px))
+<<<END
+
+### findreplace gml_Object_obj_controller_Step_2
+<<<FIND
+if (global.roaming_enabled && player_exists_local() && is_in_raid() && instance_exists(obj_map_generator))
+<<<REPLACE
+if (global.roaming_enabled && player_exists_local() && is_in_raid() && instance_exists(obj_map_generator) && !coop_is_world_replica())
+<<<END
+
+### prepend gml_Object_obj_npc_parent_Alarm_8
+if (coop_npc_skip_alarm())
+{
+    exit;
+}
+<<<END
+
 ### findreplace gml_GlobalScript_difficulty_get_description
 <<<FIND
     return _difficulty_def.__description;

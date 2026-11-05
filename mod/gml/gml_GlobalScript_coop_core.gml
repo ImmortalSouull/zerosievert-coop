@@ -559,6 +559,30 @@ function coop_keep_ai_awake(_inst)
     return false;
 }
 
+// Any other player within _dist px (circle). Used where the game checks the distance to "the" player.
+function coop_other_player_within(_x, _y, _dist)
+{
+    try
+    {
+        if (!coop().connected)
+        {
+            return false;
+        }
+        with (obj_player_puppet)
+        {
+            if (point_distance(x, y, _x, _y) < _dist)
+            {
+                return true;
+            }
+        }
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    return false;
+}
+
 function coop_near_other_player(_x, _y)
 {
     if (!coop().connected)

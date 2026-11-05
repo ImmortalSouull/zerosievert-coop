@@ -896,6 +896,9 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_NPC_STATESTR:
             coop_npc_on_statestr(_b);
             break;
+        case COOP_MSG_NPC_BARK:
+            coop_npc_on_bark(_b);
+            break;
         case COOP_MSG_NPC_HIT:
             coop_npc_on_hit(_b);
             break;
