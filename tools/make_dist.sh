@@ -3,19 +3,20 @@
 # Contains only our patch + our files + xdelta3 (GPL) - no game files.
 set -euo pipefail
 VER=${1:-0.1.0}
-ROOT=/c/Users/pasha/zerosievert-coop
-WORK=/c/Users/pasha/zerosievert-coop-work
+source "$(dirname "$0")/env.sh"
 OUT=$WORK/dist/ZS-Coop-v$VER
 bash $ROOT/tools/build.sh > /dev/null
 rm -rf "$OUT"; mkdir -p "$OUT"
-$WORK/tools/xdelta/xdelta3-3.1.0-x86_64.exe -e -9 -f -s $WORK/vanilla/data.win $WORK/build/data.win "$OUT/coop.xdelta"
-cp $WORK/tools/xdelta/xdelta3-3.1.0-x86_64.exe "$OUT/xdelta3.exe"
+"$XDELTA" -e -9 -f -s $WORK/vanilla/data.win $WORK/build/data.win "$OUT/coop.xdelta"
+cp "$XDELTA" "$OUT/xdelta3.exe"
+# Steam build of the vanilla copy (written by tools/decompile.sh --refresh from the app manifest)
+GAMEVER=$(cat "$WORK/vanilla/game_version.txt" 2>/dev/null || echo "unknown build")
 VAN=$(sha256sum $WORK/vanilla/data.win | cut -d' ' -f1)
 MOD=$(sha256sum $WORK/build/data.win | cut -d' ' -f1)
 cat > "$OUT/mod_info.json" <<EOF
 {
   "mod_version": "$VER",
-  "game_version": "ZERO Sievert 1.3.3, Steam build 25269476",
+  "game_version": "ZERO Sievert, $GAMEVER",
   "vanilla_sha256": "$VAN",
   "modded_sha256": "$MOD"
 }

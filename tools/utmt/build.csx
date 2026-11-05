@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UndertaleModLib;
 using UndertaleModLib.Models;
 
-string root = Environment.GetEnvironmentVariable("COOP_ROOT") ?? @"C:\Users\pasha\zerosievert-coop";
+string root = Environment.GetEnvironmentVariable("COOP_ROOT") ?? throw new Exception("COOP_ROOT is not set (run tools/build.sh)");
 string gmlDir = Path.Combine(root, "mod", "gml");
 string hooksFile = Path.Combine(root, "mod", "hooks.txt");
 

@@ -536,6 +536,26 @@ function coop_fog_freeze(_vb)
 // obj_controller (raid owner) simulates NPCs out of its view: walking them along their patrol paths and
 // rolling fights between them. Near another player those NPCs are live (see coop_after_culling): leave them
 // to their own AI.
+// Hook (ai_human_before_cull): the game suspends the new human AI (drops its orders and its target) for every
+// NPC outside the local camera before culling. On the raid owner the world around the other players keeps
+// running (coop_after_culling re-activates it), so their NPCs must keep their AI too. Replicas run no AI.
+function coop_keep_ai_awake(_inst)
+{
+    try
+    {
+        if (variable_instance_exists(_inst, "coop_replica") && _inst.coop_replica)
+        {
+            return true;
+        }
+        return coop_is_world_owner() && coop_near_other_player(_inst.x, _inst.y);
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    return false;
+}
+
 function coop_near_other_player(_x, _y)
 {
     if (!coop().connected)

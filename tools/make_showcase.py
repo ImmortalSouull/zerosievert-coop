@@ -3,13 +3,14 @@
 Takes (zerosievert-coop-work/caps): host.mkv + guest.mkv (same moment, two windows), menu.mkv (one window).
 Text is drawn with the game's own Cyrillic pixel font (silver.ttf from the user's install, render-only).
 """
+import os
 import shutil
 import subprocess
 from pathlib import Path
 
-CAPS = Path(r"C:\Users\pasha\zerosievert-coop-work\caps")
+CAPS = Path(__file__).resolve().parent.parent.parent / "zerosievert-coop-work" / "caps"
 OUT = CAPS / "showcase"
-FF = next(Path(r"C:\Users\pasha\AppData\Local\Microsoft\WinGet\Packages").glob("Gyan.FFmpeg*/ffmpeg-*/bin/ffmpeg.exe"))
+FF = next(Path(os.environ["LOCALAPPDATA"]) / "Microsoft" / "WinGet" / "Packages".glob("Gyan.FFmpeg*/ffmpeg-*/bin/ffmpeg.exe"))
 FONT_SRC = Path(r"C:\Program Files (x86)\Steam\steamapps\common\ZERO Sievert\ZS_vanilla\languages\russian\silver.ttf")
 ACCENT = "0xB6FF3B"
 GREY = "0x9aa38f"

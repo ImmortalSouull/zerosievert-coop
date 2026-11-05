@@ -1,16 +1,16 @@
 ### findreplace gml_GlobalScript___db_init
 <<<FIND
-global.database_savedata_root = steam_initialised() ? (string(steam_get_user_account_id()) + "/") : "offline/";
+global.database_savedata_root = platform_user_id() + "/";
 <<<REPLACE
-global.database_savedata_root = steam_initialised() ? (string(steam_get_user_account_id()) + "/") : "offline/";
+global.database_savedata_root = platform_user_id() + "/";
 global.database_savedata_root = coop_save_root_override(global.database_savedata_root);
 <<<END
 
 ### findreplace gml_GlobalScript_db_cloud_enabled
 <<<FIND
-return true && steam_initialised()
+return platform_cloud_available();
 <<<REPLACE
-return !coop_test_mode() && steam_initialised()
+return !coop_test_mode() && platform_cloud_available();
 <<<END
 
 ### append gml_Object_obj_logo_screen_Create_0
@@ -243,9 +243,9 @@ if (obj_map_generator.area != UnknownEnum.Value_9 && (coop_test_mode() || keyboa
 
 ### findreplace gml_Object_obj_logo_screen_Step_0
 <<<FIND
-            else if (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any))
+            else if ((keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any)) || dev_launch_requested())
 <<<REPLACE
-            else if (coop_test_mode() || keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any))
+            else if (coop_test_mode() || (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any)) || dev_launch_requested())
 <<<END
 
 ### prepend gml_Object_obj_map_generator_Alarm_2
@@ -612,9 +612,9 @@ real_time_played += (zs_logic_dt() / 1000000);
             var sound_time = audio_sound_length(item_weapon_get_sound_cocking(arma_now)) * 60;
 <<<END
 
-### findreplace gml_Object_obj_controller_Step_0
+### findreplace gml_GlobalScript_debug_menu
 <<<FIND
-        game_set_speed(global.fps_unlocked ? 1000 : 60, gamespeed_fps);
+        game_set_speed(arg0 ? 1000 : 60, gamespeed_fps);
 <<<REPLACE
         zs_fps_cycle();
 <<<END
@@ -967,31 +967,34 @@ if (!variable_instance_exists(id, "weapon_holder") || !variable_instance_exists(
 
 ### findreplace gml_Object_obj_controller_Step_0
 <<<FIND
-                                if (_size_path > 0 && _inside_map == true)
+                                if (!global.roaming_enabled && !_route_handled && _size_path > 0 && _inside_map == true)
                                 {
                                     if (!point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270))
 <<<REPLACE
-                                if (_size_path > 0 && _inside_map == true)
+                                if (!global.roaming_enabled && !_route_handled && _size_path > 0 && _inside_map == true)
                                 {
                                     if (!point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id.x, _id.y))
 <<<END
 
 ### findreplace gml_Object_obj_controller_Step_0
 <<<FIND
-                                if (!point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270))
-                                {
-                                    for (var j = 0; j < _size; j++)
+                                if (!instance_exists(_id) && !point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270))
 <<<REPLACE
-                                if (!point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id.x, _id.y))
-                                {
-                                    for (var j = 0; j < _size; j++)
+                                if (!instance_exists(_id) && !point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id.x, _id.y))
 <<<END
 
 ### findreplace gml_Object_obj_controller_Step_0
 <<<FIND
-if (!point_in_rectangle(_id_fight.x, _id_fight.y, x - 480, y - 270, x + 480, y + 270))
+if (!instance_exists(_id_fight) && !point_in_rectangle(_id_fight.x, _id_fight.y, x - 480, y - 270, x + 480, y + 270))
 <<<REPLACE
-if (!point_in_rectangle(_id_fight.x, _id_fight.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id_fight.x, _id_fight.y))
+if (!instance_exists(_id_fight) && !point_in_rectangle(_id_fight.x, _id_fight.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id_fight.x, _id_fight.y))
+<<<END
+
+### findreplace gml_GlobalScript_ai_bridge
+<<<FIND
+        if (ai_human_migrated(id) && (arg4 || bbox_right < arg0 || bbox_left > arg2 || bbox_bottom < arg1 || bbox_top > arg3))
+<<<REPLACE
+        if (ai_human_migrated(id) && (arg4 || ((bbox_right < arg0 || bbox_left > arg2 || bbox_bottom < arg1 || bbox_top > arg3) && !coop_keep_ai_awake(id))))
 <<<END
 
 ### findreplace gml_GlobalScript_difficulty_get_description

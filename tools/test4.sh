@@ -3,6 +3,7 @@
 # usage: tools/test4.sh <minutes> "<note>" [host args] [guest args (all guests)] [guest D args]
 # env COOP_PLAYERS=3 runs without coopD (each instance takes ~2.4 GB of RAM).
 set -euo pipefail
+source "$(dirname "$0")/env.sh"
 MIN=$1; NOTE=$2; HX=${3:-}; GX=${4:-}; DX=${5:-$GX}
 N=${COOP_PLAYERS:-4}
 rm -f "$LOCALAPPDATA"/ZERO_Sievert/coop_*.log
@@ -13,4 +14,4 @@ ARGS=(--launch "$BASE -coop_root coopA -coop_host -coop_expect $N -coop_window 0
 if [ "$N" -ge 4 ]; then
   ARGS+=(--launch "$BASE -coop_root coopD -coop_join 127.0.0.1 -coop_window 1290,740,1280,700 $DX")
 fi
-python /c/Users/pasha/zerosievert-coop/tools/game_guard.py run --max-minutes "$MIN" --note "$NOTE" --stagger 2 "${ARGS[@]}"
+python "$ROOT/tools/game_guard.py" run --max-minutes "$MIN" --note "$NOTE" --stagger 2 "${ARGS[@]}"
