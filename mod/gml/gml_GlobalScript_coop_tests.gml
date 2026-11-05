@@ -47,6 +47,9 @@ function coop_test_ext_step()
         var _py = 1304;
         with (obj_chest_general)
         {
+            // map containers only: corpses / bags made during the raid (1.4 roaming squads fight off screen and
+            // leave bodies) reach the other machines a little later
+            if (variable_instance_exists(id, "coop_dynamic") || variable_instance_exists(id, "coop_net_spawned")) continue;
             var _d = point_distance(x, y, _px, _py);
             if (_d < _bd) { _bd = _d; _best = id; }
         }
@@ -274,7 +277,11 @@ function coop_test_fps_step()
         _c.f_x = obj_player.x;
         _c.f_y = obj_player.y;
         _c.f_gt = _gt;
-        _c.f_key = (_t == 120) ? 3 : 1; // hold left, then down (coop_test_input)
+        // hold a direction toward the middle of the map (spawns can be at an edge, and walking off the map moves
+        // the player): horizontal first, then vertical. kb_hold: 0 up, 1 down, 2 right, 3 left (coop_test_input)
+        var _mh = instance_exists(obj_map_generator) ? obj_map_generator.map_height : room_height;
+        if (_t == 120) _c.f_key = (obj_player.x > room_width / 2) ? 3 : 2;
+        else _c.f_key = (obj_player.y > _mh / 2) ? 0 : 1;
     }
     if (_t == 420 || _t == 1200)
     {
@@ -1287,7 +1294,8 @@ function coop_test_aiguest_step()
         if (_t == 3000) game_end();
         exit;
     }
-    if (_t == 150)
+    // a new experienced enemy every 10 s (the previous one may be dead or led away by a roaming squad)
+    if (_t mod 600 == 150 && _t < 2400)
     {
         var _best = coop_test_pick_enemy(obj_player.x, obj_player.y, true);
         if (instance_exists(_best))
@@ -1298,7 +1306,7 @@ function coop_test_aiguest_step()
             coop_log("aiguest: jumped next to ", object_get_name(_best.object_index), " ", _best.npc_id, " (", npc_get_faction(_best.npc_id), ")");
         }
     }
-    if (_t == 190 && variable_struct_exists(_c, "ag_tg") && instance_exists(_c.ag_tg))
+    if (_t mod 600 == 190 && variable_struct_exists(_c, "ag_tg") && instance_exists(_c.ag_tg))
     {
         // trees and walls around the target are active now (culling re-activates the camera region every 20 ticks)
         var _spot = coop_test_open_spot(_c.ag_tg, 160);
@@ -1364,6 +1372,7 @@ function coop_test_pick_enemy(_x, _y, _far_from_players)
     {
         if (hp <= 0 || !ai_human_supported(id) || !ai_human_rollout_enabled(npc_id)) continue;
         if (string_pos("rookie", npc_id) > 0 || string_pos("novice", npc_id) > 0) continue;
+        if (variable_instance_exists(id, "coop_test_used")) continue; // tried already
         var _score;
         if (_far_from_players)
         {
@@ -1379,6 +1388,7 @@ function coop_test_pick_enemy(_x, _y, _far_from_players)
         if (npc_get_faction(npc_id) == "Bandits") _score += 10000000;
         if (_score > _bs) { _bs = _score; _best = id; }
     }
+    if (instance_exists(_best)) _best.coop_test_used = true;
     return _best;
 }
 

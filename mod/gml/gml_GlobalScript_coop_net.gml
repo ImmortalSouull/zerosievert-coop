@@ -62,7 +62,8 @@ function coop_peer_new(_slot)
         tx_queue: [],
         rx_expect: 0,
         rx_buf: ds_map_create(),
-        ack_due: false
+        ack_due: false,
+        freed: false
     };
 }
 
@@ -85,6 +86,9 @@ function coop_peer_free(_p)
         _k = ds_map_find_next(_p.rx_buf, _k);
     }
     ds_map_destroy(_p.rx_buf);
+    // a message delivered from the reorder buffer can free its own peer (BYE, version refusal): the delivery loop
+    // in coop_net_on_packet checks this flag (it crashed the host with an invalid ds_map when a guest quit)
+    _p.freed = true;
 }
 
 function coop_peers()
@@ -638,6 +642,10 @@ function coop_net_on_packet(_p, _b, _size)
         coop_net_on_ack(_p, _seq);
         exit;
     }
+    if (_p.freed)
+    {
+        exit;
+    }
     if (_kind == 1)
     {
         _p.ack_due = true;
@@ -659,7 +667,7 @@ function coop_net_on_packet(_p, _b, _size)
         }
         _p.rx_expect = (_p.rx_expect + 1) mod 65536;
         coop_net_deliver(_p, _b, _size);
-        while (ds_map_exists(_p.rx_buf, _p.rx_expect))
+        while (!_p.freed && ds_map_exists(_p.rx_buf, _p.rx_expect))
         {
             var _nb = ds_map_find_value(_p.rx_buf, _p.rx_expect);
             ds_map_delete(_p.rx_buf, _p.rx_expect);

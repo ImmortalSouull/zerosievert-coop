@@ -159,7 +159,7 @@ SCENARIOS = [
     S("quad", "-coop_autoraid 1 -coop_scenario quad -coop_fps 60", "-coop_scenario quad -coop_fps 60",
       done=[(k, r"quad: done") for k in "ABCD"],
       checks=[(k, r"players=4 puppets=3", 1) for k in "ABCD"] + [("A", r"maps identical with partner", 3),
-              ("A", r"revived partner .* slot 2", 1), ("B", r"kill credited", 1)]
+              ("A", r"revived partner .* slot 2", 1), ("BCD", r"kill credited", 1)]  # the shooter is slot 1, whichever guest connected first
               + [(k, r"ping mark from slot", 3) for k in "ABCD"],
       custom=lambda logs: None if (re.search(r"received .* from slot 3", logs["A"]) and any(re.search(r"gave .* to slot 0", logs[k]) for k in "BCD")) else "item give slot 3 -> host failed",
       timeout=420, minutes=7, players=4),
@@ -295,7 +295,7 @@ def run(sc, outdir, extra):
             if "MAP MISMATCH" in logs[k] or "maps differ" in logs[k]:
                 problems.append(f"{k}: map mismatch")
     for k, rx, n in sc["checks"]:
-        c = len(re.findall(rx, logs[k]))
+        c = sum(len(re.findall(rx, logs[x])) for x in k)  # k may name several windows: any of them counts
         if c < n:
             problems.append(f"{k}: expected /{rx}/ x{n}, got {c}")
     if sc["custom"] and status == "done":

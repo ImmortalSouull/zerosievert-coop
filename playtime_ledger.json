@@ -1166,6 +1166,51 @@
       "started": "2026-11-05T23:35:47",
       "minutes": 0.84,
       "result": "all instances exited"
+    },
+    {
+      "start": 1793918297.8675592,
+      "deadline": 1793918537.8675592,
+      "end": 1793918345.2252452,
+      "note": "regress fps",
+      "started": "2026-11-05T23:38:17",
+      "minutes": 0.79,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793918390.020239,
+      "deadline": 1793918630.020239,
+      "end": 1793918437.4036424,
+      "note": "regress fps",
+      "started": "2026-11-05T23:39:50",
+      "minutes": 0.79,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793918437.8351405,
+      "deadline": 1793918677.8351405,
+      "end": 1793918469.3840117,
+      "note": "regress livechest",
+      "started": "2026-11-05T23:40:37",
+      "minutes": 0.53,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793918469.8174415,
+      "deadline": 1793918769.8174415,
+      "end": 1793918534.1653392,
+      "note": "regress aiguest",
+      "started": "2026-11-05T23:41:09",
+      "minutes": 1.07,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793918534.5655231,
+      "deadline": 1793918954.5655231,
+      "end": 1793918579.8852184,
+      "note": "regress quad",
+      "started": "2026-11-05T23:42:14",
+      "minutes": 0.76,
+      "result": "all instances exited"
     }
   ],
   "note": "2026-10-03: user lifted the playtime limit (no refund planned)"
