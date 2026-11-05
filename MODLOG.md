@@ -386,3 +386,9 @@ Later the same evening (v1.0 hardening):
   buffer freed its own peer (guest quit) -> peer.freed flag. Test fixes: livechest picks map containers only
   (1.4 roaming fights leave bodies = dynamic containers), quad credit check accepts any guest (slot order =
   connection order), fps walks toward the map centre (edge spawns), aiguest retries a new enemy every 10 s.
+- Full run 2026-11-06 (after the fixes): lang+solo 8/8, duo 28/28 (all maps + aiguest per map), trio 5/5,
+  squad 2/2, squad soak 21 min (0 errors, 0 desync fixes, RAM flat +-2 MB), bad net 18/19. The one failure: v3
+  on bad net, guest shot a green_army_soldier1 replica for 6 s with no hit; on the host instance_nearest from
+  the bullet found no NPC near it (the soldier was not active there) although the guest's replica kept moving.
+  3 reruns on bad net passed. Open: log the host-side position/active state of the target NPC (by nid) when a
+  partner bullet finds nothing near, to tell a stale replica from a deactivation race.
