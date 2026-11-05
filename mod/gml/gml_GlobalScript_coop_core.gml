@@ -353,7 +353,10 @@ function coop_after_culling()
 {
     instance_activate_object(obj_coop);
     var _c = coop();
-    if (_c.connected)
+    // A normal (not shared) pause deactivates the whole room, obj_controller included. Waking the players then
+    // ran obj_player's Step without the controller: crash in player_collect_interactables
+    // ("Unable to find instance" for obj_controller, GitHub issue #1, paused in the hub lobby).
+    if (_c.connected && instance_exists(obj_controller))
     {
         instance_activate_object(obj_player_parent);
         if (coop_raid_owner() == max(0, _c.slot))

@@ -85,6 +85,17 @@ def cmd_status(_):
 GAME_EXE = r"C:\Program Files (x86)\Steam\steamapps\common\ZERO Sievert\ZERO Sievert.exe"
 
 
+ON_TOP = Path(__file__).resolve().parent / "claude_on_top.ps1"
+
+
+def claude_on_top():
+    """Keep the Claude window above the game windows so the user can follow along (ZS_NO_ONTOP=1 skips)."""
+    if os.environ.get("ZS_NO_ONTOP"):
+        return
+    subprocess.Popen(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ON_TOP)],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
 def kill_all_game():
     for pid in running_game_pids():
         subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
@@ -114,7 +125,11 @@ def cmd_run(a):
     seen = False
     gone_since = None
     reason = "all instances exited"
+    next_on_top = time.time() + 3
     while True:
+        if time.time() >= next_on_top:
+            claude_on_top()
+            next_on_top = time.time() + 15
         pids = running_game_pids()
         if pids:
             seen = True

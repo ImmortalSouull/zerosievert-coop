@@ -441,6 +441,58 @@
       "started": "2026-10-03T17:28:39",
       "minutes": 1.01,
       "result": "all instances exited"
+    },
+    {
+      "start": 1793896991.9458954,
+      "deadline": 1793897171.9458954,
+      "end": 1793897172.2662933,
+      "note": "solo smoke 1.4.13",
+      "started": "2026-11-05T17:43:11",
+      "minutes": 3.01,
+      "result": "killed at deadline"
+    },
+    {
+      "start": 1793897185.9350262,
+      "deadline": 1793897425.9350262,
+      "end": 1793897233.1243217,
+      "note": "regress fps",
+      "started": "2026-11-05T17:46:25",
+      "minutes": 0.79,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897233.5626662,
+      "deadline": 1793897473.5626662,
+      "end": 1793897278.6629379,
+      "note": "regress anim",
+      "started": "2026-11-05T17:47:13",
+      "minutes": 0.75,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897279.1194959,
+      "deadline": 1793897519.1194959,
+      "end": 1793897322.1123922,
+      "note": "regress v3",
+      "started": "2026-11-05T17:47:59",
+      "minutes": 0.72,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897322.541315,
+      "deadline": 1793897562.541315,
+      "end": 1793897359.2121441,
+      "note": "regress revive",
+      "started": "2026-11-05T17:48:42",
+      "minutes": 0.61,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793897359.6387343,
+      "deadline": 1793897599.6387343,
+      "end": null,
+      "note": "regress both",
+      "started": "2026-11-05T17:49:19"
     }
   ],
   "note": "2026-10-03: user lifted the playtime limit (no refund planned)"

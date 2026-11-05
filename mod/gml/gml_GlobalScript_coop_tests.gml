@@ -892,6 +892,14 @@ function coop_test_lobby_step(_t)
         coop_test_lobby2_step(_t);
         exit;
     }
+    // GitHub issue #1: a normal pause in the hub while connected (hub_t stops while the player is set aside;
+    // coop_test_pause_step runs the rest every frame)
+    if (_t == 120)
+    {
+        _c.pause_test = 0;
+        game_pause();
+        coop_log("lobby: paused in the hub, controller=", instance_exists(obj_controller), " menu=", instance_exists(obj_main_menu));
+    }
     if (_t == 220)
     {
         coop_visit_place_player();
@@ -949,6 +957,28 @@ function coop_test_lobby_step(_t)
         screen_save("hub_back_" + _tag + ".png");
     }
     if (_t == 1200) game_end();
+}
+
+// Runs every frame (also while the world is paused): see the pause step of coop_test_lobby_step.
+function coop_test_pause_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || !variable_struct_exists(_c, "pause_test") || _c.pause_test < 0)
+    {
+        exit;
+    }
+    _c.pause_test++;
+    if (_c.pause_test == 60)
+    {
+        // before the fix obj_player was woken here without obj_controller and crashed in its Step
+        coop_log("lobby: paused 60 frames, player active=", instance_exists(obj_player), " controller=", instance_exists(obj_controller));
+        game_unpause();
+    }
+    if (_c.pause_test == 120)
+    {
+        coop_log("lobby: pause test done, player=", instance_exists(obj_player), " controller=", instance_exists(obj_controller));
+        _c.pause_test = -1;
+    }
 }
 
 // Furniture of our own modules that is there from the start (vertex batching runs ~8 frames into the hub):

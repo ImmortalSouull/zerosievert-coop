@@ -20,10 +20,18 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   coop_ui_panel/slot/prompt/item_icon/fit). Hub lobby + visits live in `coop_hub.gml`.
 - `dist_src/` — installer.ps1, README.txt (Russian, for players), THIRD_PARTY.txt.
 - `tools/` — build/test/release scripts (below). `tools/utmt/build.csx` = UTMT build script.
-- Outside the repo (never commit game data): `C:\Users\pasha\zerosievert-coop-work\`
-  - `vanilla/data.win` pristine copy (sha256 1c4f2cd1...), `decomp/CodeEntries/` decompiled game GML
+- Outside the repo (never commit game data): `zerosievert-coop-work\` NEXT TO the repo (now
+  `C:\Users\PC\zerosievert-coop-work\`; repo `C:\Users\PC\zerosievert-coop`, new PC since 2026-11-05).
+  No script hardcodes a user folder: `tools/env.sh` derives ROOT/WORK/G (game dir, override ZS_GAME_DIR)/CLI.
+  - `vanilla/data.win` pristine copy (game 1.4.13, Steam build 26317366, sha256 96c3df3a...),
+    `decomp/CodeEntries/` decompiled game GML
   - `tools/utmt_cli/` UndertaleModCli 0.9.2.0, `tools/xdelta/`, `build/`, `dist/`, `caps/` (videos)
-- Game: `C:\Program Files (x86)\Steam\steamapps\common\ZERO Sievert` (GameMaker 2024.14, VM, data.win).
+- Game: `C:\Program Files (x86)\Steam\steamapps\common\ZERO Sievert` (GameMaker, VM, data.win).
+- After a game update: `bash tools/decompile.sh --refresh` (only while the game folder holds an untouched Steam
+  install: copies data.win to work/vanilla, decompiles, runs `python tools/check_hooks.py` = hooks whose FIND
+  text or target vanished). Then fix hooks.txt, build, regress.
+- The user watches the tests: `tools/claude_on_top.ps1` keeps the Claude window above the game (game_guard.py
+  calls it every 15 s while a game runs; `-Off` releases it, env ZS_NO_ONTOP=1 skips it).
 
 ## Commands (Git Bash)
 - Build: `bash tools/build.sh` → `zerosievert-coop-work/build/data.win` (check "COOP BUILD OK").
@@ -33,9 +41,8 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 - Regression (use it before every release): `python tools/regress.py` (core), `python tools/regress.py all`
   (+ every map), `COOP_REGRESS_ARGS="-coop_netsim 120,3,40" python tools/regress.py` (bad network);
   4 players: `tools/test4.sh` (coopA..coopD; env COOP_PLAYERS=3 for three), soak: `python tools/soak.py <minutes>`.
-  RAM: the laptop has 15 GB and each game instance takes ~2.4 GB - 4 instances swap and froze the PC once.
-  Prefer 2-instance runs and the 3-instance scenarios (trio, handoff3); run quad/handoff/soak rarely, after
-  closing heavy apps (the user allows closing RazerAppEngine, CurseForge, NitroSense; keep Steam and Claude).
+  RAM: the new PC (Ryzen 7 9800X3D, 32 GB, RTX 5060 16 GB) runs 4 instances (~2.4 GB each) fine. (The old
+  laptop had 15 GB and froze once with 4.)
   Multi-player scenarios: quad/trio (see each other, credit, revive, ping, give), handoff/handoff3 (host
   extracts, next slot owns the world), latejoin (-coop_delay_join), reconnect (blackout), menus (UI buttons),
   lobby/lobby2 (hub lobby + visits), ownerjoin/chest3/both3 (3 players), grouphp. Solo with the mod:
@@ -54,11 +61,15 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   sounds), tele (long-teleport stress), leave (host extracts). ALWAYS `game_guard.py stop` before test2.sh.
 - Debug: `-coop_prof` (subsystem us/s every 5 s), `-coop_trace`; freeze hunting: build with
   `COOP_TRACE_EVENTS='<regex of code entries>' bash tools/build.sh`, run with `-coop_phase`, then
-  `python tools/peek.py <pid> <addr from log>` shows the game event a frozen process is stuck in. Test save roots `coopA`/`coopB` (copies of an old save, Russian UI,
-  coopB has grass 0.25 + low spec to catch determinism bugs). The user's real saves are never touched.
+  `python tools/peek.py <pid> <addr from log>` shows the game event a frozen process is stuck in. Test save roots
+  `coopA`..`coopD` in %LOCALAPPDATA%\ZERO_Sievert (copies of the user's slot 1, English UI). Since 1.4 a whole
+  slot is ONE file `save_shared_<slot>.dat`; the real save lives in Steam Cloud (folder = Steam account id,
+  `using_cloud`), test mode turns cloud off. The user's real saves are never touched.
+  Screenshots: `bash tools/shots.sh <prefix>` (tools/winshot.ps1, PrintWindow) - the old `um` tool is gone.
 
 ## GitHub (public repo https://github.com/ImmortalSouull/zerosievert-coop)
-- gh CLI: `"/c/Program Files/GitHub CLI/gh.exe"` (logged in as ImmortalSouull). Ask the user before publishing.
+- gh CLI: `"/c/Program Files/GitHub CLI/gh.exe"` (on the new PC the user has to log in once: `gh auth login`).
+  Ask the user before publishing. Git identity is set per repo (ImmortalSouull); core.autocrlf=false (CRLF breaks .sh).
 - Every release: write `docs/releases/v<ver>.md` in Russian AND English (title "RU / EN", a
   "**Русский** · [English](#english)" line, Russian part, then `<a name="english"></a>` + full English
   translation incl. install steps; README.md and dist_src/README.txt are bilingual too): what's new, "Исправлено (относительно v<prev>)",
@@ -73,6 +84,13 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   (use ds_map_find_value); extension functions the game never calls must be declared (build.csx does it);
   `until` is reserved; depth must be within ±16000; no raw newlines in GML strings (use chr(10)).
 - Launch needs env SteamAppId/SteamGameId + `-no_gpu_pref` (guard handles it).
+- Game 1.4 (new enemy AI): humans run a behaviour tree (`ai_execution`, ai_*.gml, profile tree "human_basic");
+  platform layer (scr_platform: Steam/Epic/none) replaces direct steam_* calls in the game's own code (the
+  Steamworks extension is still there for our P2P). `ai_human_before_cull` suspends the AI of NPCs outside the
+  local camera: the owner keeps it awake near other players (coop_keep_ai_awake hook). Off-screen "roaming"
+  (global.roaming_enabled) only moves/fights deactivated NPCs, so the active regions around puppets are safe.
+  Perception picks the player via player_nearest_instance (our hook -> nearest standing player).
+- Never wake players while obj_controller is deactivated (vanilla pause): their Step reads obj_controller.
 - The game deactivates instances outside the camera and on pause — keep obj_coop alive (coop_ensure_alive).
 - With a player on the map the OS mouse is locked; use obj_cursor (virtual cursor) for GUI hit tests.
 - Networking (coop_net.gml): slots 0..3, star topology through the host, reliable UDP layer, raid owner =

@@ -11,3 +11,7 @@ for _p in "$LOCALAPPDATA"/Programs/Python/Python3*/; do
   [ -x "$_p/python.exe" ] && PATH="$(cygpath -u "$_p"):$PATH"
 done
 export ROOT WORK G CLI XDELTA PATH
+# Keep the Claude window above the game windows (the user watches the tests). ZS_NO_ONTOP=1 skips it.
+claude_on_top() {
+  [ -n "${ZS_NO_ONTOP:-}" ] || powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$ROOT/tools/claude_on_top.ps1")" > /dev/null 2>&1 || true
+}

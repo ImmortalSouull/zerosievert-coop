@@ -321,3 +321,26 @@ Later the same evening (v1.0 hardening):
   480x270 of any puppet (coop_near_other_player).
 - Clicking real UI in tests: `um win drive --proc "ZERO Sievert" "focus" "click x y"` (window coords of
   the 1280x720 test window); Mods = 895,541 in the main menu.
+
+## 2026-11-05 - new PC + game 1.4.13 ("Completely New Enemy AI" + "Improved Enemy AI")
+- New PC (user `PC`): repo C:\Users\PC\zerosievert-coop, work folder next to it. Installed Git, gh, Python 3.12,
+  UTMT CLI 0.9.2.0 (still the latest release), xdelta 3.1.0. Tools take paths from tools/env.sh.
+- Game: 1.4.13, Steam build 26317366, data.win sha256 96c3df3a..., 9427 code entries (was 8003), 1557 objects,
+  5 extensions (Epic Online Services added). Tools: tools/decompile.sh, tools/check_hooks.py.
+- 7 of 126 hooks no longer matched:
+  * __db_init / db_cloud_enabled / logo screen: new platform layer (platform_user_id(),
+    platform_cloud_available(), dev_launch_requested()).
+  * FPS unlock left obj_controller Step for the debug menu (debug_menu_entries "Unlock framerate").
+  * obj_controller off-screen sim rewritten: legacy patrol paths only with !global.roaming_enabled (debug
+    toggle, on by default); NPCs on the new AI use ai_routes_offscreen; roaming moves/fights only
+    deactivated NPCs (instance_exists false), so the regions coop_after_culling keeps active are safe.
+- New AI: obj_controller Alarm_4 calls ai_human_before_cull before deactivating: every migrated NPC outside the
+  LOCAL camera gets ai_human_suspend (routes, commands, cover and its target dropped). On the raid owner that hit
+  the NPCs fighting the other players every 20 frames -> hook keeps them awake (coop_keep_ai_awake).
+  Perception: player_nearest_instance (already hooked). AI time = ticks (now += 1/60), ai_world_begin_step in
+  obj_controller Begin Step (guarded on render-only frames) -> high refresh rate safe.
+- Saves since 1.4: one file per slot (save_shared_<n>.dat), in Steam Cloud. Test roots coopA..coopD = copies.
+- GitHub issue #1 (crash "Unable to find instance for object index 369" in player_collect_interactables,
+  coop_solo.log): 369 = obj_controller in 1.3.x. A normal pause deactivates the room incl. obj_controller; the
+  coop_after_culling() call at the end of game_pause woke obj_player_parent when connected (hub lobby) -> the
+  player's Step read obj_controller.marked_object_id. Fixed: players are only woken while obj_controller exists.

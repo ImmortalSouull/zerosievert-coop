@@ -185,7 +185,9 @@ SCENARIOS = [
     S("lobby", "-coop_scenario lobby", "-coop_scenario lobby",
       done=[("B", r"lobby: restored")],
       checks=[("B", r"lobby: puppets=1 together=1", 1), ("A", r"puppet of slot 1 created", 1),
-              ("B", r"save during visit wrote own modules=1", 1), ("B", r"lobby: restored=1", 1)],
+              ("B", r"save during visit wrote own modules=1", 1), ("B", r"lobby: restored=1", 1),
+              # GitHub issue #1: pause in the hub while connected must not wake the player without obj_controller
+              ("B", r"paused 60 frames, player active=0 controller=0", 1), ("B", r"pause test done, player=1 controller=1", 1)],
       need_identical=False, timeout=200, minutes=3),
     # own module furniture there from the start: gone during the visit of an empty bunker, back after
     S("lobby2", "-coop_scenario lobby", "-coop_scenario lobby2",

@@ -129,6 +129,7 @@ function coop_autopilot_step()
     coop_bot_step();
     coop_scenario_step();
     coop_scenario_hub_step();
+    coop_test_pause_step();
     coop_test_ext_step();
 }
 
