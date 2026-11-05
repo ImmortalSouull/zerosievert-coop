@@ -69,7 +69,9 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   Screenshots: `bash tools/shots.sh <prefix>` (tools/winshot.ps1, PrintWindow) - the old `um` tool is gone.
 
 ## GitHub (public repo https://github.com/ImmortalSouull/zerosievert-coop)
-- gh CLI: `"/c/Program Files/GitHub CLI/gh.exe"` (on the new PC the user has to log in once: `gh auth login`).
+- gh CLI: `"/c/Program Files/GitHub CLI/gh.exe"` (logged in as ImmortalSouull on the new PC, `gh auth setup-git` done).
+- License: MIT (LICENSE, since 2026-11-05; README "Лицензия / License" says it covers the mod's code only).
+  All the user's other mod repos are MIT too.
   Ask the user before publishing. Git identity is set per repo (ImmortalSouull); core.autocrlf=false (CRLF breaks .sh).
 - Every release: write `docs/releases/v<ver>.md` in Russian AND English (title "RU / EN", a
   "**Русский** · [English](#english)" line, Russian part, then `<a name="english"></a>` + full English
