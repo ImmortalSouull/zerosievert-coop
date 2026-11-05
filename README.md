@@ -49,6 +49,10 @@ Steam или по IP, общий мир, ранения и поднятие на
 
 Сторонние инструменты: UndertaleModTool (Underminers), xdelta3 (GPL v2, см. THIRD_PARTY.txt в релизе).
 
+## Лицензия
+Код мода — под лицензией [MIT](LICENSE): его можно свободно использовать, менять и распространять, сохраняя упоминание автора.
+Лицензия относится только к коду этого мода. Сама игра ZERO Sievert и фрагменты её кода в `mod/hooks.txt` (якоря для патчей) принадлежат их правообладателям; xdelta3 в релизах — под своей лицензией GPL v2.
+
 ---
 
 <a name="english"></a>
@@ -100,3 +104,7 @@ Full instructions: `README.txt` in the release archive.
 - Development log and every engine quirk found — `MODLOG.md` (English).
 
 Third-party tools: UndertaleModTool (Underminers), xdelta3 (GPL v2, see THIRD_PARTY.txt in the release).
+
+## License
+The mod's code is released under the [MIT License](LICENSE): you may use, modify and distribute it freely, keeping the copyright notice.
+The license covers this mod's code only. ZERO Sievert itself and the fragments of its code in `mod/hooks.txt` (anchors for the patches) belong to their owners; xdelta3 shipped in releases keeps its own GPL v2 license.
