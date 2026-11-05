@@ -862,6 +862,31 @@
       "started": "2026-11-05T22:29:07",
       "minutes": 1.07,
       "result": "all instances exited"
+    },
+    {
+      "start": 1793914264.0833588,
+      "deadline": 1793914504.0833588,
+      "end": 1793914321.050058,
+      "note": "regress solo",
+      "started": "2026-11-05T22:31:04",
+      "minutes": 0.95,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793914321.4312165,
+      "deadline": 1793914561.4312165,
+      "end": 1793914372.0736036,
+      "note": "regress solo9_cnpp",
+      "started": "2026-11-05T22:32:01",
+      "minutes": 0.84,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793914372.5732086,
+      "deadline": 1793914612.5732086,
+      "end": null,
+      "note": "regress fps",
+      "started": "2026-11-05T22:32:52"
     }
   ],
   "note": "2026-10-03: user lifted the playtime limit (no refund planned)"

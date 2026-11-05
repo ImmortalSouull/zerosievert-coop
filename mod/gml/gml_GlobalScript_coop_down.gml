@@ -1,10 +1,11 @@
-// ZERO Sievert co-op: down / revive.
-// - Lethal damage while the partner is in the raid puts you down instead of killing you.
+// ZERO Sievert co-op: down / revive (a new mechanic).
+// - Lethal damage while a teammate stands in the raid puts you down instead of killing you.
 // - Down #1: timer N s, may shoot a pistol. Down #2: timer N/2, no shooting. Down #3: death.
-// - The timer pauses while the partner is reviving you. Counter resets at raid start.
-// - Reviver picks: nothing / a bandage / a medkit. Time depends only on the category,
+// - The timer pauses while a teammate is reviving you. The counter resets at raid start.
+// - The reviver picks: nothing / a bandage / a medkit. Time depends only on the category,
 //   HP after revive depends on the exact item. Second down: HP x0.6.
-// - Both players down at once: both die and the raid ends.
+// - Everyone down at once (1.5 s with nobody standing): everyone dies and the raid ends.
+// Hook: player_step_grim_reaper (the game's single death chokepoint).
 
 #macro COOP_DOWN_REVIVE_RANGE 30
 

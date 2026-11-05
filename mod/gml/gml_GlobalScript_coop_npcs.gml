@@ -1,8 +1,13 @@
-// ZERO Sievert co-op: host-authoritative NPCs.
-// Host: real NPCs, each gets a network id (nid) and is streamed to the guest.
-// Guest: every locally generated NPC is removed; replicas are spawned from host data and their AI
-// (Step + movement alarms) is switched off. End Step still runs, so walk/idle animation, facing
-// and footsteps come for free from the replicated position and state.
+// ZERO Sievert co-op: NPCs simulated once (on the raid owner) and replicated to everyone else.
+// Owner: real NPCs; each gets a network id (nid) and is streamed: a spawn (object, position, key variables as
+// JSON), then batched snapshots (position, aim, facing, HP, state, human state) - every 4 ticks near another
+// player, every 30 ticks elsewhere. State strings are sent once and then referred to by a short id.
+// Replicas: every NPC a replica machine generated itself is removed; replicas are spawned from the owner's data
+// and run no AI (their Step and movement alarms exit, see hooks.txt). End Step still runs, so walk/idle
+// animation, facing and footsteps come for free from the replicated position and state.
+// Ownership moves (the owner extracted): the new owner turns its replicas into real NPCs with the same ids;
+// the 1.4 behaviour-tree AI then prepares itself on the first Step (ai_human_before_step, "resumed_after_gap").
+// Also here: callout bubbles (1.4 AI barks), the 30 s consistency check (missing / extra replicas).
 
 #macro COOP_MSG_NPC_STATESTR 35
 #macro COOP_NPC_SPAWN_VARS ["npc_id", "faction", "npc_name", "arma_now", "armor_id", "backpack_now", "sprite_idle", "sprite_move", "sprite_dead", "hp", "hp_max", "ammo_id_now", "npc_speaker_id", "can_be_damaged", "image_xscale"]
@@ -495,10 +500,6 @@ function coop_npc_on_gone(_b)
             instance_destroy(id, false);
         }
     }
-}
-
-function coop_npc_on_hit(_b)
-{
 }
 
 // obj_controller simulates off-screen patrols through global.list_n_id; drop an NPC from it.

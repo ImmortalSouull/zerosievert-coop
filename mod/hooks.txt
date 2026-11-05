@@ -1,3 +1,13 @@
+// Patches into ZERO Sievert's own code, applied by tools/utmt/build.csx to a copy of the original data.win.
+// Format: '### findreplace|prepend|append <code entry name>', then the body, ended by <<<END.
+//   findreplace: <<<FIND (exact decompiled text) ... <<<REPLACE ... ; the build fails if the FIND text is gone.
+//   After a game update run tools/decompile.sh: tools/check_hooks.py lists the hooks that no longer match.
+// Lines outside the ### blocks (like these) are ignored by the build.
+// 'WORKAROUND (no source access)' marks a patch that only exists because the mod can't change the game's
+// source; with the source most of them become a few lines in the right place.
+// Never 'append' to a gml_GlobalScript_* entry: the code would land outside the function.
+
+// [1] Test mode: every instance gets its own save root (-coop_root coopA..D) so several game windows on one PC never share a save.
 ### findreplace gml_GlobalScript___db_init
 <<<FIND
 global.database_savedata_root = platform_user_id() + "/";
@@ -6,6 +16,7 @@ global.database_savedata_root = platform_user_id() + "/";
 global.database_savedata_root = coop_save_root_override(global.database_savedata_root);
 <<<END
 
+// [2] Test mode: no Steam Cloud for the test save roots (the real save is never touched).
 ### findreplace gml_GlobalScript_db_cloud_enabled
 <<<FIND
 return platform_cloud_available();
@@ -13,10 +24,12 @@ return platform_cloud_available();
 return !coop_test_mode() && platform_cloud_available();
 <<<END
 
+// [3] Starts the mod: creates the persistent controller obj_coop and reads the command line.
 ### append gml_Object_obj_logo_screen_Create_0
 coop_boot();
 <<<END
 
+// [4] Test mode: skip the 'press any key' screens (logo, map loading, train arrival) so scripted tests run unattended.
 ### findreplace gml_Object_obj_logo_screen_Step_0
 <<<FIND
 if (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) || obj_gamepad.input_released[UnknownEnum.Value_29])
@@ -24,6 +37,7 @@ if (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) ||
 if (coop_test_mode() || keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) || obj_gamepad.input_released[UnknownEnum.Value_29])
 <<<END
 
+// [5] Raid start: the host's map id + seed go to everyone (coop_raid.gml) before the game opens the raid db.
 ### findreplace gml_GlobalScript_go_to_map
 <<<FIND
     db_open("raid");
@@ -34,6 +48,7 @@ if (coop_test_mode() || keyboard_check_released(vk_anykey) || mouse_check_button
     db_write("Map", "Map id", arg0);
 <<<END
 
+// [6] Shared maps: the map seed comes from the session (coop_take_seed) instead of irandom when a co-op raid starts.
 ### findreplace gml_Object_obj_map_generator_Create_0
 <<<FIND
 global.map_seed = undefined ?? irandom(4294967295);
@@ -41,6 +56,7 @@ global.map_seed = undefined ?? irandom(4294967295);
 global.map_seed = coop_take_seed() ?? irandom(4294967295);
 <<<END
 
+// [7] Bullets: every scr_shoot bullet is sent to the other players (coop_bullets.gml).
 ### findreplace gml_GlobalScript_bullet_spawn_add_data
 <<<FIND
 function bullet_spawn_add_data(arg0)
@@ -51,6 +67,7 @@ function bullet_spawn_add_data(arg0)
     coop_on_bullet_spawned(arg0);
 <<<END
 
+// [8] Bullets: on world replicas NPC hits are cosmetic; damage is applied by the raid owner only.
 ### findreplace gml_GlobalScript_bullet_hit_npc
 <<<FIND
 function bullet_hit_npc(arg0, arg1)
@@ -64,6 +81,7 @@ function bullet_hit_npc(arg0, arg1)
     }
 <<<END
 
+// [9] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_anomaly_electric_Step_0
 if (coop_npc_skip_step())
 {
@@ -71,6 +89,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [10] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_anomaly_fire_Step_0
 if (coop_npc_skip_step())
 {
@@ -78,6 +97,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [11] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_big_Step_0
 if (coop_npc_skip_step())
 {
@@ -85,6 +105,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [12] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_blink_Step_0
 if (coop_npc_skip_step())
 {
@@ -92,6 +113,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [13] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_boar_zombie_Step_0
 if (coop_npc_skip_step())
 {
@@ -99,6 +121,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [14] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_boar_Step_0
 if (coop_npc_skip_step())
 {
@@ -106,6 +129,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [15] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_crystal_violet_npp_Step_0
 if (coop_npc_skip_step())
 {
@@ -113,6 +137,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [16] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_crystal_violet_Step_0
 if (coop_npc_skip_step())
 {
@@ -120,6 +145,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [17] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_ghoul_2_Step_0
 if (coop_npc_skip_step())
 {
@@ -127,6 +153,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [18] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_ghoul_Step_0
 if (coop_npc_skip_step())
 {
@@ -134,6 +161,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [19] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_mutant_parent_Step_0
 if (coop_npc_skip_step())
 {
@@ -141,6 +169,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [20] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_rat_Step_0
 if (coop_npc_skip_step())
 {
@@ -148,6 +177,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [21] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_spider_Step_0
 if (coop_npc_skip_step())
 {
@@ -155,6 +185,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [22] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_enemy_wolf_brown_Step_0
 if (coop_npc_skip_step())
 {
@@ -162,6 +193,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [23] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_green_quest_swamp_Step_0
 if (coop_npc_skip_step())
 {
@@ -169,6 +201,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [24] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_guardia_ingresso_1_Step_0
 if (coop_npc_skip_step())
 {
@@ -176,6 +209,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [25] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_npc_human_parent_Step_0
 if (coop_npc_skip_step())
 {
@@ -183,6 +217,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [26] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_npc_parent_Step_0
 if (coop_npc_skip_step())
 {
@@ -190,6 +225,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [27] WORKAROUND (no source access): NPC replicas run no AI. Every NPC Step event that drives AI exits at once on a replica; the replica update (position, state) runs instead. With the source: one 'remote' flag checked in the NPC base step.
 ### prepend gml_Object_obj_rat_v2_Step_0
 if (coop_npc_skip_step())
 {
@@ -197,6 +233,7 @@ if (coop_npc_skip_step())
 }
 <<<END
 
+// [28] WORKAROUND (no source access): alarms that move or retarget NPCs (paths, patrol, target search) are skipped on replicas.
 ### prepend gml_Object_obj_npc_parent_Alarm_3
 if (coop_npc_skip_alarm())
 {
@@ -204,6 +241,7 @@ if (coop_npc_skip_alarm())
 }
 <<<END
 
+// [29] WORKAROUND (no source access): alarms that move or retarget NPCs (paths, patrol, target search) are skipped on replicas.
 ### prepend gml_Object_obj_npc_parent_Alarm_5
 if (coop_npc_skip_alarm())
 {
@@ -211,6 +249,7 @@ if (coop_npc_skip_alarm())
 }
 <<<END
 
+// [30] WORKAROUND (no source access): alarms that move or retarget NPCs (paths, patrol, target search) are skipped on replicas.
 ### prepend gml_Object_obj_npc_parent_Alarm_6
 if (coop_npc_skip_alarm())
 {
@@ -218,15 +257,17 @@ if (coop_npc_skip_alarm())
 }
 <<<END
 
+// [31] An NPC died or was removed on the raid owner: tell everyone (NPC_DIE / NPC_GONE).
 ### prepend gml_Object_obj_npc_parent_Destroy_0
 coop_npc_on_destroyed();
 <<<END
 
+// [32] WORKAROUND (no source access): culling (obj_controller Alarm 4) deactivates everything outside 960x540 around the LOCAL camera. Re-activate obj_coop and every player, and on the raid owner the regions around the other players (their NPCs must keep running).
 ### append gml_Object_obj_controller_Alarm_4
 coop_after_culling();
 <<<END
 
-
+// [33] Test mode: skip the 'press any key' screens (logo, map loading, train arrival) so scripted tests run unattended.
 ### findreplace gml_Object_obj_map_generator_Step_0
 <<<FIND
 if (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) || obj_gamepad.input_released[UnknownEnum.Value_29] || area == UnknownEnum.Value_10)
@@ -234,6 +275,7 @@ if (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) ||
 if (coop_test_mode() || keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) || obj_gamepad.input_released[UnknownEnum.Value_29] || area == UnknownEnum.Value_10)
 <<<END
 
+// [34] Test mode: skip the 'press any key' screens (logo, map loading, train arrival) so scripted tests run unattended.
 ### findreplace gml_Object_obj_train_Step_0
 <<<FIND
 if (obj_map_generator.area != UnknownEnum.Value_9 && (keyboard_check_pressed(vk_space) ||
@@ -241,6 +283,7 @@ if (obj_map_generator.area != UnknownEnum.Value_9 && (keyboard_check_pressed(vk_
 if (obj_map_generator.area != UnknownEnum.Value_9 && (coop_test_mode() || keyboard_check_pressed(vk_space) ||
 <<<END
 
+// [35] Test mode: skip the 'press any key' screens (logo, map loading, train arrival) so scripted tests run unattended.
 ### findreplace gml_Object_obj_logo_screen_Step_0
 <<<FIND
             else if ((keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any)) || dev_launch_requested())
@@ -248,10 +291,12 @@ if (obj_map_generator.area != UnknownEnum.Value_9 && (coop_test_mode() || keyboa
             else if (coop_test_mode() || (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any)) || dev_launch_requested())
 <<<END
 
+// [36] WORKAROUND (no source access): identical maps without sending the map: re-seed the RNG at every generation step (seed + step * 7919), because other objects consume random() between the steps. With the source: a separate RNG stream for generation.
 ### prepend gml_Object_obj_map_generator_Alarm_2
 coop_gen_reseed();
 <<<END
 
+// [37] The extra co-op difficulty settings are defined in the game's own difficulty system, before the presets are built.
 ### findreplace gml_GlobalScript___difficulty_init
 <<<FIND
 __difficulty_init_rookie();
@@ -260,6 +305,7 @@ coop_difficulty_define();
 __difficulty_init_rookie();
 <<<END
 
+// [38] Group scaling: the number of spawned enemies follows the co-op settings and the group size (fixed at raid start, coop_group_fix).
 ### findreplace gml_GlobalScript_scr_spawner_spawn
 <<<FIND
         if (scr_chance(arg0))
@@ -273,6 +319,7 @@ __difficulty_init_rookie();
         }
 <<<END
 
+// [39] Group scaling: the number of spawned enemies follows the co-op settings and the group size (fixed at raid start, coop_group_fix).
 ### findreplace gml_GlobalScript_scr_spawner_spawn_group
 <<<FIND
         if (scr_chance(arg0))
@@ -286,6 +333,7 @@ __difficulty_init_rookie();
             {
 <<<END
 
+// [40] Anomaly density: the host's co-op setting.
 ### prepend gml_Object_obj_anomaly_fire_parent_Create_0
 if (coop_anomaly_scale())
 {
@@ -293,6 +341,7 @@ if (coop_anomaly_scale())
 }
 <<<END
 
+// [41] Anomaly density: the host's co-op setting.
 ### prepend gml_Object_obj_anomaly_gas_parent_Create_0
 if (coop_anomaly_scale())
 {
@@ -300,6 +349,7 @@ if (coop_anomaly_scale())
 }
 <<<END
 
+// [42] Anomaly density: the host's co-op setting.
 ### prepend gml_Object_obj_anomaly_electric_generator_Create_0
 if (coop_anomaly_scale())
 {
@@ -307,6 +357,7 @@ if (coop_anomaly_scale())
 }
 <<<END
 
+// [43] Friendly fire (co-op setting): bullets of a teammate may hit you.
 ### findreplace gml_GlobalScript_bullet_can_collide_with_player
 <<<FIND
             if (arg0.shooter_faction != arg1.faction)
@@ -314,6 +365,7 @@ if (coop_anomaly_scale())
             if (arg0.shooter_faction != arg1.faction || coop_friendly_fire_hit(arg0, arg1))
 <<<END
 
+// [44] Down / revive: every death goes through player_step_grim_reaper; lethal damage puts you down instead while a teammate can revive you (coop_down.gml).
 ### findreplace gml_GlobalScript_player_step_grim_reaper
 <<<FIND
 function player_step_grim_reaper()
@@ -327,6 +379,7 @@ function player_step_grim_reaper()
     }
 <<<END
 
+// [45] Targeting: NPCs pick the nearest STANDING player of any slot, not only the local one (the 1.4 AI perception uses this too).
 ### findreplace gml_GlobalScript_player_nearest_instance
 <<<FIND
     return instance_nearest(arg0, arg1, obj_player_parent);
@@ -334,6 +387,7 @@ function player_step_grim_reaper()
     return coop_nearest_standing_player(arg0, arg1);
 <<<END
 
+// [46] WORKAROUND (no source access): chest loot is rolled from a seed derived from the raid seed + position, so every player gets the same loot; containers spawned by the owner skip the roll.
 ### prepend gml_Object_obj_chest_general_Alarm_0
 if (coop_chest_alarm_hook())
 {
@@ -341,18 +395,22 @@ if (coop_chest_alarm_hook())
 }
 <<<END
 
+// [47] Containers: registered for live sync when created.
 ### prepend gml_Object_obj_chest_general_Create_0
 coop_chest_on_create();
 <<<END
 
+// [48] WORKAROUND (no source access): pause and culling can deactivate or destroy obj_coop; bring it back at the top of the controller / main menu step.
 ### prepend gml_Object_obj_controller_Step_0
 coop_ensure_alive();
 <<<END
 
+// [49] WORKAROUND (no source access): pause and culling can deactivate or destroy obj_coop; bring it back at the top of the controller / main menu step.
 ### prepend gml_Object_obj_main_menu_Step_0
 coop_ensure_alive();
 <<<END
 
+// [50] World-shaping difficulty values (loot, enemies, anomalies, HP) are the host's on a connected guest, so every player generates the same raid.
 ### findreplace gml_GlobalScript_difficulty_get
 <<<FIND
 function difficulty_get(arg0)
@@ -367,14 +425,17 @@ function difficulty_get(arg0)
     }
 <<<END
 
+// [51] WORKAROUND (no source access): grass density follows each player's graphics setting and changes the number of random() calls during generation: re-seed right after the grass.
 ### append gml_Object_obj_vertex_grass_Create_0
 coop_gen_reseed_after_grass();
 <<<END
 
+// [52] Grenades: sent to the other players from the next controller step (the faction is set after Create).
 ### append gml_Object_obj_grenade_parent_Create_0
 coop_grenade_on_create();
 <<<END
 
+// [53] Grenade explosions hurt only the local player on each machine (a teammate's grenades only with friendly fire).
 ### findreplace gml_Object_obj_grenade_parent_Step_0
 <<<FIND
                     if (_is_player)
@@ -384,6 +445,7 @@ coop_grenade_on_create();
                     {
 <<<END
 
+// [54] Grenade explosions hurt only the local player on each machine (a teammate's grenades only with friendly fire).
 ### findreplace gml_Object_obj_grenade_parent_Step_0
 <<<FIND
                     if (_is_player && !skill_hunter_obtained("grenadeexpert"))
@@ -391,6 +453,7 @@ coop_grenade_on_create();
                     if (_is_player && !skill_hunter_obtained("grenadeexpert") && coop_grenade_hurts_me(self))
 <<<END
 
+// [55] Test mode: windows in the background keep the inventory UI open (the game closes it when the window loses focus).
 ### findreplace gml_GlobalScript_game_in_focus
 <<<FIND
     return window_has_focus();
@@ -398,6 +461,7 @@ coop_grenade_on_create();
     return window_has_focus() || coop_test_mode();
 <<<END
 
+// [56] A bullet or mutant hitting a teammate's puppet closed YOUR inventory: only the local player's hits close it.
 ### findreplace gml_GlobalScript_bullet_hit_player
 <<<FIND
         scr_autoclose_inventory();
@@ -410,6 +474,7 @@ coop_grenade_on_create();
         arg1.hit_shader = "BULLET_HIT_SHADER_NORMAL";
 <<<END
 
+// [57] A bullet or mutant hitting a teammate's puppet closed YOUR inventory: only the local player's hits close it.
 ### findreplace gml_Object_obj_enemy_mutant_parent_Collision_obj_player_parent
 <<<FIND
                     scr_autoclose_inventory();
@@ -422,26 +487,32 @@ coop_grenade_on_create();
                     other.hit = true;
 <<<END
 
+// [58] WORKAROUND (no source access): objects that randomise themselves in Alarm 0 (decor variants and random destroy, random building templates, anomaly fields) re-seed from (seed, xstart, ystart, object), so the result is identical on every machine.
 ### prepend gml_Object_obj_decor_parent_Alarm_0
 coop_pos_reseed(1);
 <<<END
 
+// [59] WORKAROUND (no source access): objects that randomise themselves in Alarm 0 (decor variants and random destroy, random building templates, anomaly fields) re-seed from (seed, xstart, ystart, object), so the result is identical on every machine.
 ### prepend gml_Object_obj_deserialize_parent_Alarm_0
 coop_pos_reseed(2);
 <<<END
 
+// [60] WORKAROUND (no source access): objects that randomise themselves in Alarm 0 (decor variants and random destroy, random building templates, anomaly fields) re-seed from (seed, xstart, ystart, object), so the result is identical on every machine.
 ### prepend gml_Object_obj_anomaly_fire_parent_Alarm_0
 coop_pos_reseed(3);
 <<<END
 
+// [61] WORKAROUND (no source access): objects that randomise themselves in Alarm 0 (decor variants and random destroy, random building templates, anomaly fields) re-seed from (seed, xstart, ystart, object), so the result is identical on every machine.
 ### prepend gml_Object_obj_anomaly_gas_parent_Alarm_0
 coop_pos_reseed(4);
 <<<END
 
+// [62] WORKAROUND (no source access): objects that randomise themselves in Alarm 0 (decor variants and random destroy, random building templates, anomaly fields) re-seed from (seed, xstart, ystart, object), so the result is identical on every machine.
 ### prepend gml_Object_obj_anomaly_electric_generator_Alarm_0
 coop_pos_reseed(5);
 <<<END
 
+// [63] Weather: a guest whose world follows the raid owner never rolls its own hourly weather.
 ### findreplace gml_Object_obj_meteo_controller_Step_0
 <<<FIND
 if (_hour_now != global.weather.last_generated_hour)
@@ -449,10 +520,12 @@ if (_hour_now != global.weather.last_generated_hour)
 if (_hour_now != global.weather.last_generated_hour && !coop_world_slave())
 <<<END
 
+// [64] Emissions (blowouts): the raid owner's emission stages are mirrored to everyone.
 ### prepend gml_Object_obj_meteo_controller_Alarm_1
 coop_world_on_emission_stage();
 <<<END
 
+// [65] Emissions and air drops are rolled only by the raid owner.
 ### prepend gml_Object_obj_meteo_controller_Alarm_2
 if (coop_world_guest_skips_roll())
 {
@@ -460,6 +533,7 @@ if (coop_world_guest_skips_roll())
 }
 <<<END
 
+// [66] Emissions and air drops are rolled only by the raid owner.
 ### prepend gml_Object_obj_controller_Alarm_3
 if (coop_world_guest_skips_roll())
 {
@@ -467,6 +541,7 @@ if (coop_world_guest_skips_roll())
 }
 <<<END
 
+// [67] Kill credit: hits and kills by another player (their puppet's bullets) are reported to that player (coop_credit.gml).
 ### findreplace gml_GlobalScript_bullet_hit_npc
 <<<FIND
         var _shooter_id = shooter_id;
@@ -477,6 +552,7 @@ if (coop_world_guest_skips_roll())
         var _player = player_get_local();
 <<<END
 
+// [68] A downed player can't extract.
 ### findreplace gml_Object_obj_extraction_point_Step_0
 <<<FIND
     if (player_distance_local(x + 8, y + 8) < minimum_dis_exit && !player_local_state_is(scr_player_state_inventory))
@@ -484,6 +560,7 @@ if (coop_world_guest_skips_roll())
     if (player_distance_local(x + 8, y + 8) < minimum_dis_exit && !player_local_state_is(scr_player_state_inventory) && !coop_down_is_down())
 <<<END
 
+// [69] Pause in a shared raid doesn't freeze the world for the others: only our player is set aside.
 ### findreplace gml_GlobalScript_game_pause
 <<<FIND
                 instance_deactivate_region(0, 0, room_width, room_height, true, false);
@@ -500,6 +577,7 @@ if (coop_world_guest_skips_roll())
                 }
 <<<END
 
+// [70] WORKAROUND (no source access): after the vanilla pause keep obj_coop alive. Players are only woken while obj_controller exists (the pause deactivates it too, GitHub issue #1).
 ### findreplace gml_GlobalScript_game_pause
 <<<FIND
     obj_cursor.cursor_before_pause_y = obj_cursor.y;
@@ -510,6 +588,7 @@ if (coop_world_guest_skips_roll())
 }
 <<<END
 
+// [71] Unpause: our player comes back.
 ### findreplace gml_GlobalScript_game_unpause
 <<<FIND
     move_cursor_room_with_reset(obj_cursor.cursor_before_pause_x, obj_cursor.cursor_before_pause_y);
@@ -521,6 +600,7 @@ if (coop_world_guest_skips_roll())
 }
 <<<END
 
+// [72] WORKAROUND (no source access): high refresh rate. The day clock used delta_time (per frame); it must advance per logic tick (zs_logic_dt).
 ### findreplace gml_Object_obj_light_controller_Step_0
 <<<FIND
     game_seconds_remainder += (time_increase * (delta_time / 16667));
@@ -528,6 +608,7 @@ if (coop_world_guest_skips_roll())
     game_seconds_remainder += (time_increase * (zs_logic_dt() / 16667));
 <<<END
 
+// [73] WORKAROUND (no source access): high refresh rate. The day clock used delta_time (per frame); it must advance per logic tick (zs_logic_dt).
 ### findreplace gml_Object_obj_light_controller_Step_0
 <<<FIND
     game_seconds_remainder -= (time_increase * (delta_time / 16667));
@@ -535,6 +616,7 @@ if (coop_world_guest_skips_roll())
     game_seconds_remainder -= (time_increase * (zs_logic_dt() / 16667));
 <<<END
 
+// [74] WORKAROUND (no source access): high refresh rate. The day clock used delta_time (per frame); it must advance per logic tick (zs_logic_dt).
 ### findreplace gml_Object_obj_light_controller_Step_0
 <<<FIND
 real_time_played += (delta_time / 1000000);
@@ -542,6 +624,7 @@ real_time_played += (delta_time / 1000000);
 real_time_played += (zs_logic_dt() / 1000000);
 <<<END
 
+// [75] WORKAROUND (no source access): high refresh rate: game_get_speed() is the monitor rate now; these timers assume 60.
 ### findreplace gml_GlobalScript_class_player_arms
 <<<FIND
 (sprite_get_speed(sprite_index) / game_get_speed(gamespeed_fps))
@@ -549,6 +632,7 @@ real_time_played += (zs_logic_dt() / 1000000);
 (sprite_get_speed(sprite_index) / 60)
 <<<END
 
+// [76] WORKAROUND (no source access): high refresh rate: game_get_speed() is the monitor rate now; these timers assume 60.
 ### findreplace gml_GlobalScript_player_action_interact
 <<<FIND
     var _steps = max(_duration * game_get_speed(gamespeed_fps), 1);
@@ -556,6 +640,7 @@ real_time_played += (zs_logic_dt() / 1000000);
     var _steps = max(_duration * 60, 1);
 <<<END
 
+// [77] WORKAROUND (no source access): high refresh rate: room_speed is the monitor rate now; these timers assume 60.
 ### findreplace gml_GlobalScript_bullet_hit_player
 <<<FIND
                                 adrenalinerush_cooldown = room_speed *
@@ -563,6 +648,7 @@ real_time_played += (zs_logic_dt() / 1000000);
                                 adrenalinerush_cooldown = 60 *
 <<<END
 
+// [78] WORKAROUND (no source access): high refresh rate: room_speed is the monitor rate now; these timers assume 60.
 ### findreplace gml_GlobalScript_bullet_hit_player
 <<<FIND
                                 adrenalinerush_movement_speed_timer = room_speed *
@@ -570,6 +656,7 @@ real_time_played += (zs_logic_dt() / 1000000);
                                 adrenalinerush_movement_speed_timer = 60 *
 <<<END
 
+// [79] WORKAROUND (no source access): high refresh rate: room_speed is the monitor rate now; these timers assume 60.
 ### findreplace gml_Object_obj_enemy_mutant_parent_Collision_obj_player_parent
 <<<FIND
                                     adrenalinerush_cooldown = room_speed *
@@ -577,6 +664,7 @@ real_time_played += (zs_logic_dt() / 1000000);
                                     adrenalinerush_cooldown = 60 *
 <<<END
 
+// [80] WORKAROUND (no source access): high refresh rate: room_speed is the monitor rate now; these timers assume 60.
 ### findreplace gml_Object_obj_enemy_mutant_parent_Collision_obj_player_parent
 <<<FIND
                                     adrenalinerush_movement_speed_timer = room_speed *
@@ -584,6 +672,7 @@ real_time_played += (zs_logic_dt() / 1000000);
                                     adrenalinerush_movement_speed_timer = 60 *
 <<<END
 
+// [81] WORKAROUND (no source access): high refresh rate: room_speed is the monitor rate now; these timers assume 60.
 ### findreplace gml_GlobalScript_player_action_unjam
 <<<FIND
             nojamthanks_timer = room_speed *
@@ -591,6 +680,7 @@ real_time_played += (zs_logic_dt() / 1000000);
             nojamthanks_timer = 60 *
 <<<END
 
+// [82] WORKAROUND (no source access): high refresh rate: room_speed is the monitor rate now; these timers assume 60.
 ### findreplace gml_Object_obj_player_parent_Alarm_0
 <<<FIND
         var _sound_time = audio_sound_length(sound_shell_in) * room_speed;
@@ -598,6 +688,7 @@ real_time_played += (zs_logic_dt() / 1000000);
         var _sound_time = audio_sound_length(sound_shell_in) * 60;
 <<<END
 
+// [83] WORKAROUND (no source access): high refresh rate: room_speed is the monitor rate now; these timers assume 60.
 ### findreplace gml_Object_obj_player_parent_Alarm_0
 <<<FIND
         var _sound_time = audio_sound_length(item_weapon_get_sound_mag_in(arma_now)) * room_speed;
@@ -605,6 +696,7 @@ real_time_played += (zs_logic_dt() / 1000000);
         var _sound_time = audio_sound_length(item_weapon_get_sound_mag_in(arma_now)) * 60;
 <<<END
 
+// [84] WORKAROUND (no source access): high refresh rate: room_speed is the monitor rate now; these timers assume 60.
 ### findreplace gml_Object_obj_player_parent_Alarm_0
 <<<FIND
             var sound_time = audio_sound_length(item_weapon_get_sound_cocking(arma_now)) * room_speed;
@@ -612,6 +704,7 @@ real_time_played += (zs_logic_dt() / 1000000);
             var sound_time = audio_sound_length(item_weapon_get_sound_cocking(arma_now)) * 60;
 <<<END
 
+// [85] High refresh rate: the debug menu's 'Unlock framerate' would break the 60-tick simulation; it cycles the mod's frame-rate modes instead.
 ### findreplace gml_GlobalScript_debug_menu
 <<<FIND
         game_set_speed(arg0 ? 1000 : 60, gamespeed_fps);
@@ -619,6 +712,7 @@ real_time_played += (zs_logic_dt() / 1000000);
         zs_fps_cycle();
 <<<END
 
+// [86] WORKAROUND (no source access): high refresh rate: counters that advance in Draw (cursor blink, scope dot, NPC typewriter text, radiation overlay, PDA marker lerp, indoor darkness) advance only on logic ticks.
 ### findreplace gml_Object_obj_mouse_Draw_0
 <<<FIND
         alpha_dot += (0.025 * alpha_factor);
@@ -626,6 +720,7 @@ real_time_played += (zs_logic_dt() / 1000000);
         if (!global.zs_rf) alpha_dot += (0.025 * alpha_factor);
 <<<END
 
+// [87] WORKAROUND (no source access): high refresh rate: counters that advance in Draw (cursor blink, scope dot, NPC typewriter text, radiation overlay, PDA marker lerp, indoor darkness) advance only on logic ticks.
 ### findreplace gml_Object_obj_surface_aim_Draw_0
 <<<FIND
     alpha_dot += (0.0075 * alpha_factor);
@@ -633,6 +728,7 @@ real_time_played += (zs_logic_dt() / 1000000);
     if (!global.zs_rf) alpha_dot += (0.0075 * alpha_factor);
 <<<END
 
+// [88] WORKAROUND (no source access): high refresh rate: counters that advance in Draw (cursor blink, scope dot, NPC typewriter text, radiation overlay, PDA marker lerp, indoor darkness) advance only on logic ticks.
 ### findreplace gml_Object_obj_npc_draw_text_Draw_0
 <<<FIND
     counter += text_speed;
@@ -640,6 +736,7 @@ real_time_played += (zs_logic_dt() / 1000000);
     if (!global.zs_rf) counter += text_speed;
 <<<END
 
+// [89] WORKAROUND (no source access): high refresh rate: counters that advance in Draw (cursor blink, scope dot, NPC typewriter text, radiation overlay, PDA marker lerp, indoor darkness) advance only on logic ticks.
 ### findreplace gml_Object_obj_shader_controller_Draw_77
 <<<FIND
         radiation_amount += (radiation_ - 200);
@@ -647,6 +744,7 @@ real_time_played += (zs_logic_dt() / 1000000);
         if (!global.zs_rf) radiation_amount += (radiation_ - 200);
 <<<END
 
+// [90] WORKAROUND (no source access): high refresh rate: counters that advance in Draw (cursor blink, scope dot, NPC typewriter text, radiation overlay, PDA marker lerp, indoor darkness) advance only on logic ticks.
 ### findreplace gml_Object_obj_controller_Draw_64
 <<<FIND
                             _marker.draw_x = lerp(_marker.draw_x, draw_x, 0.25);
@@ -655,6 +753,7 @@ real_time_played += (zs_logic_dt() / 1000000);
                             if (!global.zs_rf) { _marker.draw_x = lerp(_marker.draw_x, draw_x, 0.25); _marker.draw_y = lerp(_marker.draw_y, draw_y, 0.25); }
 <<<END
 
+// [91] WORKAROUND (no source access): high refresh rate: counters that advance in Draw (cursor blink, scope dot, NPC typewriter text, radiation overlay, PDA marker lerp, indoor darkness) advance only on logic ticks.
 ### findreplace gml_Object_obj_light_controller_Draw_0
 <<<FIND
                     darkness_tot += ((1 - darkness_tot) / 2);
@@ -662,6 +761,7 @@ real_time_played += (zs_logic_dt() / 1000000);
                     if (!global.zs_rf) darkness_tot += ((1 - darkness_tot) / 2);
 <<<END
 
+// [92] Test mode: scripted input for the bots.
 ### findreplace gml_Object_obj_player_Step_1
 <<<FIND
 update_keyboard_input();
@@ -670,6 +770,7 @@ update_keyboard_input();
 coop_test_input();
 <<<END
 
+// [93] The audio listener follows the LOCAL player only (puppets moved it too: sounds were heard from a teammate's position).
 ### findreplace gml_Object_obj_player_parent_Step_2
 <<<FIND
 audio_listener_position(x, y, 0);
@@ -680,6 +781,7 @@ if (object_index != obj_player_puppet)
 }
 <<<END
 
+// [94] A teammate's weapon pose (recoil, inspection) comes from the network instead of the local camera.
 ### findreplace gml_GlobalScript_class_player_weapon
 <<<FIND
         if (!(instance_exists(follow_id) && instance_exists(obj_camera)))
@@ -697,6 +799,7 @@ if (object_index != obj_player_puppet)
         }
 <<<END
 
+// [95] Torches and lasers of every player are lit, not only the local one's.
 ### findreplace gml_Object_obj_light_controller_Draw_0
 <<<FIND
 with (player_get_local())
@@ -704,6 +807,7 @@ with (player_get_local())
 with (obj_player_parent)
 <<<END
 
+// [96] Puppet footsteps use the same ground sounds; the gear rattle stays the local player's.
 ### findreplace gml_GlobalScript_scr_choose_footstep_sound
 <<<FIND
             if (object_is_player(object_index))
@@ -711,6 +815,7 @@ with (obj_player_parent)
             if (object_index == obj_player)
 <<<END
 
+// [97] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_Object_obj_player_parent_Alarm_0
 <<<FIND
 audio_play_sound(sound_shell_in, 10, false);
@@ -718,6 +823,7 @@ audio_play_sound(sound_shell_in, 10, false);
 coop_psound(sound_shell_in, 10);
 <<<END
 
+// [98] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_Object_obj_player_parent_Alarm_0
 <<<FIND
         audio_play_sound(item_weapon_get_sound_mag_in(arma_now), 10, false);
@@ -725,6 +831,7 @@ coop_psound(sound_shell_in, 10);
         coop_psound(item_weapon_get_sound_mag_in(arma_now), 10);
 <<<END
 
+// [99] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_Object_obj_player_parent_Alarm_0
 <<<FIND
             audio_play_sound(item_weapon_get_sound_cocking(arma_now), 10, false);
@@ -732,6 +839,7 @@ coop_psound(sound_shell_in, 10);
             coop_psound(item_weapon_get_sound_cocking(arma_now), 10);
 <<<END
 
+// [100] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_GlobalScript_player_action_reload
 <<<FIND
                         audio_play_sound(item_weapon_get_sound_mag_out(arma_now), 10, false);
@@ -739,6 +847,7 @@ coop_psound(sound_shell_in, 10);
                         coop_psound(item_weapon_get_sound_mag_out(arma_now), 10);
 <<<END
 
+// [101] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_GlobalScript_player_action_change_ammo
 <<<FIND
                 audio_play_sound(item_weapon_get_sound_mag_out(arma_now), 10, false);
@@ -746,6 +855,7 @@ coop_psound(sound_shell_in, 10);
                 coop_psound(item_weapon_get_sound_mag_out(arma_now), 10);
 <<<END
 
+// [102] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_GlobalScript_player_action_unjam
 <<<FIND
         audio_play_sound(snd_jam_free, 10, false);
@@ -753,6 +863,7 @@ coop_psound(sound_shell_in, 10);
         coop_psound(snd_jam_free, 10);
 <<<END
 
+// [103] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_Object_obj_player_parent_Alarm_10
 <<<FIND
     audio_play_sound(snd_sniper_bolt, 10, false);
@@ -760,6 +871,7 @@ coop_psound(sound_shell_in, 10);
     coop_psound(snd_sniper_bolt, 10);
 <<<END
 
+// [104] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_GlobalScript_player_action_toggle_torch
 <<<FIND
             audio_play_sound(snd_laser_on, 10, false);
@@ -767,6 +879,7 @@ coop_psound(sound_shell_in, 10);
             coop_psound(snd_laser_on, 10);
 <<<END
 
+// [105] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_GlobalScript_player_action_toggle_laser
 <<<FIND
             audio_play_sound(snd_laser_on, 10, false);
@@ -774,6 +887,7 @@ coop_psound(sound_shell_in, 10);
             coop_psound(snd_laser_on, 10);
 <<<END
 
+// [106] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_GlobalScript_player_action_open_chest
 <<<FIND
     audio_play_sound(chest_get_open_sound(arg0.tipo), 10, false);
@@ -781,6 +895,7 @@ coop_psound(sound_shell_in, 10);
     coop_psound(chest_get_open_sound(arg0.tipo), 10);
 <<<END
 
+// [107] Player sounds (reload, bolt, unjam, torch, chest, item use) are played for the teammates too (coop_psound sends them).
 ### findreplace gml_GlobalScript_inventory_use_quick_slot
 <<<FIND
                     audio_play_sound_on(_player.emitter_walk, _sound, false, 18);
@@ -789,6 +904,7 @@ coop_psound(sound_shell_in, 10);
                     coop_psound_send(_sound);
 <<<END
 
+// [108] Vanilla bug: vertex_freeze() on an EMPTY vertex buffer never returns (froze the game after long teleports). Skipped for empty buffers.
 ### findreplace gml_Object_obj_fog_setup_Alarm_1
 <<<FIND
     vertex_freeze(vb);
@@ -796,6 +912,7 @@ coop_psound(sound_shell_in, 10);
     coop_fog_freeze(vb);
 <<<END
 
+// [109] WORKAROUND (no source access): high refresh rate: NPC facing compared the target with the interpolated x on render frames -> left/right flicker. Uses the live tick position.
 ### findreplace gml_Object_obj_npc_human_parent_Draw_0
 <<<FIND
 if (target_for_image_scale < x)
@@ -809,6 +926,7 @@ if (target_for_image_scale < zs_live_x())
 }
 <<<END
 
+// [110] WORKAROUND (no source access): high refresh rate: NPC facing compared the target with the interpolated x on render frames -> left/right flicker. Uses the live tick position.
 ### findreplace gml_Object_obj_npc_human_parent_Draw_0
 <<<FIND
 if (target_for_image_scale < x)
@@ -822,6 +940,7 @@ if (target_for_image_scale < zs_live_x())
     rot
 <<<END
 
+// [111] WORKAROUND (no source access): high refresh rate: mutant facing compared xprevious (stale between ticks). Uses the previous/live tick positions.
 ### findreplace gml_Object_obj_enemy_mutant_parent_Draw_0
 <<<FIND
 else if (xprevious > x)
@@ -829,6 +948,7 @@ else if (xprevious > x)
 else if (zs_prev_x() > zs_live_x())
 <<<END
 
+// [112] WORKAROUND (no source access): high refresh rate: mutant facing compared xprevious (stale between ticks). Uses the previous/live tick positions.
 ### findreplace gml_Object_obj_enemy_mutant_parent_Draw_0
 <<<FIND
 else if (xprevious == x)
@@ -836,6 +956,7 @@ else if (xprevious == x)
 else if (zs_prev_x() == zs_live_x())
 <<<END
 
+// [113] WORKAROUND (no source access): high refresh rate: mutant facing compared xprevious (stale between ticks). Uses the previous/live tick positions.
 ### findreplace gml_Object_obj_enemy_mutant_parent_Draw_0
 <<<FIND
 else if (xprevious < x)
@@ -843,6 +964,7 @@ else if (xprevious < x)
 else if (zs_prev_x() < zs_live_x())
 <<<END
 
+// [114] Bunker visits: while visiting a friend's bunker, saves write OUR modules and installing / upgrading / producing is blocked (coop_hub.gml).
 ### findreplace gml_GlobalScript_scr_save_skill_and_base
 <<<FIND
 function scr_save_skill_and_base()
@@ -856,6 +978,7 @@ function scr_save_skill_and_base()
     }
 <<<END
 
+// [115] Bunker visits: while visiting a friend's bunker, saves write OUR modules and installing / upgrading / producing is blocked (coop_hub.gml).
 ### findreplace gml_GlobalScript_base_install
 <<<FIND
 function base_install(arg0, arg1, arg2 = true)
@@ -869,6 +992,7 @@ function base_install(arg0, arg1, arg2 = true)
     }
 <<<END
 
+// [116] Bunker visits: while visiting a friend's bunker, saves write OUR modules and installing / upgrading / producing is blocked (coop_hub.gml).
 ### findreplace gml_GlobalScript_base_uninstall
 <<<FIND
 function base_uninstall(arg0)
@@ -882,6 +1006,7 @@ function base_uninstall(arg0)
     }
 <<<END
 
+// [117] Bunker visits: while visiting a friend's bunker, saves write OUR modules and installing / upgrading / producing is blocked (coop_hub.gml).
 ### findreplace gml_GlobalScript_loot_action_use_now
 <<<FIND
                 var get_base_id = base_name_to_component(item_base_upgrade_get_id(_item));
@@ -893,6 +1018,7 @@ function base_uninstall(arg0)
                 var get_base_id = base_name_to_component(item_base_upgrade_get_id(_item));
 <<<END
 
+// [118] Bunker visits: while visiting a friend's bunker, saves write OUR modules and installing / upgrading / producing is blocked (coop_hub.gml).
 ### findreplace gml_GlobalScript_player_action_interact
 <<<FIND
             var closer = instance_place(x, y, obj_base_parent);
@@ -906,6 +1032,7 @@ function base_uninstall(arg0)
             var base_slot_ = closer.slot;
 <<<END
 
+// [119] Leaving the hub for a raid: ends a visit, no new hub puppets until the next room.
 ### findreplace gml_GlobalScript_go_to_map
 <<<FIND
 function go_to_map(arg0, arg1 = false)
@@ -916,6 +1043,7 @@ function go_to_map(arg0, arg1 = false)
     coop_hub_leave();
 <<<END
 
+// [120] Bunker visits: module furniture is not baked into the static vertex batch (it changes when visiting).
 ### findreplace gml_Object_obj_vertex_props_Step_0
 <<<FIND
 with (obj_decor_parent)
@@ -937,6 +1065,7 @@ with (obj_decor_parent)
     }
 <<<END
 
+// [121] Bunker visits: module furniture is not baked into the static vertex batch (it changes when visiting).
 ### findreplace gml_Object_obj_vertex_props_Step_0
 <<<FIND
 with (obj_solid)
@@ -958,6 +1087,7 @@ with (obj_solid)
     }
 <<<END
 
+// [122] WORKAROUND (no source access): a puppet created half way through a room change fails in Create; its CleanUp must not free what was never created.
 ### prepend gml_Object_obj_player_parent_CleanUp_0
 if (!variable_instance_exists(id, "weapon_holder") || !variable_instance_exists(id, "emitter_shoot"))
 {
@@ -965,6 +1095,7 @@ if (!variable_instance_exists(id, "weapon_holder") || !variable_instance_exists(
 }
 <<<END
 
+// [123] WORKAROUND (no source access): obj_controller simulates NPCs outside ITS view in a simplified way (legacy patrol paths and abstract fights). On the raid owner 'outside my view' can be next to another player: those NPCs are left alone.
 ### findreplace gml_Object_obj_controller_Step_0
 <<<FIND
                                 if (!global.roaming_enabled && !_route_handled && _size_path > 0 && _inside_map == true)
@@ -976,6 +1107,7 @@ if (!variable_instance_exists(id, "weapon_holder") || !variable_instance_exists(
                                     if (!point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id.x, _id.y))
 <<<END
 
+// [124] WORKAROUND (no source access): obj_controller simulates NPCs outside ITS view in a simplified way (legacy patrol paths and abstract fights). On the raid owner 'outside my view' can be next to another player: those NPCs are left alone.
 ### findreplace gml_Object_obj_controller_Step_0
 <<<FIND
                                 if (!instance_exists(_id) && !point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270))
@@ -983,6 +1115,7 @@ if (!variable_instance_exists(id, "weapon_holder") || !variable_instance_exists(
                                 if (!instance_exists(_id) && !point_in_rectangle(_id.x, _id.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id.x, _id.y))
 <<<END
 
+// [125] WORKAROUND (no source access): obj_controller simulates NPCs outside ITS view in a simplified way (legacy patrol paths and abstract fights). On the raid owner 'outside my view' can be next to another player: those NPCs are left alone.
 ### findreplace gml_Object_obj_controller_Step_0
 <<<FIND
 if (!instance_exists(_id_fight) && !point_in_rectangle(_id_fight.x, _id_fight.y, x - 480, y - 270, x + 480, y + 270))
@@ -990,6 +1123,7 @@ if (!instance_exists(_id_fight) && !point_in_rectangle(_id_fight.x, _id_fight.y,
 if (!instance_exists(_id_fight) && !point_in_rectangle(_id_fight.x, _id_fight.y, x - 480, y - 270, x + 480, y + 270) && !coop_near_other_player(_id_fight.x, _id_fight.y))
 <<<END
 
+// [126] WORKAROUND (no source access): the 1.4 AI suspends every behaviour-tree NPC outside the LOCAL camera before culling (drops orders, cover, target). On the raid owner the AI of NPCs near other players stays awake.
 ### findreplace gml_GlobalScript_ai_bridge
 <<<FIND
         if (ai_human_migrated(id) && (arg4 || bbox_right < arg0 || bbox_left > arg2 || bbox_bottom < arg1 || bbox_top > arg3))
@@ -997,6 +1131,7 @@ if (!instance_exists(_id_fight) && !point_in_rectangle(_id_fight.x, _id_fight.y,
         if (ai_human_migrated(id) && (arg4 || ((bbox_right < arg0 || bbox_left > arg2 || bbox_bottom < arg1 || bbox_top > arg3) && !coop_keep_ai_awake(id))))
 <<<END
 
+// [127] 1.4 roaming squads arrive at least min_player_distance_px from the player: from EVERY player.
 ### findreplace gml_GlobalScript_ai_roaming
 <<<FIND
         if (!is_undefined(arg0.player_x) && point_distance(_try_x, _try_y, arg0.player_x, arg0.player_y) < _min_player_distance_px)
@@ -1004,6 +1139,7 @@ if (!instance_exists(_id_fight) && !point_in_rectangle(_id_fight.x, _id_fight.y,
         if ((!is_undefined(arg0.player_x) && point_distance(_try_x, _try_y, arg0.player_x, arg0.player_y) < _min_player_distance_px) || coop_other_player_within(_try_x, _try_y, _min_player_distance_px))
 <<<END
 
+// [128] 1.4 roaming runs on the world owner only (on replicas it only spawned enemies the mod removed again).
 ### findreplace gml_Object_obj_controller_Step_2
 <<<FIND
 if (global.roaming_enabled && player_exists_local() && is_in_raid() && instance_exists(obj_map_generator))
@@ -1011,6 +1147,7 @@ if (global.roaming_enabled && player_exists_local() && is_in_raid() && instance_
 if (global.roaming_enabled && player_exists_local() && is_in_raid() && instance_exists(obj_map_generator) && !coop_is_world_replica())
 <<<END
 
+// [129] WORKAROUND (no source access): Alarm 8 re-rolls the patrol state of non-behaviour-tree NPCs; on a replica it fought the owner's state until the next snapshot (mutants twitched).
 ### prepend gml_Object_obj_npc_parent_Alarm_8
 if (coop_npc_skip_alarm())
 {
@@ -1018,6 +1155,7 @@ if (coop_npc_skip_alarm())
 }
 <<<END
 
+// [130] The co-op difficulty tab's descriptions are translated (vanilla descriptions are plain strings).
 ### findreplace gml_GlobalScript_difficulty_get_description
 <<<FIND
     return _difficulty_def.__description;

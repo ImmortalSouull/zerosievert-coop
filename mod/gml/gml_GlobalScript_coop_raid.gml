@@ -1,4 +1,6 @@
-// ZERO Sievert co-op: shared raid start, room hooks, test-mode autopilot.
+// ZERO Sievert co-op: shared raid start, joining a raid in progress, room hooks, test-mode autopilot.
+// Hook: first line of go_to_map(). The host shares map + seed with the others; group scaling is fixed here once
+// and never recomputed during the raid (a late joiner would otherwise generate a different map).
 
 // Hook: first line of go_to_map(). Host shares map + seed with the guest.
 function coop_hook_go_to_map(_map)

@@ -11,7 +11,7 @@ string root = Environment.GetEnvironmentVariable("COOP_ROOT") ?? throw new Excep
 string gmlDir = Path.Combine(root, "mod", "gml");
 string hooksFile = Path.Combine(root, "mod", "hooks.txt");
 
-// Extension functions the game never calls itself (e.g. Steam lobby/P2P) have no FUNC entry, so the
+// WORKAROUND (UTMT compiler): extension functions the game never calls itself (e.g. Steam lobby/P2P) have no FUNC entry, so the
 // compiler would treat calls to them as variable calls. Declare every one our code uses.
 var modText = string.Join("\n", Directory.GetFiles(gmlDir, "*.gml").Select(File.ReadAllText));
 int declared = 0;
@@ -34,7 +34,7 @@ var group = new UndertaleModLib.Compiler.CodeImportGroup(Data)
     ThrowOnNoOpFindReplace = true
 };
 
-// UTMT's compiler does not share #macro across code entries: expand them textually here.
+// WORKAROUND (UTMT compiler): #macro is not shared across code entries: expand them textually here.
 var sources = new Dictionary<string, string>();
 var macros = new Dictionary<string, string>();
 var macroRx = new System.Text.RegularExpressions.Regex(@"^#macro\s+(\w+)\s+(.+)$", System.Text.RegularExpressions.RegexOptions.Multiline);
@@ -135,7 +135,7 @@ for (int i = 0; i < lines.Length; i++)
     hooks++;
 }
 
-// High refresh rate (coop_fps.gml): the game's logic events exit on render-only frames. Alarms are not
+// WORKAROUND (no source access) - high refresh rate (coop_fps.gml): the game's logic events exit on render-only frames. Alarms are not
 // guarded (that would lose them) - they are held by obj_coop through the generated table (top of this file).
 var guardRx = new System.Text.RegularExpressions.Regex(@"^gml_Object_(.+)_(Step_[012]|Collision_.+|Keyboard_\d+|KeyPress_\d+|KeyRelease_\d+|Mouse_\d+|Other_(0|1|4\d|5\d))$");
 int guarded = 0;
@@ -170,7 +170,7 @@ if (!string.IsNullOrEmpty(traceRx))
 
 group.Import(true);
 
-// Replacement D3D11 pixel shaders (mod/shaders/<shader>_ps.dxbc, compiled by tools/make_shaders.py): GameMaker
+// WORKAROUND (no source access) - replacement D3D11 pixel shaders (mod/shaders/<shader>_ps.dxbc, compiled by tools/make_shaders.py): GameMaker
 // wraps the DXBC in its own header (uniform table) followed by a string table; the header holds the DXBC size
 // and absolute offsets into the string table, which move when the DXBC length changes.
 int shadersPatched = 0;

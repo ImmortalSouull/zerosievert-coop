@@ -1,4 +1,5 @@
-// ZERO Sievert co-op: extra scripted test scenarios (test mode only).
+// ZERO Sievert co-op: scripted test scenarios (test mode only, -coop_scenario <name>; never active in normal play).
+// tools/regress.py launches 1-4 game windows per scenario and checks their logs. See CLAUDE.md for the list.
 
 function coop_test_ext_step()
 {

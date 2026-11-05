@@ -1,5 +1,6 @@
 // ZERO Sievert co-op: shared world state in a raid - time of day, weather, emissions (blowouts), air drops.
-// Each save has its own clock and weather; in a shared raid the host's world is the truth.
+// Each save has its own clock and weather; in a shared raid the raid owner's world is the truth and every other
+// player follows it (coop_world_slave): they never roll their own weather, emissions or air drops.
 
 #macro COOP_MSG_WORLD_TIME 61
 #macro COOP_MSG_WEATHER 62

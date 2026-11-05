@@ -1,4 +1,6 @@
 // ZERO Sievert co-op: high refresh rate without changing the game's speed.
+// WORKAROUND (no source access): a fixed timestep retrofitted from outside. With the source: an accumulator
+// around the logic update in the main loop + interpolation in Draw, none of the guards/alarm tables below.
 //
 // The game's simulation is frame based: every speed, timer and alarm is tuned for 60 steps per second, so
 // simply raising the game speed would make everything run faster. Instead the runner goes at the monitor's

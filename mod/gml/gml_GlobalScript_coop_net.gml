@@ -26,7 +26,7 @@
 #macro COOP_MSG_NPC_SNAP 31
 #macro COOP_MSG_NPC_DIE 32
 #macro COOP_MSG_NPC_GONE 33
-#macro COOP_MSG_NPC_HIT 34
+// 34 was NPC_HIT (never sent; removed) - keep the id unused
 #macro COOP_MSG_DOWN 40
 #macro COOP_MSG_REVIVE 41
 #macro COOP_MSG_DEAD 42
@@ -744,7 +744,6 @@ function coop_net_relayable(_type)
         case COOP_MSG_PONG:
         case COOP_MSG_BYE:
         case COOP_MSG_JOIN_REQ:
-        case COOP_MSG_NPC_HIT:
         case COOP_MSG_CHEST_REQ:
         case COOP_MSG_FP:
         case COOP_MSG_ROSTER:
@@ -898,9 +897,6 @@ function coop_handle_message_inner(_b, _size)
             break;
         case COOP_MSG_NPC_BARK:
             coop_npc_on_bark(_b);
-            break;
-        case COOP_MSG_NPC_HIT:
-            coop_npc_on_hit(_b);
             break;
         case COOP_MSG_DOWN:
         case COOP_MSG_REVIVE:

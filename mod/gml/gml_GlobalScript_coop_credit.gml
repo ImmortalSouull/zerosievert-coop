@@ -1,7 +1,8 @@
-// ZERO Sievert co-op: kill credit / reputation for the guest.
-// NPC damage is computed on the host, where the guest's bullets belong to the puppet - so the game itself
-// credits nobody. The host reports hits and kills by the partner; the guest applies the same rewards the game
+// ZERO Sievert co-op: kill credit / reputation for every player.
+// NPC damage is computed on the raid owner, where another player's bullets belong to their puppet - so the game
+// itself credits nobody. The owner reports hits and kills to the shooter, who applies the same rewards the game
 // gives the local player (faction reputation, quest progress + kill XP via kill_check_quest, stats).
+// Hook: bullet_hit_npc, inside with(bullet), right after the local-player credit block.
 
 #macro COOP_MSG_CREDIT 64
 

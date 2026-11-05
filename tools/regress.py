@@ -215,6 +215,14 @@ for _id, _nm in MAPS.items():
                        done=[("A", r"v3: done"), ("B", r"v3: done")],
                        checks=[("B", r"emission started by host", 1), ("A", r"v3: host unpaused, player exists=1", 1)],
                        timeout=320, minutes=6, tags="maps"))
+    # single player with the mod on every map
+    SCENARIOS.append(S(f"solo{_id}_{_nm}", f"-coop_autoraid {_id} -coop_scenario solo", "",
+                       done=[("A", r"solo: done")], checks=[("A", r"solo: unpaused, player=1", 1)],
+                       need_identical=False, timeout=240, minutes=4, players=1, tags="maps"))
+    # the 1.4 AI near a guest far from the host, on every map
+    SCENARIOS.append(S(f"aiguest{_id}_{_nm}", f"-coop_autoraid {_id} -coop_scenario aiguest", "-coop_scenario aiguest",
+                       done=[("B", r"aiguest: done")], checks=[("A", r"hearing emits=[1-9]", 1)],
+                       timeout=300, minutes=5, tags="maps"))
 
 
 def read(path):

@@ -1,6 +1,9 @@
-// ZERO Sievert co-op: grenade replication (players and NPCs).
-// The thrower's machine sends the throw; the partner spawns the same grenade. Each machine applies the
-// explosion to its own player only (the game already does that); NPC damage counts on the host.
+// ZERO Sievert co-op: grenade replication (players and NPCs, including grenades thrown by the 1.4 AI).
+// The thrower's machine sends the throw (object, start, direction, detonation point, speed, faction); the others
+// spawn the same grenade. Each machine applies the explosion to its own player only (the game already does that);
+// NPC damage counts on the raid owner.
+// Hook: end of obj_grenade_parent Create. Faction / thrown_by_player are set right after creation, so the
+// throw is sent from the next obj_coop step.
 
 #macro COOP_MSG_GRENADE 21
 

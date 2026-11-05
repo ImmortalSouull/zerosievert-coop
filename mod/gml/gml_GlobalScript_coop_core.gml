@@ -1,4 +1,13 @@
-// ZERO Sievert co-op: core state, command line, logging, test-mode helpers.
+// ZERO Sievert co-op: core state, command line, roles and world authority, logging, test-mode helpers.
+//
+// Roles: session host (slot 0, relays traffic) and guests (slots 1..3). World authority is NOT the host but the
+// "raid owner": the lowest slot among the players in that raid (coop_is_world_owner / coop_is_world_replica).
+// It runs the NPC AI, time/weather/emissions/air drops, loot rolls and kill credit; everyone else runs replicas.
+//
+// Also here: the deterministic re-seeding that makes every player generate the same map from one seed, the
+// culling/pause survival of obj_coop, and the save-root override for multi-window tests.
+// WORKAROUND (no source access) comments below mark code that only exists because the game's source can't be
+// changed; with the source each of them becomes a small change in the game itself.
 
 #macro COOP_VERSION 7
 #macro COOP_PORT 47777
@@ -347,8 +356,9 @@ function coop_take_seed()
     return _s;
 }
 
-// The game deactivates everything outside the camera region (and everything when paused).
-// Keep the co-op controller alive, and on the host keep the areas around the other players simulated.
+// WORKAROUND (no source access): the game deactivates everything outside the LOCAL camera region (and everything when
+// paused). Keep the co-op controller alive, and on the raid owner keep the areas around the other players
+// simulated. With the source: culling that considers every player.
 function coop_after_culling()
 {
     instance_activate_object(obj_coop);
@@ -370,6 +380,7 @@ function coop_after_culling()
     }
 }
 
+// WORKAROUND (no source access): identical maps without sending the map.
 // Hook: top of obj_map_generator Alarm_2 (one generation step per fire). Re-seeding every step makes
 // the shared map depend only on the seed and step number, not on random() calls made by other
 // objects between steps (weather, particles, sounds...), so host and guest build the same map.
@@ -384,6 +395,7 @@ function coop_gen_reseed()
     random_set_seed((_c.gen_seed + _c.gen_step * 7919) mod 2147483647);
 }
 
+// WORKAROUND (no source access): a mod can't add a persistent system object to every room.
 // Hook: top of obj_controller / obj_main_menu Step. The controller must survive every room change,
 // pause and menu; if anything deactivated or destroyed it, bring it back.
 function coop_ensure_alive()
@@ -402,6 +414,7 @@ function coop_ensure_alive()
     instance_create_depth(0, 0, -15000, obj_coop);
 }
 
+// WORKAROUND (no source access): a graphics setting changes the map.
 // Hook: end of obj_vertex_grass Create. Grass density follows each player's own graphics setting, so the
 // number of random() calls it makes differs between players; restore a deterministic RNG state after it.
 function coop_gen_reseed_after_grass()
@@ -414,6 +427,7 @@ function coop_gen_reseed_after_grass()
     random_set_seed((_c.gen_seed + _c.gen_step * 7919 + 4099) mod 2147483647);
 }
 
+// WORKAROUND (no source access): objects that randomise themselves after generation.
 // Per-object deterministic RNG for things the map generator creates and that roll their layout a frame later
 // (decor, building templates, anomaly fields, containers): same seed + same position = same result on both.
 function coop_pos_reseed(_salt)
@@ -539,6 +553,7 @@ function coop_fog_freeze(_vb)
 // obj_controller (raid owner) simulates NPCs out of its view: walking them along their patrol paths and
 // rolling fights between them. Near another player those NPCs are live (see coop_after_culling): leave them
 // to their own AI.
+// WORKAROUND (no source access): 1.4 AI suspension is tied to the local camera.
 // Hook (ai_human_before_cull): the game suspends the new human AI (drops its orders and its target) for every
 // NPC outside the local camera before culling. On the raid owner the world around the other players keeps
 // running (coop_after_culling re-activates it), so their NPCs must keep their AI too. Replicas run no AI.

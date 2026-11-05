@@ -1,7 +1,8 @@
 // ZERO Sievert co-op: bullet replication.
-// Every bullet exists on both machines. Damage to a player is applied only by that player's own
-// machine (the game already gates bullet_hit_player on the local index). Damage to NPCs is applied
-// only on the host, where NPCs are real; on the guest NPCs are replicas and hits are cosmetic.
+// Every bullet exists on every machine. Damage to a player is applied only by that player's own machine (the
+// game already gates bullet_hit_player on the local index). Damage to NPCs is applied only by the raid owner,
+// where NPCs are real; on the other machines NPCs are replicas and hits are cosmetic.
+// Hook: end of bullet_spawn_add_data(bullet), i.e. every scr_shoot() bullet.
 
 // Hook: end of bullet_spawn_add_data(bullet), i.e. every scr_shoot() bullet.
 function coop_on_bullet_spawned_inner(_bull)

@@ -1,4 +1,5 @@
-// ZERO Sievert co-op: diagnostics for tests (map fingerprint, periodic status line).
+// ZERO Sievert co-op: diagnostics (map fingerprint exchange: every player hashes solids, chests, anomalies and
+// decor and compares; a periodic status line in the log).
 
 function coop_diag_step()
 {
