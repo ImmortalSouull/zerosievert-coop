@@ -971,7 +971,7 @@ function coop_net_on_hello(_b)
     if (_ver != COOP_VERSION)
     {
         coop_log("guest ", _name, " has mod version ", _ver, ", host has ", COOP_VERSION, " - refused");
-        coop_notify(coop_t(_name + " has a different co-op mod version - update!", "У " + _name + " другая версия кооп-мода - обновитесь!"));
+        coop_notify(coop_tf("{0} has a different co-op mod version - update!", "У {0} другая версия кооп-мода - обновитесь!", _name));
         _p.hello = true;
         coop_msg_begin(COOP_MSG_BYE);
         coop_msg_send_to(_p.slot, true);
@@ -990,7 +990,7 @@ function coop_net_on_hello(_b)
     if (_new)
     {
         coop_log("guest connected: ", _name, " slot ", _p.slot, " (players ", coop_player_count(), ")");
-        coop_notify(coop_t(_name + " joined", _name + " подключился"));
+        coop_notify(coop_tf("{0} joined", "{0} подключился", _name));
         coop_peers_refresh();
         coop_send_roster();
         coop_on_connected(_p.slot);
@@ -1020,7 +1020,7 @@ function coop_net_on_welcome(_b)
     _h.name = _wname;
     coop_peers_refresh();
     coop_log("connected to host ", _wname, " v", _wver, " as slot ", _slot);
-    coop_notify(coop_t("Connected to ", "Подключено к ") + _wname);
+    coop_notify(coop_tf("Connected to {0}", "Подключено к {0}", _wname));
     coop_on_connected(0);
 }
 
@@ -1066,7 +1066,7 @@ function coop_net_on_roster(_b)
         {
             _p = coop_peer_new(_i);
             _ps[_i] = _p;
-            coop_notify(coop_t(_name + " joined", _name + " подключился"));
+            coop_notify(coop_tf("{0} joined", "{0} подключился", _name));
             coop_send_loadout(); // so the newcomer can dress our character
         }
         if (_on)
@@ -1096,7 +1096,7 @@ function coop_peer_left(_slot, _quiet)
     {
         coop_log("player left: ", _p.name, " slot ", _slot);
     }
-    coop_notify(coop_t(_p.name + " left", _p.name + " вышел"));
+    coop_notify(coop_tf("{0} left", "{0} вышел", _p.name));
     coop_puppet_remove_slot(_slot);
     if (_slot == 0 && _c.role == "guest")
     {
@@ -1168,7 +1168,7 @@ function coop_net_on_raid_state(_from, _b)
     }
     if (_from == 0 && _old_loc != _loc && _loc == 2 && _c.role == "guest" && is_in_hub())
     {
-        coop_notify(coop_t(_p.name + " is in a raid - F7 to join", _p.name + " в рейде - F7, чтобы присоединиться"));
+        coop_notify(coop_tf("{0} is in a raid - F7 to join", "{0} в рейде - F7, чтобы присоединиться", _p.name));
     }
     if (!_in)
     {
@@ -1178,7 +1178,7 @@ function coop_net_on_raid_state(_from, _b)
         }
         if (_was)
         {
-            coop_notify(coop_t(_p.name + " left the raid", _p.name + " покинул рейд"));
+            coop_notify(coop_tf("{0} left the raid", "{0} покинул рейд", _p.name));
             if (!_c.peer_in_raid && coop_in_raid())
             {
                 coop_npc_guest_release(); // nobody else is left: our NPCs run on our own AI
@@ -1249,7 +1249,7 @@ function coop_net_step()
         if (_p.connected && _direct && current_time - _p.last_recv > 15000)
         {
             coop_log("connection to ", _p.name, " timed out");
-            coop_notify(coop_t("Connection to " + _p.name + " lost", "Связь с " + _p.name + " потеряна"));
+            coop_notify(coop_tf("Connection to {0} lost", "Связь с {0} потеряна", _p.name));
             coop_peer_left(_i, true);
         }
     }

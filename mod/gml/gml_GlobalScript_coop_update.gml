@@ -43,7 +43,7 @@ function coop_update_on_http()
     {
         _c.upd_latest = _tag;
         coop_log("update available: ", _tag, " (have ", COOP_MOD_VERSION, ")");
-        coop_notify(coop_t("Co-op mod update available: v", "Доступна новая версия кооп-мода: v") + _tag);
+        coop_notify(coop_tf("Co-op mod update available: v{0}", "Доступна новая версия кооп-мода: v{0}", _tag));
     }
 }
 
@@ -72,5 +72,5 @@ function coop_update_text()
     {
         return "";
     }
-    return coop_t("Update v", "Обновление v") + _c.upd_latest + ": " + COOP_RELEASES_PAGE;
+    return coop_tf("Update v{0}: {1}", "Обновление v{0}: {1}", _c.upd_latest, COOP_RELEASES_PAGE);
 }

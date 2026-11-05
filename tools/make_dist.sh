@@ -7,8 +7,9 @@ source "$(dirname "$0")/env.sh"
 OUT=$WORK/dist/ZS-Coop-v$VER
 bash $ROOT/tools/build.sh > /dev/null
 rm -rf "$OUT"; mkdir -p "$OUT"
-"$XDELTA" -e -9 -f -s $WORK/vanilla/data.win $WORK/build/data.win "$OUT/coop.xdelta"
-cp "$XDELTA" "$OUT/xdelta3.exe"
+# (run from WORK with relative paths)
+(cd "$WORK" && "$XDELTA_EXE" -e -9 -f -s vanilla/data.win build/data.win "dist/ZS-Coop-v$VER/coop.xdelta")
+cp "$XDELTA_EXE" "$OUT/xdelta3.exe"
 # Steam build of the vanilla copy (written by tools/decompile.sh --refresh from the app manifest)
 GAMEVER=$(cat "$WORK/vanilla/game_version.txt" 2>/dev/null || echo "unknown build")
 VAN=$(sha256sum $WORK/vanilla/data.win | cut -d' ' -f1)
@@ -23,7 +24,7 @@ cat > "$OUT/mod_info.json" <<EOF
 EOF
 cp $ROOT/mod/ui/enemies_entries.txt "$OUT/ui_enemies_entries.txt"
 cp $ROOT/mod/ui/coop_tab.txt "$OUT/ui_coop_tab.txt"
-cp $ROOT/mod/ui/lang_rows.tsv "$OUT/lang_rows.tsv"
+cp $ROOT/mod/lang/difficulty_rows.tsv "$OUT/lang_rows.tsv"
 cp $ROOT/mod/ui/pda_partner.txt "$OUT/ui_pda_partner.txt"
 cp $ROOT/mod/ui/menu_button.txt "$OUT/ui_menu_button.txt"
 cp $ROOT/mod/ui/mods_entry.txt "$OUT/ui_mods_entry.txt"

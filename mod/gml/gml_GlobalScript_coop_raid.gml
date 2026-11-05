@@ -48,7 +48,7 @@ function coop_on_raid_start(_map, _seed)
     }
     else
     {
-        coop_notify(coop_t(_c.peer_name + " started a raid - you will follow when you close the menu", _c.peer_name + " начал рейд - вы поедете следом, когда закроете меню"));
+        coop_notify(coop_tf("{0} started a raid - you will follow when you close the menu", "{0} начал рейд - вы поедете следом, когда закроете меню", _c.peer_name));
     }
 }
 
@@ -421,7 +421,7 @@ function coop_request_join()
     coop_msg_begin(COOP_MSG_JOIN_REQ);
     coop_msg_send_to(_t, true);
     var _name = coop_peer_name(_t);
-    coop_notify(coop_t("Asking " + _name + " to join the raid...", "Запрос на вход в рейд " + _name + "..."));
+    coop_notify(coop_tf("Asking {0} to join the raid...", "Запрос на вход в рейд {0}...", _name));
     coop_log("join request sent to slot ", _t);
 }
 
@@ -512,7 +512,7 @@ function coop_pending_raid_step()
     }
     _c.pending_raid = undefined;
     _c.seed = _pr.seed;
-    coop_notify(coop_t("Following " + _c.peer_name + " into the raid", "Едем за " + _c.peer_name + " в рейд"));
+    coop_notify(coop_tf("Following {0} into the raid", "Едем за {0} в рейд", _c.peer_name));
     __uiGlobal().__defaultOnion.Clear();
     go_to_map(_pr.map);
 }

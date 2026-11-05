@@ -141,7 +141,7 @@ function coop_diag_compare()
         else
         {
             coop_log("MAP MISMATCH with partner ", _p.name, " (slot ", _s, "): ", _bad);
-            coop_notify(coop_t("Warning: your map differs from " + _p.name + "'s (send the coop log)", "Внимание: карта отличается от карты " + _p.name + " (пришлите coop-лог)"));
+            coop_notify(coop_tf("Warning: your map differs from {0}'s (send the coop log)", "Внимание: карта отличается от карты {0} (пришлите coop-лог)", _p.name));
         }
         _p.fp = undefined;
     }

@@ -66,7 +66,7 @@ function zs_fps_mode_label(_mode)
     var _v = _modes[_mode];
     if (_v == 0)
     {
-        return coop_t("monitor (", "как монитор (") + string(zs_fps_monitor_hz()) + ")";
+        return coop_tf("monitor ({0})", "как монитор ({0})", zs_fps_monitor_hz());
     }
     if (_v == 60)
     {

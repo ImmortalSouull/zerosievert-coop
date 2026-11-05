@@ -22,6 +22,7 @@ function coop_test_ext_step()
     coop_test_ownerjoin_step();
     coop_test_solo_step();
     coop_test_aiguest_step();
+    coop_test_lang_step();
     coop_test_soak_step();
     coop_test_menus_step();
     coop_test_treefade_step();
@@ -1394,4 +1395,66 @@ function coop_test_open_spot(_npc, _dist)
         }
     }
     return [_npc.x - _dist, _npc.y];
+}
+
+// -coop_scenario lang (one window, in the hub): every game language in turn through the game's own
+// language_set_new_language; checks that every mod text comes from mod/lang/strings.tsv for it and saves a
+// screenshot of the co-op panel (fonts: Polish letters, kana/kanji, hangul, hanzi). Ends back in English.
+function coop_test_lang_step()
+{
+    var _c = coop();
+    if (_c.scenario != "lang" || !is_in_hub() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "lg_t")) { _c.lg_t = 0; _c.lg_ok = 0; }
+    _c.lg_t++;
+    var _t = _c.lg_t;
+    if (!variable_struct_exists(_c, "lg_langs"))
+    {
+        // only the languages the game offers (gamedata/languages.json); the table may have more
+        var _game = variable_struct_get(global.language_data, "languages");
+        _c.lg_langs = [];
+        var _all = coop_lang_list();
+        for (var _q = 0; _q < array_length(_all); _q++) if (variable_struct_exists(_game, _all[_q])) array_push(_c.lg_langs, _all[_q]);
+        coop_log("lang: game languages ", array_length(_c.lg_langs), " of ", array_length(_all), " in the table");
+    }
+    var _langs = _c.lg_langs;
+    var _n = array_length(_langs);
+    if (_t == 60) _c.panel = true;
+    var _i = (_t - 90) div 45;
+    var _k = (_t - 90) mod 45;
+    if (_t >= 90 && _i < _n)
+    {
+        var _l = _langs[_i];
+        if (_k == 0)
+        {
+            language_set_new_language(_l);
+        }
+        if (_k == 30)
+        {
+            var _d = coop_lang_data();
+            var _keys = variable_struct_get_names(_d.index);
+            var _bad = 0;
+            for (var _j = 0; _j < array_length(_keys); _j++)
+            {
+                var _want = _keys[_j];
+                if (_l != "english")
+                {
+                    var _a = variable_struct_get(_d.langs, _l);
+                    _want = _a[variable_struct_get(_d.index, _keys[_j])];
+                }
+                if (coop_t(_keys[_j], "") != _want) _bad++;
+            }
+            if (_bad == 0) _c.lg_ok++;
+            coop_log("lang: ", _l, " current=", global.language_current, " texts=", array_length(_keys), " wrong=", _bad, " sample=", coop_tf("{0} joined", "", "Ondrey"));
+            screen_save("lang_" + _l + ".png");
+        }
+    }
+    if (_t == 90 + _n * 45)
+    {
+        language_set_new_language("english");
+        _c.panel = false;
+        coop_log("lang: done ok=", _c.lg_ok, "/", _n);
+    }
 }

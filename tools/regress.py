@@ -107,6 +107,10 @@ def fps_ok(logs):
 
 
 SCENARIOS = [
+    # every game language: mod texts from mod/lang/strings.tsv, screenshots of the co-op panel (lang_<language>.png)
+    S("lang", "-coop_scenario lang", "",
+      done=[("A", r"lang: done")], checks=[("A", r"lang: done ok=13/13", 1), ("A", r"lang: game languages 13 ", 1)],
+      need_identical=False, timeout=180, minutes=3, players=1),
     # one window, no co-op session: the mod installed for single player (the new AI must fight normally)
     S("solo", "-coop_autoraid 1 -coop_scenario solo", "",
       done=[("A", r"solo: done")],

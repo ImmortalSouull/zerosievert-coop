@@ -20,7 +20,7 @@ function coop_draw_gui()
     if (_c.role != "none")
     {
         // rebuilt only when something in it changes (this runs every frame)
-        var _key = _c.role + _c.transport + string(_c.connected) + _c.peer_name + string(round(_c.ping)) + string(coop_player_count()) + coop_t("en", "ru");
+        var _key = _c.role + _c.transport + string(_c.connected) + _c.peer_name + string(round(_c.ping)) + string(coop_player_count()) + (variable_global_exists("language_current") ? string(global.language_current) : "");
         if (!variable_struct_exists(_c, "hud_key") || _c.hud_key != _key)
         {
             var _txt = coop_t("CO-OP", "КООП") + " · " + ((_c.role == "host") ? coop_t("host", "хост") : coop_t("guest", "гость"));

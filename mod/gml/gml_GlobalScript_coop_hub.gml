@@ -208,7 +208,7 @@ function coop_visit_start(_slot)
     coop_base_apply(_p.base);
     coop_base_rebuild();
     coop_visit_place_player();
-    coop_notify(coop_t("You are visiting " + _p.name + ": their bunker, your stash and items", "Вы в гостях у " + _p.name + ": его бункер, ваши схрон и вещи"));
+    coop_notify(coop_tf("You are visiting {0}: their bunker, your stash and items", "Вы в гостях у {0}: его бункер, ваши схрон и вещи", _p.name));
     coop_log("visit start: slot ", _slot);
     var _b = coop_msg_begin(COOP_MSG_VISIT);
     buffer_write(_b, buffer_u8, 1);
@@ -252,11 +252,11 @@ function coop_visit_on_msg(_b)
     var _name = coop_peer_name(_c.msg_from);
     if (_in)
     {
-        coop_notify(coop_t(_name + " is visiting your bunker", _name + " зашёл к вам в гости"));
+        coop_notify(coop_tf("{0} is visiting your bunker", "{0} зашёл к вам в гости", _name));
     }
     else
     {
-        coop_notify(coop_t(_name + " went back home", _name + " вернулся к себе"));
+        coop_notify(coop_tf("{0} went back home", "{0} вернулся к себе", _name));
     }
 }
 
@@ -367,7 +367,7 @@ function coop_hub_draw_gui()
         exit;
     }
     coop_ui_font(COOP_F_SMALL);
-    coop_ui_prompt(COOP_GW / 2, 16, "F7", coop_t("Visiting ", "В гостях у ") + coop_peer_name(_v.slot) + coop_t(" - go home", " - вернуться к себе"));
+    coop_ui_prompt(COOP_GW / 2, 16, "F7", coop_tf("Visiting {0} - go home", "В гостях у {0} - вернуться к себе", coop_peer_name(_v.slot)));
 }
 
 // obj_vertex_props (hub): the furniture of the bunker modules stays as instances instead of being baked into

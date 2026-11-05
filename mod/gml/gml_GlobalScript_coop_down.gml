@@ -9,15 +9,6 @@
 
 #macro COOP_DOWN_REVIVE_RANGE 30
 
-function coop_t(_en, _ru)
-{
-    if (variable_global_exists("language_current") && global.language_current == "russian")
-    {
-        return _ru;
-    }
-    return _en;
-}
-
 function coop_down()
 {
     var _c = coop();
@@ -181,7 +172,7 @@ function coop_down_on_message(_type, _b)
     switch (_type)
     {
         case COOP_MSG_DOWN:
-            coop_notify(coop_t(_who + " is down! Go to them and press [E]", _who + " ранен! Подойдите и нажмите [E]"));
+            coop_notify(coop_tf("{0} is down! Go to them and press [E]", "{0} ранен! Подойдите и нажмите [E]", _who));
             break;
         case COOP_MSG_DEAD:
             coop_log("partner death message, both=", _arg, " from slot ", _from);
@@ -201,7 +192,7 @@ function coop_down_on_message(_type, _b)
             }
             else
             {
-                coop_notify(coop_t(_who + " died", _who + " погиб"));
+                coop_notify(coop_tf("{0} died", "{0} погиб", _who));
                 coop_down_on_player_gone();
             }
             break;
@@ -474,7 +465,7 @@ function coop_revive_step()
             buffer_write(_c.send_buf, buffer_f32, _r.opt.hp);
             coop_msg_send_to(_pp.coop_slot, true);
             coop_log("revived partner with ", _r.opt.name, " (", _r.opt.hp, " hp) slot ", _pp.coop_slot);
-            coop_notify(coop_t(coop_peer_name(_pp.coop_slot) + " revived", coop_peer_name(_pp.coop_slot) + " поднят"));
+            coop_notify(coop_tf("{0} revived", "{0} поднят", coop_peer_name(_pp.coop_slot)));
         }
     }
 }

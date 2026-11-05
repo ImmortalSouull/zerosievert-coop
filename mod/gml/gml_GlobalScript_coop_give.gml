@@ -170,7 +170,7 @@ function coop_give_do(_loot, _target)
     db_close();
     var _name = loot_get_name(_copy);
     coop_log("gave ", _copy.item, " x", _copy.quantity, " to slot ", _target.coop_slot);
-    coop_notify(coop_t("Given to ", "Передано ") + coop_peer_name(_target.coop_slot) + ": " + _name);
+    coop_notify(coop_tf("Given to {0}: {1}", "Передано {0}: {1}", coop_peer_name(_target.coop_slot), _name));
     coop_msg_begin(COOP_MSG_GIVE);
     buffer_write(_c.send_buf, buffer_string, _name);
     coop_msg_send_to(_target.coop_slot, true);
@@ -180,7 +180,7 @@ function coop_give_on_message(_b)
 {
     var _name = buffer_read(_b, buffer_string);
     var _c = coop();
-    coop_notify(coop_peer_name(_c.msg_from) + coop_t(" gave you: ", " передал вам: ") + _name + coop_t(" (bag at your feet)", " (мешок у ваших ног)"));
+    coop_notify(coop_tf("{0} gave you: {1} (bag at your feet)", "{0} передал вам: {1} (мешок у ваших ног)", coop_peer_name(_c.msg_from), _name));
     coop_log("received ", _name, " from slot ", _c.msg_from);
 }
 
@@ -204,7 +204,7 @@ function coop_give_draw_gui()
     {
         _w = max(_w, string_width(_g.options[_i].name) + 104);
     }
-    var _title = coop_t("Give to ", "Передать: ") + coop_peer_name(_g.target.coop_slot);
+    var _title = coop_tf("Give to {0}", "Передать: {0}", coop_peer_name(_g.target.coop_slot));
     _w = min(max(_w, string_width(_title) + 40), 640);
     var _h = 66 + _show * (_rh + 4) + 64;
     var _bx = clamp(_gx + 60, 16, COOP_GW - _w - 16);

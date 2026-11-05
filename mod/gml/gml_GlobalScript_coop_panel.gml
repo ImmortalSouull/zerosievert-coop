@@ -16,7 +16,7 @@ function coop_panel_buttons()
         if (coop_can_join_host_raid())
         {
             var _jn = coop_peer_name(coop_join_target());
-            array_push(_b, { id: "join_raid", label: coop_t("Join " + _jn + "'s raid", "Присоединиться к рейду " + _jn) });
+            array_push(_b, { id: "join_raid", label: coop_tf("Join {0}'s raid", "Присоединиться к рейду {0}", _jn) });
         }
         // visits: the bunker of a friend who sent theirs (lobby in the hub)
         if (coop_visit_active())
@@ -30,7 +30,7 @@ function coop_panel_buttons()
             {
                 if (coop_visit_can(_k))
                 {
-                    array_push(_b, { id: "visit_" + string(_k), label: coop_t("Visit " + _ps[_k].name + "'s bunker", "В гости к " + _ps[_k].name) });
+                    array_push(_b, { id: "visit_" + string(_k), label: coop_tf("Visit {0}'s bunker", "В гости к {0}", _ps[_k].name) });
                 }
             }
         }
@@ -77,7 +77,7 @@ function coop_panel_step()
             _c.peer_ip = _c.last_ip;
             _c.peer_port = COOP_PORT;
             coop_net_start();
-            coop_notify(coop_t("Connecting to ", "Подключение к ") + _c.peer_ip);
+            coop_notify(coop_tf("Connecting to {0}", "Подключение к {0}", _c.peer_ip));
         }
         if (keyboard_check_pressed(vk_escape))
         {
