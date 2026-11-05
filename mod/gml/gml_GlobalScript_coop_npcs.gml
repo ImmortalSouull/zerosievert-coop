@@ -538,6 +538,10 @@ function coop_npc_on_destroyed()
 {
     try
     {
+        if (coop().test_mode && hp <= 0)
+        {
+            coop().kills_seen = (variable_struct_exists(coop(), "kills_seen") ? coop().kills_seen : 0) + 1;
+        }
         coop_npc_on_destroyed_inner();
     }
     catch (_e)
@@ -637,6 +641,7 @@ function coop_npc_on_bark(_b)
     }
     if (coop().test_mode)
     {
+        coop().barks_in = (variable_struct_exists(coop(), "barks_in") ? coop().barks_in : 0) + 1;
         coop_log("npc bark from owner: ", _kind, " ", _line, " ", _text);
     }
 }

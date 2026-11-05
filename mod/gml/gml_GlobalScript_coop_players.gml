@@ -560,6 +560,7 @@ function coop_puppet_step()
     depth = -y;
     player_step_update_building_exit();
     coop_puppet_footsteps();
+    coop_puppet_hearing_step();
     if (torch_on_general || laser_on_general || coop_lights_were_on)
     {
         // torch/laser attachment positions on the partner's own weapon (mods come with the loadout)
@@ -785,21 +786,40 @@ function coop_puppet_on_sound(_b)
 
 // WORKAROUND (no source access): the 1.4 AI hears footsteps through ai_hearing_emit(), which only
 // scr_player_movement calls, i.e. only for the LOCAL player. On the raid owner the other players are puppets,
-// so enemies that lost sight of a guest could never follow them by ear. Emit the puppet's footsteps on the
-// owner with the same cadence (every 28 ticks while walking). ai_hearing_emit requires a moving player
-// (hspd/vspd != 0), so the puppet's movement is set for the call and restored after it.
-function coop_puppet_hearing_emit()
+// so enemies that lost sight of a guest could never follow them by ear. The owner emits the puppet's footsteps
+// with the game's cadence (every 28 ticks of movement). "Moving" = the network position changed, which also
+// covers walking while using an item. ai_hearing_emit requires hspd/vspd != 0: they are set for the call only.
+function coop_puppet_hearing_step()
 {
     if (!coop_is_world_owner() || !coop_in_raid())
     {
         exit;
     }
+    if (!variable_instance_exists(id, "coop_hear_t"))
+    {
+        coop_hear_t = 0;
+        coop_hear_x = coop_net_x;
+        coop_hear_y = coop_net_y;
+    }
+    var _dx = coop_net_x - coop_hear_x;
+    var _dy = coop_net_y - coop_hear_y;
+    if (_dx == 0 && _dy == 0)
+    {
+        exit; // standing (or no new state yet): the counter keeps its value, like the game's walk_time
+    }
+    coop_hear_x = coop_net_x;
+    coop_hear_y = coop_net_y;
+    coop_hear_t++;
+    if (coop_hear_t < 28)
+    {
+        exit;
+    }
+    coop_hear_t = 0;
     try
     {
         var _h = hspd, _v = vspd;
-        hspd = coop_net_x - x;
-        vspd = coop_net_y - y;
-        if (hspd == 0 && vspd == 0) hspd = 1;
+        hspd = _dx;
+        vspd = _dy;
         var _run = variable_instance_exists(id, "coop_flags") && (coop_flags & 16) != 0;
         var _ok = ai_hearing_emit(id, _run);
         hspd = _h;
@@ -832,7 +852,6 @@ function coop_puppet_footsteps()
         coop_walk_time = 0;
         audio_emitter_position(emitter_walk, x, y, 0);
         scr_choose_footstep_sound(1);
-        coop_puppet_hearing_emit();
         if (coop().test_mode && coop().scenario == "anim")
         {
             coop_log("puppet footstep");

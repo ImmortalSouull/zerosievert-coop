@@ -20,6 +20,7 @@ function coop_test_ext_step()
     coop_test_handoff_step();
     coop_test_ownerjoin_step();
     coop_test_solo_step();
+    coop_test_aiguest_step();
     coop_test_soak_step();
     coop_test_menus_step();
     coop_test_treefade_step();
@@ -1168,25 +1169,49 @@ function coop_test_solo_step()
     {
         exit;
     }
-    if (!variable_struct_exists(_c, "so_t")) _c.so_t = 0;
+    if (!variable_struct_exists(_c, "so_t")) { _c.so_t = 0; _c.so_hits = 0; _c.so_engaged = 0; _c.so_hp = obj_player.hp; }
     _c.so_t++;
     var _t = _c.so_t;
-    if (_t >= 120 && _t <= 900 && _t mod 20 == 0 && instance_exists(obj_player))
+    // stay alive for the whole test, count the hits taken
+    if (obj_player.hp < _c.so_hp - 0.5) _c.so_hits++;
+    obj_player.hp = obj_player.hp_max;
+    _c.so_hp = obj_player.hp;
+    if (_t mod 10 == 0) _c.so_engaged = max(_c.so_engaged, coop_test_ai_targeting(obj_player.id));
+    if (_t mod 120 == 0) { coop_log("solo t=", _t, " engaged=", _c.so_engaged, " hits=", _c.so_hits); coop_test_ai_dump(obj_player); }
+    // 2 s in: stand at combat distance from an experienced bandit; 8 s of letting the AI engage, then fight back
+    if (_t == 120)
     {
-        instance_activate_object(obj_npc_parent);
-        var _tg = instance_nearest(obj_player.x, obj_player.y, obj_npc_human_parent);
-        if (instance_exists(_tg))
+        _c.so_tg = coop_test_pick_enemy(obj_player.x, obj_player.y, false);
+        if (instance_exists(_c.so_tg))
         {
-            if (_t mod 200 == 0)
+            obj_player.x = _c.so_tg.x - 300;
+            obj_player.y = _c.so_tg.y;
+            coop_log("solo: next to ", object_get_name(_c.so_tg.object_index), " ", _c.so_tg.npc_id);
+        }
+    }
+    if (_t == 160 && variable_struct_exists(_c, "so_tg") && instance_exists(_c.so_tg))
+    {
+        var _spot = coop_test_open_spot(_c.so_tg, 160);
+        _c.so_x = _spot[0];
+        _c.so_y = _spot[1];
+    }
+    if (_t > 160 && _t <= 900 && variable_struct_exists(_c, "so_x"))
+    {
+        var _a = _t * 3;
+        obj_player.x = _c.so_x + lengthdir_x(20, _a);
+        obj_player.y = _c.so_y + lengthdir_y(20, _a);
+        if (_t > 600 && _t mod 20 == 0)
+        {
+            instance_activate_object(obj_npc_parent);
+            var _tg = instance_nearest(obj_player.x, obj_player.y, obj_npc_human_parent);
+            if (instance_exists(_tg) && point_distance(_tg.x, _tg.y, obj_player.x, obj_player.y) < 500)
             {
-                obj_player.x = _tg.x - 60;
-                obj_player.y = _tg.y;
-            }
-            with (obj_player)
-            {
-                if (item_exists(arma_now) && item_get_category(arma_now) == "weapon")
+                with (obj_player)
                 {
-                    scr_shoot(point_direction(x, y, _tg.x, _tg.y), 1, item_weapon_get_damage(arma_now), 0);
+                    if (item_exists(arma_now) && item_get_category(arma_now) == "weapon")
+                    {
+                        scr_shoot(point_direction(x, y, _tg.x, _tg.y), 1, item_weapon_get_damage(arma_now), 0);
+                    }
                 }
             }
         }
@@ -1201,6 +1226,171 @@ function coop_test_solo_step()
     {
         var _n = 0;
         with (obj_npc_parent) _n++;
-        coop_log("solo: done, npcs=", _n, " hp=", obj_player.hp, " fps=", fps);
+        coop_log("solo: done, npcs=", _n, " hp=", obj_player.hp, " fps=", fps, " kills=", coop_test_kills(), " hits taken=", _c.so_hits, " ai engaged=", _c.so_engaged);
     }
+}
+
+// Number of behaviour-tree NPCs whose current target is _who (1.4 AI: ai_execution.knowledge).
+function coop_test_ai_targeting(_who)
+{
+    var _n = 0;
+    with (obj_npc_parent)
+    {
+        if (hp > 0 && ai_human_migrated(id) && ai_execution.knowledge.valid && ai_execution.knowledge.target == _who)
+        {
+            _n++;
+        }
+    }
+    return _n;
+}
+
+// Kills counted by the game's own statistics (whatever the save had before is subtracted by the caller).
+function coop_test_kills()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "kills_seen")) _c.kills_seen = 0;
+    return _c.kills_seen;
+}
+
+// -coop_scenario aiguest (host and guest): the 1.4 AI fighting a guest far away from the host.
+// Guest: jumps next to enemies at least 700 px from every other player, walks in a small circle there (stays
+// alive), counts the hits it takes and the callout bubbles it receives. Host (raid owner): logs how many of its
+// NPCs target the guest's puppet and how many of the guest's footsteps its AI heard.
+function coop_test_aiguest_step()
+{
+    var _c = coop();
+    if (_c.scenario != "aiguest" || !coop_shared_ready() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "ag_t")) { _c.ag_t = 0; _c.ag_hits = 0; _c.ag_hp = obj_player.hp; _c.ag_best = 0; }
+    _c.ag_t++;
+    var _t = _c.ag_t;
+    if (obj_player.hp < _c.ag_hp - 0.5) _c.ag_hits++;
+    obj_player.hp = obj_player.hp_max; // both stay alive for the whole test
+    _c.ag_hp = obj_player.hp;
+    if (_c.role == "host")
+    {
+        if (_t mod 10 == 0)
+        {
+            var _n = 0;
+            with (obj_player_puppet) _n += coop_test_ai_targeting(id);
+            _c.ag_best = max(_c.ag_best, _n);
+        }
+        if (_t mod 120 == 0)
+        {
+            coop_log("aiguest owner: best=", _c.ag_best, " hearing emits=", variable_struct_exists(_c, "hearing_emits") ? _c.hearing_emits : 0);
+            coop_test_ai_dump(obj_player_puppet);
+        }
+        if (_t == 3000) game_end();
+        exit;
+    }
+    if (_t == 150)
+    {
+        var _best = coop_test_pick_enemy(obj_player.x, obj_player.y, true);
+        if (instance_exists(_best))
+        {
+            _c.ag_tg = _best;
+            obj_player.x = _best.x - 300;
+            obj_player.y = _best.y;
+            coop_log("aiguest: jumped next to ", object_get_name(_best.object_index), " ", _best.npc_id, " (", npc_get_faction(_best.npc_id), ")");
+        }
+    }
+    if (_t == 190 && variable_struct_exists(_c, "ag_tg") && instance_exists(_c.ag_tg))
+    {
+        // trees and walls around the target are active now (culling re-activates the camera region every 20 ticks)
+        var _spot = coop_test_open_spot(_c.ag_tg, 160);
+        _c.ag_x = _spot[0];
+        _c.ag_y = _spot[1];
+    }
+    if (_t > 190 && variable_struct_exists(_c, "ag_x") && _t < 2700)
+    {
+        // walk: the owner must hear the puppet's footsteps
+        var _a = _t * 3;
+        obj_player.x = _c.ag_x + lengthdir_x(20, _a);
+        obj_player.y = _c.ag_y + lengthdir_y(20, _a);
+    }
+    if (_t mod 300 == 0)
+    {
+        coop_log("aiguest: hits=", _c.ag_hits, " barks=", variable_struct_exists(_c, "barks_in") ? _c.barks_in : 0);
+    }
+    if (_t == 2700)
+    {
+        coop_log("aiguest: done hits=", _c.ag_hits, " barks=", variable_struct_exists(_c, "barks_in") ? _c.barks_in : 0);
+    }
+}
+
+// Debug: the AI state of the 3 NPCs closest to _who (test logs only).
+function coop_test_ai_dump(_who)
+{
+    if (!instance_exists(_who)) exit;
+    var _px = _who.x, _py = _who.y;
+    var _l = ds_priority_create();
+    with (obj_npc_parent) if (hp > 0) ds_priority_add(_l, id, point_distance(x, y, _px, _py));
+    repeat (min(3, ds_priority_size(_l)))
+    {
+        var _n = ds_priority_delete_min(_l);
+        var _s = object_get_name(_n.object_index) + " d=" + string(floor(point_distance(_n.x, _n.y, _px, _py))) + " state=" + string(_n.state) + " hs=" + string(_n.human_state_now) + " ai=" + string(_n.ai_status);
+        if (ai_human_migrated(_n))
+        {
+            var _k = _n.ai_execution.knowledge;
+            _s += " know=" + string(_k.valid) + " vis=" + string(_k.visible) + " tgt=" + (instance_exists(_k.target) ? object_get_name(_k.target.object_index) : string(_k.target));
+            if (variable_struct_exists(_n.ai_execution, "withdrawal")) _s += " withdraw=" + string(_n.ai_execution.withdrawal.active);
+            var _pn = player_nearest_instance(_n.x, _n.y);
+            var _v = __ai_perception_view(_n);
+            _s += " nearest=" + (instance_exists(_pn) ? object_get_name(_pn.object_index) : "none");
+            if (instance_exists(_pn))
+            {
+                _s += " hostile=" + string(__ai_perception_hostile(_n, _pn)) + " inview=" + string(__ai_perception_in_view(_n.x, _n.y, _pn.x, _pn.y, _n.weapon_pointing_direction, _v))
+                    + " wall=" + string(collision_line(_n.x, _n.y, _pn.x, _pn.y, obj_solid, true, false) != -4) + " vdist=" + string(floor(_v.distance)) + " ang=" + string(floor(_v.angle))
+                    + " alert=" + string(_n.ai_execution.perception.alert) + "/" + string(_n.alert_player_max) + " atgt=" + (instance_exists(_n.ai_execution.perception.alert_target) ? object_get_name(_n.ai_execution.perception.alert_target.object_index) : "none");
+            }
+        }
+        coop_log("  ai near: ", _s);
+    }
+    ds_priority_destroy(_l);
+}
+
+// Test helper: an enemy on the 1.4 behaviour-tree AI to fight. Bandits first (always hostile), never rookies or
+// novices (the new AI withdraws when they are surprised at close range). _far_from_players: at least 700 px from
+// every other player (the fight must happen away from the raid owner); otherwise the nearest to (_x, _y).
+function coop_test_pick_enemy(_x, _y, _far_from_players)
+{
+    instance_activate_object(obj_npc_parent);
+    var _best = noone, _bs = -1;
+    with (obj_npc_human_parent)
+    {
+        if (hp <= 0 || !ai_human_supported(id) || !ai_human_rollout_enabled(npc_id)) continue;
+        if (string_pos("rookie", npc_id) > 0 || string_pos("novice", npc_id) > 0) continue;
+        var _score;
+        if (_far_from_players)
+        {
+            var _far = 1000000;
+            with (obj_player_puppet) _far = min(_far, point_distance(x, y, other.x, other.y));
+            if (_far < 700) continue;
+            _score = _far;
+        }
+        else
+        {
+            _score = 1000000 - point_distance(x, y, _x, _y);
+        }
+        if (npc_get_faction(npc_id) == "Bandits") _score += 10000000;
+        if (_score > _bs) { _bs = _score; _best = id; }
+    }
+    return _best;
+}
+
+// Test helper: a point _dist px from _npc with no wall in between (8 directions tried), inside its sight range.
+function coop_test_open_spot(_npc, _dist)
+{
+    for (var _a = 180; _a < 540; _a += 45)
+    {
+        var _x = _npc.x + lengthdir_x(_dist, _a);
+        var _y = _npc.y + lengthdir_y(_dist, _a);
+        if (collision_line(_npc.x, _npc.y, _x, _y, obj_solid, true, false) == -4 && !collision_circle(_x, _y, 8, obj_solid, false, true))
+        {
+            return [_x, _y];
+        }
+    }
+    return [_npc.x - _dist, _npc.y];
 }

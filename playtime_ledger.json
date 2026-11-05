@@ -709,6 +709,159 @@
       "end": null,
       "note": "regress v3",
       "started": "2026-11-05T18:08:02"
+    },
+    {
+      "start": 1793912956.5091577,
+      "deadline": 1793913196.5091577,
+      "end": 1793913007.1284494,
+      "note": "regress solo",
+      "started": "2026-11-05T22:09:16",
+      "minutes": 0.84,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913007.5684547,
+      "deadline": 1793913307.5684547,
+      "end": 1793913071.7697453,
+      "note": "regress aiguest",
+      "started": "2026-11-05T22:10:07",
+      "minutes": 1.07,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913110.2253,
+      "deadline": 1793913410.2253,
+      "end": 1793913175.4067576,
+      "note": "regress aiguest",
+      "started": "2026-11-05T22:11:50",
+      "minutes": 1.09,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913218.8256266,
+      "deadline": 1793913458.8256266,
+      "end": 1793913268.26237,
+      "note": "regress solo",
+      "started": "2026-11-05T22:13:38",
+      "minutes": 0.82,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913268.7027738,
+      "deadline": 1793913568.7027738,
+      "end": 1793913335.0206227,
+      "note": "regress aiguest",
+      "started": "2026-11-05T22:14:28",
+      "minutes": 1.11,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913363.237809,
+      "deadline": 1793913603.237809,
+      "end": 1793913410.5948384,
+      "note": "regress solo",
+      "started": "2026-11-05T22:16:03",
+      "minutes": 0.79,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913444.7202673,
+      "deadline": 1793913684.7202673,
+      "end": 1793913494.1843588,
+      "note": "regress solo",
+      "started": "2026-11-05T22:17:24",
+      "minutes": 0.82,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913494.6140108,
+      "deadline": 1793913794.6140108,
+      "end": 1793913559.766593,
+      "note": "regress aiguest",
+      "started": "2026-11-05T22:18:14",
+      "minutes": 1.09,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913635.4651031,
+      "deadline": 1793913935.4651031,
+      "end": 1793913700.7435822,
+      "note": "regress aiguest",
+      "started": "2026-11-05T22:20:35",
+      "minutes": 1.09,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913721.2088315,
+      "deadline": 1793913961.2088315,
+      "end": 1793913768.611318,
+      "note": "regress solo",
+      "started": "2026-11-05T22:22:01",
+      "minutes": 0.79,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913769.0505898,
+      "deadline": 1793914069.0505898,
+      "end": 1793913834.2026231,
+      "note": "regress aiguest",
+      "started": "2026-11-05T22:22:49",
+      "minutes": 1.09,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913834.766134,
+      "deadline": 1793914074.766134,
+      "end": 1793913884.228552,
+      "note": "regress solo",
+      "started": "2026-11-05T22:23:54",
+      "minutes": 0.82,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913884.6590126,
+      "deadline": 1793914184.6590126,
+      "end": 1793913948.866314,
+      "note": "regress aiguest",
+      "started": "2026-11-05T22:24:44",
+      "minutes": 1.07,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793913987.0105274,
+      "deadline": 1793914227.0105274,
+      "end": 1793914034.4379036,
+      "note": "regress solo",
+      "started": "2026-11-05T22:26:27",
+      "minutes": 0.79,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793914034.868058,
+      "deadline": 1793914334.868058,
+      "end": 1793914099.1110313,
+      "note": "regress aiguest",
+      "started": "2026-11-05T22:27:14",
+      "minutes": 1.07,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793914099.6983392,
+      "deadline": 1793914339.6983392,
+      "end": 1793914147.1097646,
+      "note": "regress solo",
+      "started": "2026-11-05T22:28:19",
+      "minutes": 0.79,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793914147.5416877,
+      "deadline": 1793914447.5416877,
+      "end": 1793914211.7613137,
+      "note": "regress aiguest",
+      "started": "2026-11-05T22:29:07",
+      "minutes": 1.07,
+      "result": "all instances exited"
     }
   ],
   "note": "2026-10-03: user lifted the playtime limit (no refund planned)"

@@ -107,6 +107,11 @@ def fps_ok(logs):
 
 
 SCENARIOS = [
+    # one window, no co-op session: the mod installed for single player (the new AI must fight normally)
+    S("solo", "-coop_autoraid 1 -coop_scenario solo", "",
+      done=[("A", r"solo: done")],
+      checks=[("A", r"solo: unpaused, player=1", 1), ("A", r"ai engaged=[1-9]", 1), ("A", r"kills=[1-9]", 1)],
+      need_identical=False, timeout=240, minutes=4, players=1),
     S("fps", "-coop_autoraid 1 -coop_scenario fps", "-coop_scenario fps -coop_fps 60",
       done=[("A", r"fpstest(.|\n)*fpstest"), ("B", r"fpstest(.|\n)*fpstest")],
       checks=[], custom=fps_ok),
@@ -142,6 +147,11 @@ SCENARIOS = [
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),
+    # 1.4 AI against a guest far from the host: targets the puppet, hears its steps, shoots it, callouts reach it
+    S("aiguest", "-coop_autoraid 1 -coop_scenario aiguest", "-coop_scenario aiguest",
+      done=[("B", r"aiguest: done")],
+      checks=[("A", r"best=[1-9]", 1), ("A", r"hearing emits=[1-9]", 1), ("B", r"npc bark from owner", 1)],
+      timeout=300, minutes=5),
     S("quad", "-coop_autoraid 1 -coop_scenario quad -coop_fps 60", "-coop_scenario quad -coop_fps 60",
       done=[(k, r"quad: done") for k in "ABCD"],
       checks=[(k, r"players=4 puppets=3", 1) for k in "ABCD"] + [("A", r"maps identical with partner", 3),
@@ -224,9 +234,15 @@ def run(sc, outdir, extra):
     for p in LOGS.values():
         if os.path.exists(p):
             os.remove(p)
-    script = "tools/test4.sh" if sc["players"] >= 3 else "tools/test2.sh"
     # the scenario's own arguments come last, so they win over the shared extra ones
-    cmd = f'bash {script} {sc["minutes"]} "regress {sc["name"]}" "{extra} {sc["host"]}" "{extra} {sc["guest"]}"'
+    if sc["players"] == 1:
+        # single player with the mod: no session, one window (save root coopA, log coop_coopA.log)
+        cmd = (f'source tools/env.sh && python tools/game_guard.py run --max-minutes {sc["minutes"]} '
+               f'--note "regress {sc["name"]}" --launch "-no_gpu_pref -coop_slot 1 -coop_root coopA '
+               f'-coop_window 40,100,1280,720 {extra} {sc["host"]}"')
+    else:
+        script = "tools/test4.sh" if sc["players"] >= 3 else "tools/test2.sh"
+        cmd = f'bash {script} {sc["minutes"]} "regress {sc["name"]}" "{extra} {sc["host"]}" "{extra} {sc["guest"]}"'
     env = dict(os.environ, COOP_PLAYERS=str(sc["players"]))
     proc = subprocess.Popen([BASH, "-c", cmd], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
     t0 = time.time()
