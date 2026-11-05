@@ -46,7 +46,10 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   laptop had 15 GB and froze once with 4.)
   Multi-player scenarios: quad/trio (see each other, credit, revive, ping, give), handoff/handoff3 (host
   extracts, next slot owns the world), latejoin (-coop_delay_join), reconnect (blackout), menus (UI buttons),
-  lobby/lobby2 (hub lobby + visits), ownerjoin/chest3/both3 (3 players), grouphp. Solo with the mod:
+  lobby/lobby2 (hub lobby + visits), ownerjoin/chest3/both3 (3 players), grouphp, aiguest (1.4 AI vs a guest far
+  from the host), solo (1 window, players=1 in regress.py); per map: map*/solo*/aiguest* (tag maps).
+  Everything in order: `bash tools/regress_full.sh [soak minutes]` (solo > duo > trio > squad > soak > bad net).
+  Solo with the mod by hand:
   `python tools/game_guard.py run --max-minutes 3 --note solo --launch "-no_gpu_pref -coop_slot 1 -coop_root
   coopA -coop_autoraid 1 -coop_scenario solo"`. Test-only args: -coop_diff key=val,... (difficulty override,
   not saved), -coop_name <name>, -coop_seq_dump N (saves 30 consecutive frames, for flicker hunting).
@@ -94,6 +97,8 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   (global.roaming_enabled) only moves/fights deactivated NPCs, so the active regions around puppets are safe.
   Perception picks the player via player_nearest_instance (our hook -> nearest standing player).
 - Never wake players while obj_controller is deactivated (vanilla pause): their Step reads obj_controller.
+- ai_compat and ai_commands can't be recompiled (field `until`): no hooks there (callouts = owner-side scan).
+- Comments: every hook gets a `// [n] why` line; tag hacks `WORKAROUND (no source access)` (the devs grep it).
 - The game deactivates instances outside the camera and on pause — keep obj_coop alive (coop_ensure_alive).
 - With a player on the map the OS mouse is locked; use obj_cursor (virtual cursor) for GUI hit tests.
 - Networking (coop_net.gml): slots 0..3, star topology through the host, reliable UDP layer, raid owner =

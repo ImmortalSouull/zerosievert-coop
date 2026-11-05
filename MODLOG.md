@@ -344,3 +344,26 @@ Later the same evening (v1.0 hardening):
   coop_solo.log): 369 = obj_controller in 1.3.x. A normal pause deactivates the room incl. obj_controller; the
   coop_after_culling() call at the end of game_pause woke obj_player_parent when connected (hub lobby) -> the
   player's Step read obj_controller.marked_object_id. Fixed: players are only woken while obj_controller exists.
+
+## 2026-11-05 (later) - 1.4 AI in co-op: hearing, callouts, roaming; tests; comments for the devs
+- Hearing: ai_hearing_emit() is only called by scr_player_movement (local player). The owner now emits puppets'
+  footsteps (coop_puppet_hearing_step: network movement, 28-tick cadence, running = PSTATE flag 16). Hearing only
+  refreshes a KNOWN target (__ai_hearing_eligible needs knowledge/withdrawal); first contact is by sight.
+- Callouts: barks are obj_npc_draw_text bubbles made inside the AI (owner only). ai_compat AND ai_commands can't be
+  recompiled by UTMT (struct field `until`, reserved word) -> no hooks there. The owner scans new bubbles every
+  tick (coop_npc_bark_scan; bark key = npc.ai_bark_last_line, legacy text ids 6/8/12/16/17), receivers rebuild
+  the bubble like __ai_compat_show_bark (message 38 NPC_BARK).
+- Roaming: spawn distance check covers every player (coop_other_player_within); ai_roaming_step runs on the world
+  owner only (obj_controller Step_2 hook); despawn needs !instance_exists, so the owner's active regions are safe.
+- Not changeable: ai_commands_camera_step (NPC may fire at the LOCAL player only once inside that player's camera,
+  after an opening delay) is off for other targets -> enemies off a guest's screen can fire at them at once.
+- Checked, no change needed: takeover of replicas - ai_equipment_ready is set in every NPC Create
+  (npc_setup_weapon), the BT prepares itself on the first Step, "resumed_after_gap" resets stale state.
+- Replica Alarm 8 (patrol state re-roll for non-BT NPCs) skipped.
+- Tests: solo (1 window, regress players=1: AI engages, kills, pause) and aiguest (guest jumps to experienced
+  bandits >= 700 px from the host: owner logs targeting/hearing, guest logs callouts), both on every map too.
+  Gotchas: rookie/novice bandits WITHDRAW when surprised at close range (barks "retreat"); view distance ~250 px
+  at dusk; trees around a far target are deactivated on the teleporting machine, so the open-spot search must
+  wait for the next culling pass (~20 ticks). tools/regress_full.sh = solo > duo > trio > squad > soak > bad net.
+- Comments: every hook in hooks.txt has a "// [n]" line; WORKAROUND (no source access) tags (79). Dead NPC_HIT (34)
+  removed. Mixed line endings in the repo: keep each file's own (some .gml are CRLF).
