@@ -6,7 +6,7 @@ source "$(dirname "$0")/env.sh"
 cd "$ROOT"
 SOAK=${1:-20}
 P=(python tools/regress.py)
-LIST=$(python tools/regress.py --list | tr -d "")  # Windows Python prints CRLF
+LIST=$(python tools/regress.py --list | tr -d '\r')  # Windows Python prints CRLF
 pick() { for s in $LIST; do case "$s" in $1) echo "$s";; esac; done; }
 SOLO="lang solo $(pick 'solo[0-9]*_*')"
 DUO="fps anim v3 revive both chest livechest join latejoin leave reconnect aiguest grouphp lobby lobby2 tele $(pick 'map[0-9]*_*') $(pick 'aiguest[0-9]*_*')"
