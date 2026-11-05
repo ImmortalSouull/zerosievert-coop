@@ -367,3 +367,22 @@ Later the same evening (v1.0 hardening):
   wait for the next culling pass (~20 ticks). tools/regress_full.sh = solo > duo > trio > squad > soak > bad net.
 - Comments: every hook in hooks.txt has a "// [n]" line; WORKAROUND (no source access) tags (79). Dead NPC_HIT (34)
   removed. Mixed line endings in the repo: keep each file's own (some .gml are CRLF).
+
+## 2026-11-05 (night) - every game language; fixes from the full run
+- Game 1.4.13 offers 13 languages (gamedata/languages.json; folder chinese_traditional exists but is not listed).
+  global.language_current = folder name (english, russian, polish, german, french, italian, spanish_es,
+  spanish_latam, pt_br, turkish, japanese, korean, chinese_simplified); the game sets it from Steam/Epic locale
+  at first start, language_set_new_language() switches (reloads CSV + fonts; fonts render CJK/hangul fine).
+- Mod texts: mod/lang/strings.tsv (English key column + 13 columns, also Traditional Chinese) ->
+  tools/make_lang.py (run by build.sh) -> gml_GlobalScript_coop_lang.gml (coop_t, coop_tf, data). Texts with
+  names/values use coop_tf("{0} joined", "{0} подключился", name) - word order differs per language.
+  tools/lang_extract.py lists texts in code that the table lacks. Difficulty tab rows: mod/lang/difficulty_rows.tsv
+  (key + column per language) -> installer writes each language's CSV (quotes texts with commas).
+- Installer talks in the Windows UI language (Get-UICulture), English in brackets.
+- xdelta3 reads an XDELTA environment variable as extra options: never export XDELTA (env.sh uses XDELTA_EXE).
+- Test lang (1 window): every game language through language_set_new_language, all texts from the table,
+  screenshot lang_<language>.png of the co-op panel.
+- Full-run fixes: host crashed (invalid ds_map in coop_net_on_packet) when a message delivered from the reorder
+  buffer freed its own peer (guest quit) -> peer.freed flag. Test fixes: livechest picks map containers only
+  (1.4 roaming fights leave bodies = dynamic containers), quad credit check accepts any guest (slot order =
+  connection order), fps walks toward the map centre (edge spawns), aiguest retries a new enemy every 10 s.

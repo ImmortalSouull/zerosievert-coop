@@ -1211,6 +1211,22 @@
       "started": "2026-11-05T23:42:14",
       "minutes": 0.76,
       "result": "all instances exited"
+    },
+    {
+      "start": 1793918649.3084962,
+      "deadline": 1793918829.3084962,
+      "end": 1793918688.4084845,
+      "note": "regress lang",
+      "started": "2026-11-05T23:44:09",
+      "minutes": 0.65,
+      "result": "all instances exited"
+    },
+    {
+      "start": 1793918688.7928452,
+      "deadline": 1793918928.7928452,
+      "end": null,
+      "note": "regress solo",
+      "started": "2026-11-05T23:44:48"
     }
   ],
   "note": "2026-10-03: user lifted the playtime limit (no refund planned)"

@@ -1,11 +1,12 @@
 ZERO Sievert CO-OP (неофициальный мод) — версия см. mod_info.json
-English version: see the ENGLISH section below.
+English version: see the ENGLISH section below.  Wersja polska: sekcja POLSKI na końcu pliku.
 
 ОБНОВЛЕНИЕ: просто запустите install.bat новой версии поверх старой (у всех игроков одна версия!).
 =====================================================================
 
 Совместные рейды до 4 игроков + ранения/поднятие + расширенная настройка сложности.
 Мод сделан с помощью ИИ (Claude) по заказу и дизайну игрока. Не связан с разработчиками игры.
+Мод говорит на языке игры (все 13 языков игры): смените язык в настройках игры - мод переключится сам.
 
 УСТАНОВКА (каждому игроку)
 1. Закройте игру.
@@ -101,7 +102,8 @@ UPDATE: just run install.bat of the new version over the old one (all players ne
 
 Joint raids for up to 4 players + down/revive system + extended difficulty settings.
 Made with AI (Claude) to the player's design. Not affiliated with the game's developers.
-The mod's UI follows the game language (Russian or English).
+The mod's UI follows the game language (all 13 languages of the game): change it in the game's settings and
+the mod switches with it.
 
 INSTALLATION (every player)
 1. Close the game.
@@ -191,3 +193,34 @@ KNOWN LIMITATIONS
 
 Credits: game by CABO Studio / Modern Wolf; UndertaleModTool (Underminers) used to build the patch;
 xdelta3 (GPL) to apply it.
+
+---------------------------------------------------------------------
+POLSKI
+ZERO Sievert CO-OP (nieoficjalny mod) - wersja: zobacz mod_info.json
+(Tłumaczenie przygotowane przy pomocy AI.)
+
+AKTUALIZACJA: uruchom install.bat nowej wersji na starej (wszyscy gracze muszą mieć tę samą wersję!).
+
+Wspólne rajdy do 4 graczy + ranienie/podnoszenie + rozszerzone ustawienia trudności.
+Mod mówi w języku gry (wszystkie 13 języków gry): zmień język w ustawieniach gry, a mod przełączy się sam.
+
+INSTALACJA (każdy gracz)
+1. Zamknij grę.
+2. Rozpakuj archiwum w dowolnym folderze i uruchom install.bat.
+   Instalator sam znajdzie grę, zrobi kopię zapasową (folder coop_backup w folderze gry)
+   i nałoży łatkę na TWOJE pliki gry. Archiwum nie zawiera plików gry.
+3. Odinstalowanie: uninstall.bat (albo Steam > Właściwości > Zweryfikuj spójność plików gry).
+Mod jest zbudowany dla ZERO Sievert 1.4.13 (Steam build 26317366). Po aktualizacji gry instalator
+odmówi działania, dopóki nie wyjdzie nowa wersja moda (mod sam poinformuje o niej w menu).
+
+JAK GRAĆ
+- Menu główne lub menu pauzy > "Kooperacja" (albo klawisz F7) - panel kooperacji.
+- Host: "Utwórz grę przez Steam" -> otworzy się nakładka Steam -> zaproś do 3 znajomych.
+  Znajomi przyjmują zaproszenie w Steam albo klikają "Dołącz do gry" przy hoście na liście znajomych.
+- Zapasowo: "Utwórz grę przez IP" u hosta (port UDP 47777) i "Dołącz przez IP" u znajomych
+  (przez Radmin VPN / ZeroTier / przekierowanie portu).
+- Każdy wczytuje SWÓJ zapis. Gdy host wyrusza na rajd, gracze w bunkrze jadą za nim na tę samą mapę.
+- Ranny gracz czeka na pomoc: podejdź i naciśnij [E], kółkiem myszy wybierz bandaż lub apteczkę.
+- [X] obok towarzysza: przekaż mu przedmiot. Środkowy przycisk myszy: znacznik dla wszystkich.
+- W bunkrze widzicie się nawzajem; przez panel można odwiedzić bunkier znajomego.
+- Przy błędzie gry log jest w %LOCALAPPDATA%\ZERO_Sievert\coop_solo.log - wyślij go autorowi.

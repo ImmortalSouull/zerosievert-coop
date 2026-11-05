@@ -17,6 +17,9 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 - `mod/ui/` — text inserted into the game's .ui / language files by the installer.
 - `mod/shaders/*_ps.hlsl` — replacement D3D11 pixel shaders (shd_tree: world-anchored fade dither); compile
   with `python tools/make_shaders.py` (-> .dxbc, committed), build.csx splices them into the game's shaders.
+- Texts: every text the player sees goes through coop_t("English", "Russian") / coop_tf("... {0}", "... {0}", args)
+  and must be in `mod/lang/strings.tsv` (13 game languages + zh-Hant; `python tools/lang_extract.py` lists missing
+  ones; build.sh generates coop_lang.gml). Difficulty tab rows: `mod/lang/difficulty_rows.tsv`.
 - UI: draw co-op overlays with `coop_style.gml` helpers (1920x1080 UI space, game fonts COOP_F_SMALL/BODY,
   coop_ui_panel/slot/prompt/item_icon/fit). Hub lobby + visits live in `coop_hub.gml`.
 - `dist_src/` — installer.ps1, README.txt (Russian, for players), THIRD_PARTY.txt.
