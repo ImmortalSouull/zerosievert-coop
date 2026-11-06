@@ -392,3 +392,39 @@ Later the same evening (v1.0 hardening):
   the bullet found no NPC near it (the soldier was not active there) although the guest's replica kept moving.
   3 reruns on bad net passed. Open: log the host-side position/active state of the target NPC (by nid) when a
   partner bullet finds nothing near, to tell a stale replica from a deactivation race.
+
+## 2026-11-06/07 - live test with Ondrey (v1.2.0 build) and fixes (protocol COOP_VERSION 8)
+Live: Steam invite launch (+connect_lobby) works. Found:
+- Separate raids: the guest took the train alone (no shared seed), the host later started a fresh raid. Now every
+  connected player's raid has a known seed (RAID_STATE carries it + a 'late' flag); a train ride while any partner
+  is in a raid goes into that raid (coop_hook_go_to_map returns the map, hook [5] `arg0 = ...; if (arg0 < 0) exit`).
+  Raid owner = lowest slot among the players who STARTED the raid, before late joiners (coop_raid_owner), so a lower
+  slot (the host) can join a guest's raid without taking a fresh map copy's world over. Panel "Join raid" is the same
+  train ride now (no JOIN_REQ round trip; the owner's raid_settings_json snapshot is no longer sent - only matters if
+  the host changed difficulty mid-raid).
+- User design: the host's train opens a gathering circle (coop_gather.gml, msg 67, radius 160, 15 s, 4 s in tests)
+  where the host stands; guests inside when RAID_START arrives follow, the rest stay (log "gather: stays in the
+  bunker"). Hub guests of a host who JOINED a running raid get RAID_START with late=1.
+- Crash "Unable to find instance ... is_inside_bunker" on Continue/New game after leaving a raid: player_get caches the
+  last instance and only forgets it in obj_player_parent CleanUp, which does not run for an instance removed while
+  deactivated -> hook [131] checks instance_exists(last_player).
+- Crash in the Mods menu after a translation mod was deleted: mods_perform_event read .file_path of an undefined
+  context (vanilla bug) -> hook [132] skips entries without a struct.
+- Enemy callouts shown as keys (npc.bark.*) on a guest with a full-Russian translation mod: that mod replaces the
+  language files (English master too), the game's own fallback can't help. Not ours (vanilla barks show the same).
+- Stale Steam lobby: the host quit, Steam made the remaining guest the owner, an invite to it hung 30 s. The host
+  writes lobby data zs_host; a guest whose lobby owner != zs_host leaves with a message; a guest leaves when the host
+  leaves the lobby; the host drops members that left the lobby (their BYE is often lost: the P2P session closes right
+  after sending it -> the puppet stood "breathing fast" until the timeout).
+- F7 panel: drawn at Draw GUI End over the game's cursor -> the arrow is drawn again on top. Game input muted while
+  it is open: update_keyboard_input (like the Steam overlay case), obj_gamepad actions reset (like the radial menu),
+  ui_handle_input gets no pointer (hooks 133-135).
+- Bunker weather differed between players: the session host's bunker sends time + weather (every 5 s too); a guest
+  in its bunker while the host is in the hub follows it (coop_world_hub_slave), applies only changed JSON.
+- [X] give in the bunker: the item travels as JSON and is placed with class_loot_grid(8,11).TryPlace like
+  inventory_add_item (bag at the feet when full); waits while the receiver's inventory layer is open.
+- "Invite friend again" -> "Invite friend"; mod version in the main menu corner.
+Tests: hostjoin (guest raids alone, host's train to map 3 lands in map 1, owner stays slot 1), gather (3 players,
+slot 2 walks out of the circle and stays), lobby checks bunker weather + bunker give. regress.py does NOT install the
+build: run tools/install_test.sh first (a test once ran on the installer's old build). Test windows: a 2x2 grid right
+of the Claude window (tools/env.sh WIN_A..D).

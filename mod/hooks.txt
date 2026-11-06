@@ -37,13 +37,18 @@ if (keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) ||
 if (coop_test_mode() || keyboard_check_released(vk_anykey) || mouse_check_button_released(mb_any) || obj_gamepad.input_released[UnknownEnum.Value_29])
 <<<END
 
-// [5] Raid start: the host's map id + seed go to everyone (coop_raid.gml) before the game opens the raid db.
+// [5] Raid start: map id + seed are shared (coop_raid.gml) before the game opens the raid db; a train ride while a
+// partner is in a raid goes into that raid (the hook returns its map).
 ### findreplace gml_GlobalScript_go_to_map
 <<<FIND
     db_open("raid");
     db_write("Map", "Map id", arg0);
 <<<REPLACE
-    coop_hook_go_to_map(arg0);
+    arg0 = coop_hook_go_to_map(arg0);
+    if (arg0 < 0)
+    {
+        exit; // the host's gathering countdown at the train runs first (coop_gather.gml)
+    }
     db_open("raid");
     db_write("Map", "Map id", arg0);
 <<<END
@@ -1161,4 +1166,66 @@ if (coop_npc_skip_alarm())
     return _difficulty_def.__description;
 <<<REPLACE
     return coop_difficulty_description(_difficulty_def.__description);
+<<<END
+
+// [131] WORKAROUND (no source access): player_get caches the last instance per index and only forgets it in obj_player_parent CleanUp. A player removed without CleanUp (deactivated at a room change: co-op keeps rooms partly active, pause deactivates) left a dead id in the cache: "Continue"/"New game" after leaving a raid crashed in obj_meteo_controller Create -> is_inside_bunker ("Unable to find instance"). Check the cached instance still exists.
+### findreplace gml_GlobalScript_player_get
+<<<FIND
+    if (last_index == arg0)
+<<<REPLACE
+    if (last_index == arg0 && instance_exists(last_player))
+<<<END
+
+// [132] WORKAROUND (no source access): a mod folder deleted while the game knew it (e.g. a translation mod removed, then "Refresh mod data" in the Mods menu) leaves its name in Mods_Data_Array without a context struct; mods_perform_event then crashed reading .file_path of undefined. Skip such entries (vanilla bug, the co-op mod is not in that list).
+### findreplace gml_GlobalScript_scr_mods
+<<<FIND
+        var _mod_context = variable_struct_get(global.Mods_Data, global.Mods_Data_Array[_i]);
+<<<REPLACE
+        var _mod_context = variable_struct_get(global.Mods_Data, global.Mods_Data_Array[_i]);
+        if (!is_struct(_mod_context))
+        {
+            continue;
+        }
+<<<END
+
+// [133] F7 panel open: the game's key/button table reads as "nothing pressed" (same as its Steam overlay case) - no shooting, walking, interacting.
+### findreplace gml_GlobalScript_update_keyboard_input
+<<<FIND
+        else
+        {
+            global.kb_hold[_i] = keyboard_check(_constant)
+<<<REPLACE
+        else if (coop_panel_blocks_game())
+        {
+            global.kb_hold[_i] = false;
+            global.kb_pressed[_i] = false;
+        }
+        else
+        {
+            global.kb_hold[_i] = keyboard_check(_constant)
+<<<END
+
+// [134] F7 panel open: the game's actions (gamepad + mapped keys) are reset, like the game does under its radial menu.
+### findreplace gml_Object_obj_gamepad_Step_1
+<<<FIND
+if (instance_exists(obj_radial_menu))
+{
+<<<REPLACE
+if (coop_panel_blocks_game())
+{
+    for (var _ca = 0; _ca < UnknownEnum.Value_41; _ca++)
+    {
+        reset_action(_ca);
+    }
+}
+if (instance_exists(obj_radial_menu))
+{
+<<<END
+
+// [135] F7 panel open: the game's UI (inventory, menus behind the panel) gets no pointer/buttons this frame.
+### findreplace gml_GlobalScript_ui_handle_input
+<<<FIND
+        if (_oldMode == InputGetMode() || global.is_steamdeck)
+<<<REPLACE
+        if (!coop_panel_blocks_game() && (_oldMode == InputGetMode() || global.is_steamdeck))
 <<<END

@@ -53,6 +53,8 @@ function coop_peer_new(_slot)
         last_recv: current_time,
         ping: 0,
         in_raid: false,
+        raid_late: false, // joined its raid while it was running (coop_raid_owner)
+        raid_seed: -1, // seed of the raid it is in, -1 = none (a train ride joins it: coop_hook_go_to_map)
         ready: false,
         loc: 0,
         map: -1,
@@ -856,9 +858,10 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_RAID_START:
             var _map = buffer_read(_b, buffer_u8);
             var _seed = buffer_read(_b, buffer_f64);
+            var _rlate = buffer_read(_b, buffer_u8);
             if (_from == 0 || (variable_struct_exists(_c, "join_target") && _from == _c.join_target))
             {
-                coop_on_raid_start(_map, _seed);
+                coop_on_raid_start(_map, _seed, _rlate);
             }
             break;
         case COOP_MSG_RAID_STATE:
@@ -940,6 +943,9 @@ function coop_handle_message_inner(_b, _size)
             break;
         case COOP_MSG_FP:
             coop_diag_on_fp(_b);
+            break;
+        case COOP_MSG_GATHER:
+            coop_gather_on_msg(_b);
             break;
         case COOP_MSG_MARK:
             coop_mark_on_message(_b);
@@ -1147,6 +1153,7 @@ function coop_net_on_raid_state(_from, _b)
     var _pmap = buffer_read(_b, buffer_s8);
     var _rid = buffer_read(_b, buffer_f64);
     var _rdy = buffer_read(_b, buffer_u8);
+    var _late = buffer_read(_b, buffer_u8);
     var _p = coop_peer(_from);
     if (!is_struct(_p) || _from == _c.slot)
     {
@@ -1159,6 +1166,8 @@ function coop_net_on_raid_state(_from, _b)
         coop_log("player ", _p.name, " (slot ", _from, ") in raid = ", _in, " map ", _pmap);
     }
     _p.in_raid = _in;
+    _p.raid_late = _late;
+    _p.raid_seed = (_loc == 2) ? _rid : -1;
     var _became_ready = _in && _rdy && !_p.ready;
     _p.ready = _in && _rdy;
     var _old_loc = _p.loc;
@@ -1174,7 +1183,7 @@ function coop_net_on_raid_state(_from, _b)
             coop_npc_guest_readopt(); // back after a lost connection: the host drives the NPCs again
         }
     }
-    if (_from == 0 && _old_loc != _loc && _loc == 2 && _c.role == "guest" && is_in_hub())
+    if (_old_loc != _loc && _loc == 2 && is_in_hub())
     {
         coop_notify(coop_tf("{0} is in a raid - F7 to join", "{0} в рейде - F7, чтобы присоединиться", _p.name));
     }
@@ -1341,6 +1350,7 @@ function coop_send_raid_state()
     buffer_write(_c.send_buf, buffer_s8, _in ? obj_map_generator.area : -1);
     buffer_write(_c.send_buf, buffer_f64, (_in && _c.gen_seed != undefined) ? _c.gen_seed : -1);
     buffer_write(_c.send_buf, buffer_u8, coop_raid_ready());
+    buffer_write(_c.send_buf, buffer_u8, _in && _c.raid_late);
     coop_msg_send_to(COOP_ALL, true);
 }
 

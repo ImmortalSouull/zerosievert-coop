@@ -6,7 +6,7 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 ## Read first
 - `MODLOG.md` — full journal: every engine fact, gotcha, decision and test result. Read it before changing code.
 - Current release: **v1.2.0** (game 1.4.13 / new enemy AI; up to 4 players, hub lobby + bunker visits,
-  game-style UI), network protocol `COOP_VERSION 7` (all players must match). v1.2.0 is built locally but NOT
+  game-style UI), network protocol `COOP_VERSION 8` (all players must match). v1.2.0 is built locally but NOT
   published: the user said (2026-11-05) not to push/release on GitHub until they say so.
   `COOP_MOD_VERSION` in coop_update.gml must equal the release version (update check compares GitHub tags).
 
@@ -39,7 +39,9 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 
 ## Commands (Git Bash)
 - Build: `bash tools/build.sh` → `zerosievert-coop-work/build/data.win` (check "COOP BUILD OK").
-- Quick test install (data.win only): `bash tools/install_test.sh`.
+- Quick test install (data.win only): `bash tools/install_test.sh`. regress.py does NOT install the build itself:
+  run install_test.sh after every build before testing.
+- Test windows open in a 2x2 grid right of the Claude window (tools/env.sh WIN_A..WIN_D, override ZS_WIN_A..D).
 - Release: `bash tools/make_dist.sh <ver>` then run `dist/ZS-Coop-v<ver>/installer.ps1 install`
   (`powershell -NoProfile -ExecutionPolicy Bypass -File ...`). Copy the zip into the repo root for the user.
 - Regression (use it before every release): `python tools/regress.py` (core), `python tools/regress.py all`
@@ -49,7 +51,8 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   laptop had 15 GB and froze once with 4.)
   Multi-player scenarios: quad/trio (see each other, credit, revive, ping, give), handoff/handoff3 (host
   extracts, next slot owns the world), latejoin (-coop_delay_join), reconnect (blackout), menus (UI buttons),
-  lobby/lobby2 (hub lobby + visits), ownerjoin/chest3/both3 (3 players), grouphp, aiguest (1.4 AI vs a guest far
+  lobby/lobby2 (hub lobby + visits, bunker weather + bunker give), hostjoin (host's train joins a guest's raid),
+  gather (3 players, train circle: inside goes, outside stays), ownerjoin/chest3/both3 (3 players), grouphp, aiguest (1.4 AI vs a guest far
   from the host), solo (1 window, players=1 in regress.py); per map: map*/solo*/aiguest* (tag maps).
   Everything in order: `bash tools/regress_full.sh [soak minutes]` (solo > duo > trio > squad > soak > bad net).
   Solo with the mod by hand:

@@ -20,6 +20,8 @@ function coop_test_ext_step()
     coop_test_quad_step();
     coop_test_handoff_step();
     coop_test_ownerjoin_step();
+    coop_test_hostjoin_step();
+    coop_test_gather_step();
     coop_test_solo_step();
     coop_test_aiguest_step();
     coop_test_lang_step();
@@ -891,6 +893,18 @@ function coop_test_lobby_step(_t)
         coop_log("lobby: puppets=", array_length(coop_puppets()), " together=", coop_hub_together());
         screen_save("hub_lobby_" + _tag + ".png");
     }
+    // the guest hands the host an item in the bunker (straight into the host's inventory grid)
+    if (_c.role == "guest" && (_t == 240 || _t == 241 || _t == 242))
+    {
+        var _h = coop_puppet_of(0);
+        if (instance_exists(_h))
+        {
+            obj_player.x = _h.x + 16;
+            obj_player.y = _h.y;
+        }
+        if (_t == 241) _c.sim_give = true;
+        if (_t == 242) _c.sim_give_ok = true;
+    }
     if (_c.role != "guest")
     {
         if (_t == 1200) game_end();
@@ -1466,5 +1480,87 @@ function coop_test_lang_step()
         language_set_new_language("english");
         _c.panel = false;
         coop_log("lang: done ok=", _c.lg_ok, "/", _n);
+    }
+}
+
+// -coop_scenario hostjoin (2 players): the guest takes the train alone while the host stays in the bunker; later the
+// host takes the train to ANOTHER map and must land in the guest's raid (same map + seed), which the guest keeps
+// owning (it started the raid, the host joined it late). Live bug 2026-11-06: the two ended up in separate raids.
+function coop_test_hostjoin_step()
+{
+    var _c = coop();
+    if (_c.scenario != "hostjoin" || !_c.connected)
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "hj_t")) _c.hj_t = 0;
+    _c.hj_t++;
+    var _t = _c.hj_t;
+    if (_c.role == "guest" && !variable_struct_exists(_c, "hj_go") && is_in_hub() && instance_exists(obj_player) && _t > 240)
+    {
+        _c.hj_go = true;
+        coop_log("hostjoin: guest starts its own raid");
+        go_to_map(1);
+    }
+    if (_c.role == "host" && !variable_struct_exists(_c, "hj_go") && is_in_hub() && instance_exists(obj_player))
+    {
+        var _p = coop_peer(1);
+        if (is_struct(_p) && _p.loc == 2 && _p.raid_seed >= 0)
+        {
+            if (!variable_struct_exists(_c, "hj_seen")) _c.hj_seen = _t;
+            if (_t - _c.hj_seen == 600)
+            {
+                _c.hj_go = true;
+                coop_log("hostjoin: host takes the train to map 3");
+                go_to_map(3);
+            }
+        }
+    }
+    if (variable_struct_exists(_c, "hj_go") && coop_shared_ready() && instance_exists(obj_player) && instance_exists(obj_map_generator))
+    {
+        if (!variable_struct_exists(_c, "hj_in")) _c.hj_in = _t;
+        if (_t - _c.hj_in == 900)
+        {
+            var _rep = 0;
+            instance_activate_object(obj_npc_parent);
+            with (obj_npc_parent)
+            {
+                if (coop_npc_is_replica()) _rep++;
+            }
+            coop_log("hostjoin: done owner=", coop_raid_owner(), " late=", _c.raid_late, " map=", obj_map_generator.area, " replicas=", _rep > 0);
+        }
+    }
+}
+
+// -coop_scenario gather (3 players, host autoraid): the host's train ride opens the circle; slot 2 walks out of it
+// and must stay in the bunker, slot 1 stays inside and goes along.
+function coop_test_gather_step()
+{
+    var _c = coop();
+    if (_c.scenario != "gather" || _c.role != "guest")
+    {
+        exit;
+    }
+    if (_c.slot == 2 && variable_struct_exists(_c, "gather") && _c.gather != undefined && !variable_struct_exists(_c, "gt_moved") && instance_exists(obj_player))
+    {
+        _c.gt_moved = true;
+        obj_player.x = _c.gather.x + 400;
+        coop_log("gather test: slot 2 walks away from the train");
+    }
+    if (!variable_struct_exists(_c, "gt_t")) _c.gt_t = 0;
+    _c.gt_t++;
+    if (variable_struct_exists(_c, "gt_moved") && _c.gt_t mod 60 == 0 && !variable_struct_exists(_c, "gt_done"))
+    {
+        if (!variable_struct_exists(_c, "gt_from")) _c.gt_from = _c.gt_t;
+        if (_c.gt_t - _c.gt_from >= 900)
+        {
+            _c.gt_done = true;
+            coop_log("gather test: done hub=", is_in_hub(), " raid=", coop_in_raid());
+        }
+    }
+    if (_c.slot == 1 && coop_shared_ready() && !variable_struct_exists(_c, "gt_done") && instance_exists(obj_player))
+    {
+        _c.gt_done = true;
+        coop_log("gather test: done hub=", is_in_hub(), " raid=", coop_in_raid());
     }
 }

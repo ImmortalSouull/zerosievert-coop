@@ -14,7 +14,9 @@ Steam или по IP, общий мир, ранения и поднятие на
 
 ## Возможности
 - Кнопка «Кооператив» в главном меню и меню паузы (или F7): игра в Steam (приглашение до 3 друзей) или по IP.
-- Совместные рейды: игроки едут за хостом на ту же карту или присоединяются к уже идущему рейду.
+- Совместные рейды: у поезда хоста круг сбора с отсчётом — кто в круге, едет вместе; остальные
+  присоединяются к идущему рейду позже (поездом или из панели). Раздельных рейдов не бывает.
+- [X] — передать предмет напарнику, в рейде и в бункере.
 - Одинаковая карта у всех; враги, выстрелы, гранаты, трупы, лут в реальном времени, выброшенные
   предметы, двери, время суток, погода и выбросы синхронизированы.
 - Бункер как лобби: игроки видят друг друга в своих хабах, а кнопка «В гости» показывает бункер друга
@@ -70,7 +72,9 @@ new, fixes, known bugs; Russian and English) are in [docs/releases](docs/release
 
 ## Features
 - A "Co-op" button in the main menu and pause menu (or F7): play via Steam (invite up to 3 friends) or by IP.
-- Joint raids: players follow the host to the same map or join a raid already in progress.
+- Joint raids: a gathering circle with a countdown at the host's train — whoever is in it goes along;
+  the others join the running raid later (by train or from the panel). Never two separate raids.
+- [X] gives an item to a teammate, in a raid and in the bunker.
 - Identical map for everybody; enemies, shots, grenades, corpses, live loot, dropped items, doors,
   time of day, weather and emissions are synchronized.
 - The bunker as a lobby: players see each other in their hubs, and "Visit" shows a friend's bunker (their

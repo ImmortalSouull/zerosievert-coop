@@ -1,6 +1,8 @@
 // ZERO Sievert co-op: give an item to a teammate. X next to a standing teammate opens a list of the items in
-// your inventory grid (not the equipped ones); the chosen stack leaves your inventory and appears in a bag at the
-// teammate's feet (the dropped-bag mechanics every machine already syncs), and the teammate is told about it.
+// your inventory grid (not the equipped ones); the chosen stack leaves your inventory and
+// - in a raid: appears in a bag at the teammate's feet (the dropped-bag mechanics every machine already syncs);
+// - in the bunker (no shared bags there): travels as data and goes straight into the teammate's inventory grid
+//   (a bag at their feet if it is full). The teammate is told about it.
 
 #macro COOP_MSG_GIVE 16
 #macro COOP_GIVE_RANGE 48
@@ -66,7 +68,11 @@ function coop_give_step()
 {
     var _c = coop();
     var _g = coop_give();
-    if (!_c.connected || !coop_in_raid() || !instance_exists(obj_player) || (variable_struct_exists(_c, "panel") && _c.panel))
+    if (is_in_hub())
+    {
+        coop_give_receive_pending();
+    }
+    if (!_c.connected || !(coop_in_raid() || is_in_hub()) || !instance_exists(obj_player) || (variable_struct_exists(_c, "panel") && _c.panel))
     {
         _g.menu = false;
         exit;
@@ -155,6 +161,17 @@ function coop_give_do(_loot, _target)
     array_delete(_arr, _found, 1);
     db_write("Inventory", "items", _arr);
     db_close();
+    if (is_in_hub())
+    {
+        var _hname = loot_get_name(_copy);
+        coop_log("gave ", _copy.item, " x", _copy.quantity, " to slot ", _target.coop_slot, " (bunker)");
+        coop_notify(coop_tf("Given to {0}: {1}", "Передано {0}: {1}", coop_peer_name(_target.coop_slot), _hname));
+        coop_msg_begin(COOP_MSG_GIVE);
+        buffer_write(_c.send_buf, buffer_string, _hname);
+        buffer_write(_c.send_buf, buffer_string, json_stringify(_copy));
+        coop_msg_send_to(_target.coop_slot, true);
+        exit;
+    }
     // the bag at the teammate's feet (synced to everybody like any dropped bag)
     _copy.x = 0;
     _copy.y = 0;
@@ -173,15 +190,83 @@ function coop_give_do(_loot, _target)
     coop_notify(coop_tf("Given to {0}: {1}", "Передано {0}: {1}", coop_peer_name(_target.coop_slot), _name));
     coop_msg_begin(COOP_MSG_GIVE);
     buffer_write(_c.send_buf, buffer_string, _name);
+    buffer_write(_c.send_buf, buffer_string, ""); // the bag carries the item
     coop_msg_send_to(_target.coop_slot, true);
 }
 
 function coop_give_on_message(_b)
 {
     var _name = buffer_read(_b, buffer_string);
+    var _json = buffer_read(_b, buffer_string);
     var _c = coop();
-    coop_notify(coop_tf("{0} gave you: {1} (bag at your feet)", "{0} передал вам: {1} (мешок у ваших ног)", coop_peer_name(_c.msg_from), _name));
-    coop_log("received ", _name, " from slot ", _c.msg_from);
+    coop_log("received ", _name, " from slot ", _c.msg_from, (_json != "") ? " (bunker)" : "");
+    if (_json == "")
+    {
+        coop_notify(coop_tf("{0} gave you: {1} (bag at your feet)", "{0} передал вам: {1} (мешок у ваших ног)", coop_peer_name(_c.msg_from), _name));
+        exit;
+    }
+    // bunker: into the inventory as soon as it is safe (coop_give_receive_pending)
+    if (!variable_struct_exists(_c, "give_in"))
+    {
+        _c.give_in = [];
+    }
+    array_push(_c.give_in, _json);
+    coop_notify(coop_tf("{0} gave you: {1}", "{0} передал вам: {1}", coop_peer_name(_c.msg_from), _name));
+}
+
+// Bunker gifts go into the inventory grid. Not while the inventory screen is open: it keeps its own copy of the
+// items and writes it back when it closes, which would drop the gift - wait until it is closed.
+function coop_give_receive_pending()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "give_in") || array_length(_c.give_in) == 0 || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (__uiGlobal().__defaultOnion.LayerExists("inventory layer"))
+    {
+        exit;
+    }
+    var _json = _c.give_in[0];
+    array_delete(_c.give_in, 0, 1);
+    var _loot = json_parse(_json);
+    var _db = inventory_target_db();
+    db_open(_db);
+    var _arr = db_read("Inventory", "items", []);
+    db_close();
+    // same placement as the game's inventory_add_item (8x11 grid, 16 px cells)
+    var _grid = new class_loot_grid(8, 11);
+    _grid.PlaceFromInventoryLootArray(_arr);
+    var _pos = _grid.TryPlace(_loot.item);
+    _grid.Destroy();
+    if (is_struct(_pos))
+    {
+        _loot.x = _pos.x * 16;
+        _loot.y = _pos.y * 16;
+        _loot.rotation = _pos.rot;
+        _loot.placement = "player inventory";
+        array_push(_arr, _loot);
+        db_open(_db);
+        db_write("Inventory", "items", _arr);
+        db_close();
+        coop_log("gift placed in the inventory: ", _loot.item, " x", _loot.quantity);
+        exit;
+    }
+    // inventory full: a bag at our feet, like the game does when inventory_add_item finds no room
+    _loot.x = 0;
+    _loot.y = 0;
+    _loot.rotation = 0;
+    _loot.placement = "other inventory";
+    var _bag = instance_create_depth(obj_player.x, obj_player.y + 2, -obj_player.y, obj_chest_general);
+    _bag.tipo = "discard";
+    db_open("all loot");
+    var _key = "chest_" + string(_bag.id);
+    db_write(_key, "chest_x", _bag.x);
+    db_write(_key, "chest_y", _bag.y);
+    db_write(_key, "items", [_loot]);
+    db_close();
+    coop_notify(coop_t("Inventory full - the gift is in a bag at your feet", "Инвентарь полон - подарок в мешке у ваших ног"));
+    coop_log("gift dropped in a bag (inventory full): ", _loot.item);
 }
 
 // Draw GUI (UI space): the list next to the teammate, inventory-style rows with item icons.

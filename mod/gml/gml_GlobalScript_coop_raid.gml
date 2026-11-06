@@ -2,33 +2,96 @@
 // Hook: first line of go_to_map(). The host shares map + seed with the others; group scaling is fixed here once
 // and never recomputed during the raid (a late joiner would otherwise generate a different map).
 
-// Hook: first line of go_to_map(). Host shares map + seed with the guest.
+// Hook: go_to_map() before it writes the map id; returns the map to go to.
+// - following a raid start (pending raid / join): the seed is already set, nothing to decide;
+// - another player is in a raid: the train goes into THAT raid (same map + seed), we join it late;
+// - otherwise a new raid with a known seed, so the others can join it later (guests too, not only the host).
+// The host's raid start (new or joined) takes the players standing in the bunker along.
 function coop_hook_go_to_map(_map)
 {
     var _c = coop();
-    if (_c.role == "host")
+    if (coop_gather_begin(_map))
     {
-        // Always a known seed while hosting, so a partner can still join this raid later.
-        var _seed = irandom(2147483646);
-        _c.seed = _seed;
-        coop_group_fix(); // the raid is generated with the group size of this moment
+        return -1; // the host waits for the players at the train (coop_gather.gml); the ride comes later
+    }
+    var _joined = false;
+    if (_c.seed != undefined)
+    {
+        // _c.raid_late was set by whoever set the seed (coop_pending_raid_step)
+    }
+    else
+    {
+        _c.raid_late = false;
+        var _t = coop_raid_to_join();
+        if (_t >= 0)
+        {
+            var _p = coop_peer(_t);
+            _c.seed = _p.raid_seed;
+            _map = _p.map;
+            _c.raid_late = true;
+            _joined = true;
+            coop_notify(coop_tf("Following {0} into the raid", "Едем за {0} в рейд", _p.name));
+            coop_log("train joins the raid of slot ", _t, ": map ", _map, " seed ", _c.seed);
+        }
+        else if (_c.role == "host" || _c.connected)
+        {
+            // Always a known seed while connected (or hosting), so a partner can still join this raid later.
+            _c.seed = irandom(2147483646);
+            if (_c.role == "host")
+            {
+                coop_group_fix(); // the raid is generated with the group size of this moment
+            }
+        }
+    }
+    if (_c.role == "host" && _c.pending_raid == undefined)
+    {
         if (!_c.connected)
         {
-            coop_log("raid started without partner, seed ", _seed);
-            exit;
+            coop_log("raid started without partner, seed ", _c.seed);
+            return _map;
         }
-        coop_settings_send(); // world settings must arrive before the guest generates the map
+        if (!_joined)
+        {
+            coop_settings_send(); // world settings must arrive before the guest generates the map
+        }
         coop_msg_begin(COOP_MSG_RAID_START);
         buffer_write(_c.send_buf, buffer_u8, _map);
-        buffer_write(_c.send_buf, buffer_f64, _seed);
+        buffer_write(_c.send_buf, buffer_f64, _c.seed);
+        buffer_write(_c.send_buf, buffer_u8, _c.raid_late);
         coop_msg_send(true);
-        coop_log("raid start sent: map ", _map, " seed ", _seed);
+        coop_log("raid start sent: map ", _map, " seed ", _c.seed, " late ", _c.raid_late);
         _c.raid_map = _map;
     }
+    else if (_c.connected && !_joined && _c.raid_late == false && _c.pending_raid == undefined)
+    {
+        coop_log("own raid started: map ", _map, " seed ", _c.seed);
+    }
+    return _map;
 }
 
-// Guest: host started a raid.
-function coop_on_raid_start(_map, _seed)
+// Slot of a connected player who is in a raid we can join (its seed is known), -1 = none.
+// Lowest slot first; everyone in that raid has the same seed anyway.
+function coop_raid_to_join()
+{
+    var _c = coop();
+    if (!_c.connected)
+    {
+        return -1;
+    }
+    var _ps = coop_peers();
+    for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++)
+    {
+        var _p = _ps[_k];
+        if (_k != _c.slot && is_struct(_p) && _p.connected && _p.loc == 2 && _p.raid_seed >= 0 && _p.map >= 0)
+        {
+            return _k;
+        }
+    }
+    return -1;
+}
+
+// Guest: host started a raid (or the raid owner answered a join request). _late: the raid was already running.
+function coop_on_raid_start(_map, _seed, _late = false)
 {
     var _c = coop();
     if (_c.role != "guest")
@@ -40,8 +103,20 @@ function coop_on_raid_start(_map, _seed)
         coop_log("ownerjoin: stays in the hub");
         exit;
     }
+    if (!is_in_hub())
+    {
+        // already in a raid of our own: don't follow it later from the bunker by surprise
+        coop_log("raid start of map ", _map, " ignored (not in the bunker)");
+        exit;
+    }
+    if (!_late && !coop_gather_inside())
+    {
+        coop_log("gather: stays in the bunker (outside the circle)");
+        coop_notify(coop_tf("{0} went into a raid - take the train or F7 to join", "{0} ушёл в рейд - садитесь на поезд или F7, чтобы присоединиться", _c.peer_name));
+        exit;
+    }
     coop_log("host started raid map ", _map, " seed ", _seed);
-    _c.pending_raid = { map: _map, seed: _seed, time: current_time };
+    _c.pending_raid = { map: _map, seed: _seed, time: current_time, late: _late };
     if (is_in_hub() && instance_exists(obj_player) && player_state_is(0, scr_player_state_move))
     {
         coop_pending_raid_step();
@@ -59,6 +134,7 @@ function coop_on_room_start()
     coop_log("room start: ", room_get_name(room));
     coop_apply_test_window();
     coop_npc_reset_room();
+    _c.weather_json_in = ""; // a new room loads its own weather: take the next bunker resend
     coop_puppets_prune(); // characters carried over from the hub lobby, if any
     if (room == room1)
     {
@@ -70,7 +146,11 @@ function coop_on_room_start()
         var _ps = coop_peers();
         for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++)
         {
-            if (is_struct(_ps[_k])) _ps[_k].fp = undefined;
+            if (is_struct(_ps[_k]))
+            {
+                _ps[_k].fp = undefined;
+                _ps[_k].fp_answered = false;
+            }
         }
         _c.ready_time = 0;
     }
@@ -397,7 +477,7 @@ function coop_join_target()
         var _p = _ps[_k];
         if (_k != _c.slot && is_struct(_p) && _p.connected && _p.loc == 2)
         {
-            return (_k < _c.slot) ? _k : -1;
+            return _k; // any slot: a joiner never takes the raid over (coop_raid_owner)
         }
     }
     return -1;
@@ -418,11 +498,12 @@ function coop_request_join()
         exit;
     }
     _c.join_target = _t;
-    coop_msg_begin(COOP_MSG_JOIN_REQ);
-    coop_msg_send_to(_t, true);
-    var _name = coop_peer_name(_t);
-    coop_notify(coop_tf("Asking {0} to join the raid...", "Запрос на вход в рейд {0}...", _name));
-    coop_log("join request sent to slot ", _t);
+    // Every player's raid seed and map are known (RAID_STATE): take the train straight into that raid,
+    // coop_hook_go_to_map turns it into a late join.
+    coop_log("join: train into the raid of slot ", _t);
+    var _p = coop_peer(_t);
+    __uiGlobal().__defaultOnion.Clear();
+    go_to_map(_p.map);
 }
 
 // Raid owner: send the running raid (settings + map + seed) to a player standing in the bunker.
@@ -444,6 +525,7 @@ function coop_on_join_request(_from)
         coop_msg_begin(COOP_MSG_RAID_START);
         buffer_write(_c.send_buf, buffer_u8, obj_map_generator.area);
         buffer_write(_c.send_buf, buffer_f64, _c.gen_seed);
+        buffer_write(_c.send_buf, buffer_u8, 1); // late: the raid is running
         coop_msg_send(true);
         _c.msg_dest = COOP_ALL;
         coop_log("join request of slot ", _from, " accepted (raid owner): map ", obj_map_generator.area, " seed ", _c.gen_seed);
@@ -454,6 +536,7 @@ function coop_on_join_request(_from)
     coop_msg_begin(COOP_MSG_RAID_START);
     buffer_write(_c.send_buf, buffer_u8, obj_map_generator.area);
     buffer_write(_c.send_buf, buffer_f64, _c.gen_seed);
+    buffer_write(_c.send_buf, buffer_u8, 1); // late: the raid is running
     coop_msg_send(true);
     _c.msg_dest = COOP_ALL;
     coop_log("join request of slot ", _from, " accepted: map ", obj_map_generator.area, " seed ", _c.gen_seed);
@@ -512,6 +595,7 @@ function coop_pending_raid_step()
     }
     _c.pending_raid = undefined;
     _c.seed = _pr.seed;
+    _c.raid_late = _pr.late;
     coop_notify(coop_tf("Following {0} into the raid", "Едем за {0} в рейд", _c.peer_name));
     __uiGlobal().__defaultOnion.Clear();
     go_to_map(_pr.map);

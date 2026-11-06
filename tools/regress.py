@@ -195,10 +195,24 @@ SCENARIOS = [
     S("ownerjoin", "-coop_autoraid 1 -coop_scenario ownerjoin -coop_fps 60", "-coop_scenario ownerjoin -coop_fps 60",
       done=[("BC", r"ownerjoin: done")], checks=[], custom=ownerjoin_ok,
       need_identical=False, timeout=600, minutes=10, players=3),
+    # the host's train opens a circle with a countdown: slot 1 inside goes along, slot 2 walks away and stays home
+    S("gather", "-coop_autoraid 1 -coop_scenario gather -coop_fps 60", "-coop_scenario gather -coop_fps 60",
+      done=[("B", r"gather test: done"), ("C", r"gather test: done")],
+      checks=[("A", r"gather: countdown over", 1), ("B", r"gather test: done hub=0 raid=1", 1),
+              ("C", r"gather: stays in the bunker", 1), ("C", r"gather test: done hub=1 raid=0", 1)],
+      need_identical=False, timeout=420, minutes=7, players=3),
+    # the guest raids alone first, the host's train later goes into the guest's raid (the guest keeps owning it)
+    S("hostjoin", "-coop_scenario hostjoin", "-coop_scenario hostjoin",
+      done=[("A", r"hostjoin: done"), ("B", r"hostjoin: done")],
+      checks=[("A", r"train joins the raid of slot 1: map 1", 1), ("A", r"hostjoin: done owner=1 late=1 map=1 replicas=1", 1),
+              ("B", r"hostjoin: done owner=1 late=0 map=1 replicas=0", 1), ("AB", r"maps identical with partner", 1)],
+      timeout=360, minutes=6),
     # the hub as a lobby: both players see each other; a visit shows the friend's bunker modules and saves ours
     S("lobby", "-coop_scenario lobby", "-coop_scenario lobby",
       done=[("B", r"lobby: restored")],
       checks=[("B", r"lobby: puppets=1 together=1", 1), ("A", r"puppet of slot 1 created", 1),
+              ("B", r"weather synced from host", 1),  # the bunker weather follows the host's
+              ("B", r"gave \S+ x\d+ to slot 0 \(bunker\)", 1), ("A", r"gift placed in the inventory|gift dropped in a bag", 1),
               ("B", r"save during visit wrote own modules=1", 1), ("B", r"lobby: restored=1", 1),
               # GitHub issue #1: pause in the hub while connected must not wake the player without obj_controller
               ("B", r"paused 60 frames, player active=0 controller=0", 1), ("B", r"pause test done, player=1 controller=1", 1)],
@@ -251,7 +265,7 @@ def run(sc, outdir, extra):
         # single player with the mod: no session, one window (save root coopA, log coop_coopA.log)
         cmd = (f'source tools/env.sh && python tools/game_guard.py run --max-minutes {sc["minutes"]} '
                f'--note "regress {sc["name"]}" --launch "-no_gpu_pref -coop_slot 1 -coop_root coopA '
-               f'-coop_window 40,100,1280,720 {extra} {sc["host"]}"')
+               f'-coop_window $WIN_A {extra} {sc["host"]}"')
     else:
         script = "tools/test4.sh" if sc["players"] >= 3 else "tools/test2.sh"
         cmd = f'bash {script} {sc["minutes"]} "regress {sc["name"]}" "{extra} {sc["host"]}" "{extra} {sc["guest"]}"'

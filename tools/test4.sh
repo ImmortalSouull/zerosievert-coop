@@ -8,10 +8,10 @@ MIN=$1; NOTE=$2; HX=${3:-}; GX=${4:-}; DX=${5:-$GX}
 N=${COOP_PLAYERS:-4}
 rm -f "$LOCALAPPDATA"/ZERO_Sievert/coop_*.log
 BASE="-no_gpu_pref -coop_slot 1"
-ARGS=(--launch "$BASE -coop_root coopA -coop_host -coop_expect $N -coop_window 0,30,1280,700 $HX"
-      --launch "$BASE -coop_root coopB -coop_join 127.0.0.1 -coop_window 1290,30,1280,700 $GX"
-      --launch "$BASE -coop_root coopC -coop_join 127.0.0.1 -coop_window 0,740,1280,700 $GX")
+ARGS=(--launch "$BASE -coop_root coopA -coop_host -coop_expect $N -coop_window $WIN_A $HX"
+      --launch "$BASE -coop_root coopB -coop_join 127.0.0.1 -coop_window $WIN_B $GX"
+      --launch "$BASE -coop_root coopC -coop_join 127.0.0.1 -coop_window $WIN_C $GX")
 if [ "$N" -ge 4 ]; then
-  ARGS+=(--launch "$BASE -coop_root coopD -coop_join 127.0.0.1 -coop_window 1290,740,1280,700 $DX")
+  ARGS+=(--launch "$BASE -coop_root coopD -coop_join 127.0.0.1 -coop_window $WIN_D $DX")
 fi
 python "$ROOT/tools/game_guard.py" run --max-minutes "$MIN" --note "$NOTE" --stagger 2 "${ARGS[@]}"

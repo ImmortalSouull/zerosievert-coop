@@ -36,7 +36,7 @@ function coop_panel_buttons()
         }
         if (_c.role == "host" && _c.transport == "steam")
         {
-            array_push(_b, { id: "steam_invite", label: coop_t("Invite friend again", "Пригласить друга ещё раз") });
+            array_push(_b, { id: "steam_invite", label: coop_t("Invite friend", "Пригласить друга") });
         }
         array_push(_b, { id: "leave", label: coop_t("Leave co-op", "Выйти из кооператива") });
     }
@@ -341,4 +341,17 @@ function coop_pad_pressed(_btn)
         }
     }
     return false;
+}
+
+// True while the F7 panel is open: the game's own input (hooks in update_keyboard_input, obj_gamepad Begin Step
+// and ui_handle_input) is muted, so clicks and keys meant for the panel don't shoot, walk, move inventory items
+// or press the menu buttons behind it. The panel reads the keyboard, mouse and gamepad directly.
+function coop_panel_blocks_game()
+{
+    if (!variable_global_exists("coop_state"))
+    {
+        return false;
+    }
+    var _c = global.coop_state;
+    return variable_struct_exists(_c, "panel") && _c.panel;
 }

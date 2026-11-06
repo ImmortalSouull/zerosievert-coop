@@ -16,3 +16,10 @@ export ROOT WORK G CLI XDELTA_EXE PATH
 claude_on_top() {
   [ -n "${ZS_NO_ONTOP:-}" ] || powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$ROOT/tools/claude_on_top.ps1")" > /dev/null 2>&1 || true
 }
+
+# Test windows (x,y,w,h): a 2x2 grid right of the Claude window (which keeps x < 615 free).
+# Tuned for 3440x1440; override with ZS_WIN_A..ZS_WIN_D.
+WIN_A="${ZS_WIN_A:-830,8,1180,664}"
+WIN_B="${ZS_WIN_B:-2030,8,1180,664}"
+WIN_C="${ZS_WIN_C:-830,700,1180,664}"
+WIN_D="${ZS_WIN_D:-2030,700,1180,664}"

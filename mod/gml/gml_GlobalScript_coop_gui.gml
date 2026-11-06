@@ -15,6 +15,11 @@ function coop_draw_gui()
     }
     coop_ui_begin(COOP_F_SMALL);
     _c.frame_draw = (variable_struct_exists(_c, "frame_draw") ? _c.frame_draw : 0) + 1; // one per drawn frame
+    if (room == r_menu)
+    {
+        // players asked how to tell the mod is installed and running
+        coop_ui_text_ol(16, COOP_GH - 44, "ZERO Sievert CO-OP v" + COOP_MOD_VERSION, COOP_C_TEXT);
+    }
     var _x = 16;
     var _y = 128;
     if (_c.role != "none")
@@ -100,7 +105,9 @@ function coop_draw_gui()
     }
     if (is_in_hub())
     {
+        coop_gather_draw();
         coop_hub_draw_gui();
+        coop_give_draw_gui();
     }
     if (coop_in_raid())
     {
@@ -132,5 +139,8 @@ function coop_draw_gui_end()
     }
     coop_panel_draw();
     display_set_gui_size(1920, 1080);
+    // The panel is drawn at Draw GUI End, after the game's own cursor (main menu Draw GUI End, obj_mouse in the
+    // world): draw the arrow again on top, where the panel's hit tests read the mouse.
+    draw_sprite_ext(s_mouse, 4, coop_gui_mouse_x() * 4, coop_gui_mouse_y() * 4, 4, 4, 0, c_white, 1);
 }
 

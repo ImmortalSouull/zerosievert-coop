@@ -9,7 +9,7 @@
 // WORKAROUND (no source access) comments below mark code that only exists because the game's source can't be
 // changed; with the source each of them becomes a small change in the game itself.
 
-#macro COOP_VERSION 7
+#macro COOP_VERSION 8
 #macro COOP_PORT 47777
 
 function coop()
@@ -41,6 +41,7 @@ function coop_init_globals()
         peer_loc: 0,
         local_paused: false,
         pending_raid: undefined,
+        raid_late: false, // we joined a raid that was already running (raid ownership, coop_raid_owner)
         peer_map: -1,
         peer_name: "Partner",
         tag: "solo",
@@ -217,14 +218,28 @@ function coop_raid_owner()
     {
         return -1;
     }
-    var _best = (instance_exists(obj_player) || _c.local_paused) ? max(0, _c.slot) : COOP_MAX_PLAYERS;
+    // The players who started this raid own it before the ones who joined it later (lowest slot first):
+    // a player joining a running raid has a fresh copy of the map, so the world must stay with someone who
+    // has been running it. Every machine knows every player's 'late' flag (RAID_STATE): all agree.
+    var _best = COOP_MAX_PLAYERS;
+    var _best_late = true;
+    if (instance_exists(obj_player) || _c.local_paused)
+    {
+        _best = max(0, _c.slot);
+        _best_late = _c.raid_late;
+    }
     var _ps = coop_peers();
     for (var _i = 0; _i < COOP_MAX_PLAYERS; _i++)
     {
         var _p = _ps[_i];
-        if (_i != _c.slot && is_struct(_p) && _p.connected && _p.in_raid && _i < _best)
+        if (_i != _c.slot && is_struct(_p) && _p.connected && _p.in_raid)
         {
-            _best = _i;
+            var _late = _p.raid_late;
+            if ((_best_late && !_late) || (_late == _best_late && _i < _best))
+            {
+                _best = _i;
+                _best_late = _late;
+            }
         }
     }
     return (_best >= COOP_MAX_PLAYERS) ? -1 : _best;

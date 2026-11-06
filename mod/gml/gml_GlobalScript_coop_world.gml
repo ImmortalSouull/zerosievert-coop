@@ -6,17 +6,26 @@
 #macro COOP_MSG_WEATHER 62
 #macro COOP_MSG_EMISSION 63
 
-// Guest whose world follows the host right now.
+// Guest whose world follows the host right now: in a shared raid, and in the bunker while the host is in its
+// bunker too (live report 2026-11-06: one player had fog in the bunker, the other not).
 function coop_world_slave()
 {
     var _c = coop();
-    return coop_is_world_replica();
+    return coop_is_world_replica() || coop_world_hub_slave();
+}
+
+function coop_world_hub_slave()
+{
+    var _c = coop();
+    return _c.role == "guest" && _c.connected && is_in_hub() && _c.peer_loc == 1;
 }
 
 function coop_world_step()
 {
     var _c = coop();
-    if (!coop_is_world_owner() || !instance_exists(obj_light_controller))
+    // the session host's bunker sets the bunker weather for everyone in theirs
+    var _hub = _c.role == "host" && _c.connected && is_in_hub();
+    if (!(coop_is_world_owner() || _hub) || !instance_exists(obj_light_controller))
     {
         exit;
     }
@@ -26,7 +35,8 @@ function coop_world_step()
     }
     if (variable_global_exists("weather") && is_struct(global.weather))
     {
-        if (!variable_struct_exists(_c, "weather_hour_sent") || _c.weather_hour_sent != global.weather.last_generated_hour)
+        // in the bunker also every 5 s: a guest who just came back from a raid gets it (applied only when changed)
+        if (!variable_struct_exists(_c, "weather_hour_sent") || _c.weather_hour_sent != global.weather.last_generated_hour || (_hub && _c.frame mod 300 == 150))
         {
             _c.weather_hour_sent = global.weather.last_generated_hour;
             coop_world_send_weather();
@@ -86,6 +96,12 @@ function coop_world_on_weather(_b)
     {
         exit;
     }
+    var _c = coop();
+    if (coop_world_hub_slave() && variable_struct_exists(_c, "weather_json_in") && _c.weather_json_in == _json)
+    {
+        exit; // the bunker resend of a weather we already show
+    }
+    _c.weather_json_in = _json;
     global.weather = json_parse(_json);
     with (obj_meteo_controller)
     {

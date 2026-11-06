@@ -95,10 +95,12 @@ function coop_diag_on_fp(_b)
     {
         exit;
     }
+    var _first = !variable_struct_exists(_p, "fp_answered") || !_p.fp_answered; // one answer per raid (no ping-pong)
+    _p.fp_answered = true;
     _p.fp = json_parse(_json);
-    if (_c.role == "host" && variable_struct_exists(_c, "my_fp") && _c.my_fp != undefined)
+    if (_first && variable_struct_exists(_c, "my_fp") && _c.my_fp != undefined)
     {
-        // a late joiner never got ours: answer so both sides can compare
+        // a late joiner (host or guest) never got ours: answer once so both sides can compare
         coop_msg_begin(COOP_MSG_FP);
         buffer_write(_c.send_buf, buffer_string, json_stringify(_c.my_fp));
         buffer_write(_c.send_buf, buffer_f64, _c.gen_seed);

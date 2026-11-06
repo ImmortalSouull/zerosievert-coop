@@ -80,6 +80,8 @@ function coop_steam_on_async()
             if (_ok == undefined || _ok)
             {
                 steam_lobby_set_data("zs_coop", string(COOP_VERSION));
+                // who hosts: when the host quits, Steam hands the lobby to a guest who is not hosting
+                steam_lobby_set_data("zs_host", string(steam_get_user_steam_id()));
                 // Friends can also use "Join game" in the Steam friends list.
                 steam_set_rich_presence("connect", "+connect_lobby " + string(_c.lobby));
                 steam_set_rich_presence("status", "ZERO Sievert co-op");
@@ -107,6 +109,15 @@ function coop_steam_on_async()
         case "lobby_chat_update":
             // Someone entered/left: the host learns a guest's id from its first P2P packet.
             coop_log("lobby update, members ", steam_lobby_get_member_count());
+            if (_c.role == "host")
+            {
+                coop_steam_drop_left_members();
+            }
+            if (_c.role == "guest" && _c.peer_steam != 0 && steam_lobby_get_owner_id() != _c.peer_steam)
+            {
+                // the host left the lobby: leave it too, a lobby without its host can't be joined
+                coop_steam_stale_lobby();
+            }
             break;
         case "p2p_session_request":
             var _who = ds_map_find_value(async_load, "user_id");
@@ -127,6 +138,14 @@ function coop_steam_pick_peer()
     {
         exit;
     }
+    var _host = steam_lobby_get_data("zs_host");
+    if (is_string(_host) && _host != "" && _host != string(_owner))
+    {
+        // live bug 2026-11-06: an invite to a lobby whose host had quit hung until the timeout
+        coop_log("lobby owner ", _owner, " is not its host ", _host);
+        coop_steam_stale_lobby();
+        exit;
+    }
     _c.peer_steam = _owner;
     var _h = coop_peer(0);
     if (is_struct(_h))
@@ -134,6 +153,37 @@ function coop_steam_pick_peer()
         _h.steam = _owner;
     }
     coop_log("steam host = ", _owner);
+}
+
+// Host: a guest who left the Steam lobby is gone now. Its BYE often never arrives: the guest closes the P2P session
+// right after sending it. Without this its character stood (breathing fast) until the connection timed out.
+function coop_steam_drop_left_members()
+{
+    var _c = coop();
+    var _n = steam_lobby_get_member_count();
+    var _ids = [];
+    for (var _i = 0; _i < _n; _i++)
+    {
+        array_push(_ids, steam_lobby_get_member_id(_i));
+    }
+    var _ps = coop_peers();
+    for (var _k = 1; _k < COOP_MAX_PLAYERS; _k++)
+    {
+        var _p = _ps[_k];
+        if (is_struct(_p) && _p.connected && _p.steam != 0 && !array_contains(_ids, _p.steam))
+        {
+            coop_log("slot ", _k, " left the steam lobby");
+            coop_peer_left(_k, false);
+        }
+    }
+}
+
+// Guest: the lobby lost its host (quit / left). Leave it and say what to do.
+function coop_steam_stale_lobby()
+{
+    coop_log("steam lobby has no host any more - leaving");
+    coop_net_stop();
+    coop_notify(coop_t("The host has left this lobby - ask your friend to host again", "Хост вышел из этого лобби - попросите друга создать игру заново"));
 }
 
 function coop_steam_step()

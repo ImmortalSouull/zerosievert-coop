@@ -612,6 +612,10 @@ function coop_spawn_sync(_hx, _hy)
     {
         exit;
     }
+    if (coop_is_world_owner())
+    {
+        exit; // our own raid that the host joined later: we are already playing, the host comes to us
+    }
     _c.spawn_synced = true;
     if (point_distance(obj_player.x, obj_player.y, _hx, _hy) < 120)
     {
