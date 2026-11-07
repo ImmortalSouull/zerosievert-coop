@@ -314,6 +314,12 @@ SCENARIOS = [
       checks=[("A", r"migrate test: host quits", 1), ("BC", r"migrate: the host left, successor slot 1 \(me\)", 1),
               ("BC", r"migrate: the host left, successor slot 1 at 127.0.0.1", 1), ("BC", r"I host now", 1), ("BC", r"back in, slot 1", 1)],
       need_identical=False, timeout=420, minutes=7, players=3),
+    # the host crashes (no goodbye): the hand-over waits for the timeout + 30 s
+    S("migrate_crash", "-coop_autoraid 1 -coop_scenario migrate_crash", "-coop_scenario migrate_crash",
+      done=[("BC", r"migrate test: done players=2 puppets=1 owner me=1"), ("BC", r"migrate test: done players=2 puppets=1 owner me=0")],
+      checks=[("A", r"migrate test: host quits", 1), ("BC", r"host timed out, waiting 30 s", 1), ("BC", r"migrate: the host left, successor slot 1 \(me\)", 1),
+              ("BC", r"migrate: the host left, successor slot 1 at 127.0.0.1", 1), ("BC", r"I host now", 1), ("BC", r"back in, slot 1", 1)],
+      need_identical=False, timeout=420, minutes=7, players=3),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

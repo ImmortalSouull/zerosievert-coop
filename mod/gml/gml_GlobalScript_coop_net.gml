@@ -1228,7 +1228,15 @@ function coop_peer_left(_slot, _quiet)
         coop_puppet_remove_all();
         coop_on_disconnected();
         coop_guest_reset_host();
-        coop_migrate_go(_next);
+        if (_quiet)
+        {
+            // a timeout may be our own link: try the old host for 30 s first (coop_migrate_step)
+            coop_migrate_later(_next);
+        }
+        else
+        {
+            coop_migrate_go(_next); // the host quit for real (BYE)
+        }
         if (_was_in)
         {
             coop_down_on_player_gone();

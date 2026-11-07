@@ -2799,7 +2799,7 @@ function coop_test_arena_step()
 function coop_test_migrate_step()
 {
     var _c = coop();
-    if (!_c.test_mode || _c.scenario != "migrate" || !coop_in_raid() || !instance_exists(obj_player)) exit;
+    if (!_c.test_mode || (_c.scenario != "migrate" && _c.scenario != "migrate_crash") || !coop_in_raid() || !instance_exists(obj_player)) exit;
     if (!variable_struct_exists(_c, "mg")) { _c.mg = 0; _c.mg_was = _c.slot; }
     _c.mg++;
     var _t = _c.mg;
@@ -2807,6 +2807,14 @@ function coop_test_migrate_step()
     if (_c.role == "host" && _c.mg_was == 0 && _t == 700 && coop_player_count() >= 3)
     {
         coop_log("migrate test: host quits");
+        if (_c.scenario == "migrate_crash")
+        {
+            // like a crash: no goodbye, the socket just goes silent
+            network_destroy(_c.sock);
+            _c.sock = -1;
+            _c.connected = false;
+            _c.role = "none";
+        }
         game_end();
     }
     if (_c.mg_was > 0 && _c.connected && _c.slot == 0 && !variable_struct_exists(_c, "mg_host")) { _c.mg_host = _t; coop_log("migrate test: I host now (was slot ", _c.mg_was, ")"); }

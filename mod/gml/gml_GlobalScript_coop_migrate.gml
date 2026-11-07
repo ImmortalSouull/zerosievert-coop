@@ -1,6 +1,7 @@
 // ZERO Sievert co-op: the session survives the host leaving (2.0.0 item 2).
 // The roster tells every player where the others can be reached (the host's view: IP or Steam id). When the host is
-// gone (BYE or timeout), every guest picks the same successor: on Steam the lobby's new owner (Steam hands the lobby
+// gone (BYE at once; after a timeout only when the old host stays silent for 30 s: the timeout may be our own
+// link), every guest picks the same successor: on Steam the lobby's new owner (Steam hands the lobby
 // over by itself), otherwise the remaining player with the lowest slot. The successor becomes the host (UDP: it
 // listens on the co-op port), the others say hello to it. Raids go on: the world passes to the lowest slot in the
 // raid as when an owner extracts, and the replicas are adopted again on reconnect.
@@ -82,4 +83,35 @@ function coop_migrate_go(_next)
         if (is_struct(_h)) { _h.ip = _next.addr; _h.port = COOP_PORT; }
     }
     coop_notify(coop_t("The host left - reconnecting to the new host", "Хост вышел - подключаемся к новому хосту"));
+}
+
+// After a timeout: the hand-over waits 30 s for the old host.
+function coop_migrate_later(_next)
+{
+    var _c = coop();
+    if (!is_struct(_next)) exit;
+    _c.migrate_pending = { next: _next, t: current_time + 30000 };
+    coop_log("migrate: host timed out, waiting 30 s for it before slot ", _next.slot, " takes over");
+}
+
+// obj_coop Step
+function coop_migrate_step()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "migrate_pending") || !is_struct(_c.migrate_pending))
+    {
+        exit;
+    }
+    if (_c.connected || _c.role != "guest")
+    {
+        _c.migrate_pending = undefined; // the old host is back (or we left)
+        coop_log("migrate: not needed");
+        exit;
+    }
+    if (current_time >= _c.migrate_pending.t)
+    {
+        var _n = _c.migrate_pending.next;
+        _c.migrate_pending = undefined;
+        coop_migrate_go(_n);
+    }
 }
