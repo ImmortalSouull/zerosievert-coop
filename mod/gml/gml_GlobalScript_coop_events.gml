@@ -85,6 +85,11 @@ function coop_events_step()
         }
         exit;
     }
+    // the event area stays simulated even with nobody looking (the game suspends NPCs outside the cameras)
+    if (_e.state == "active")
+    {
+        instance_activate_region(_e.x - 520, _e.y - 400, 1040, 800, true);
+    }
     // the survivor stays put and unhurt
     if (instance_exists(_e.giver))
     {
@@ -98,7 +103,8 @@ function coop_events_step()
         for (var _i = 0; _i < array_length(_e.npcs); _i++)
         {
             instance_activate_object(_e.npcs[_i]);
-            if (instance_exists(_e.npcs[_i]) && _e.npcs[_i].hp > 0) _alive++;
+            // one that wandered far off (90 m) no longer holds the event up
+            if (instance_exists(_e.npcs[_i]) && _e.npcs[_i].hp > 0 && point_distance(_e.npcs[_i].x, _e.npcs[_i].y, _e.x, _e.y) < 1440) _alive++;
         }
         if (_c.test_mode && _c.frame mod 600 == 0)
         {

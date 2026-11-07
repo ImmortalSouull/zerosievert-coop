@@ -2599,6 +2599,7 @@ function coop_test_event_step()
     {
         for (var _i = 0; _i < array_length(_e.npcs); _i++)
         {
+            instance_activate_object(_e.npcs[_i]);
             if (instance_exists(_e.npcs[_i]) && _e.npcs[_i].hp > 0) { _e.npcs[_i].hp = 0; break; }
         }
     }
