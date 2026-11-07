@@ -9,7 +9,7 @@
 // WORKAROUND (no source access) comments below mark code that only exists because the game's source can't be
 // changed; with the source each of them becomes a small change in the game itself.
 
-#macro COOP_VERSION 8
+#macro COOP_VERSION 9
 #macro COOP_PORT 47777
 
 function coop()

@@ -301,7 +301,7 @@ def run(sc, outdir, extra):
     keys = "ABCD"[:sc["players"]]
     for k in keys:
         for line in logs[k].splitlines():
-            if "CRASH" in line or "ERROR" in line:
+            if "CRASH" in line or "ERROR" in line or "NPC DRIFT" in line:
                 problems.append(f"{k}: {line[:160]}")
                 break
     if sc["need_identical"]:

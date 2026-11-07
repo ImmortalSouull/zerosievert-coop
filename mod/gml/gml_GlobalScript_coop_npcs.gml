@@ -161,6 +161,64 @@ function coop_npc_host_step()
             _count = 0;
         }
     }
+    // Pass 3 (far tick): NPCs deactivated on this machine (outside the culling regions) still walk and fight
+    // off screen (1.4 roaming moves deactivated instances). Without their positions the replicas stayed where the
+    // NPC was last seen: a "ghost" the others could shoot at while the real one stood somewhere else.
+    if (_far_tick)
+    {
+        var _map = _c.npc_by_nid;
+        var _k = ds_map_find_first(_map);
+        while (_k != undefined)
+        {
+            var _inst = ds_map_find_value(_map, _k);
+            _k = ds_map_find_next(_map, _k);
+            if (instance_exists(_inst))
+            {
+                continue;
+            }
+            var _row = undefined;
+            try
+            {
+                if (_inst.hp > 0)
+                {
+                    var _hsn = variable_instance_exists(_inst, "human_state_now") ? _inst.human_state_now : -1;
+                    var _flags = (variable_instance_exists(_inst, "damage_on_hit") && _inst.damage_on_hit) ? 1 : 0;
+                    _row = [_inst.coop_nid, _inst.x, _inst.y, _inst.weapon_pointing_direction, _inst.target_for_image_scale,
+                        _inst.hp, coop_npc_state_id(_inst.state), _hsn, _flags];
+                }
+            }
+            catch (_e)
+            {
+                _row = undefined; // destroyed, not deactivated
+            }
+            if (_row == undefined)
+            {
+                continue;
+            }
+            if (_count == 0)
+            {
+                coop_msg_begin(COOP_MSG_NPC_SNAP);
+                _count_pos = buffer_tell(_b);
+                buffer_write(_b, buffer_u16, 0);
+            }
+            buffer_write(_b, buffer_u32, _row[0]);
+            buffer_write(_b, buffer_f32, _row[1]);
+            buffer_write(_b, buffer_f32, _row[2]);
+            buffer_write(_b, buffer_f32, _row[3]);
+            buffer_write(_b, buffer_f32, _row[4]);
+            buffer_write(_b, buffer_f32, _row[5]);
+            buffer_write(_b, buffer_u16, _row[6]);
+            buffer_write(_b, buffer_s16, _row[7]);
+            buffer_write(_b, buffer_u8, _row[8]);
+            _count++;
+            if (_count >= 36)
+            {
+                buffer_poke(_b, _count_pos, buffer_u16, _count);
+                coop_msg_send(false);
+                _count = 0;
+            }
+        }
+    }
     if (_count > 0)
     {
         buffer_poke(_b, _count_pos, buffer_u16, _count);
@@ -377,9 +435,24 @@ function coop_npc_on_snap(_b)
         var _sid = buffer_read(_b, buffer_u16);
         var _hsn = buffer_read(_b, buffer_s16);
         var _flags = buffer_read(_b, buffer_u8);
-        var _inst = coop_npc_find(_nid);
+        var _inst = ds_map_find_value(_c.npc_by_nid, _nid);
+        if (_inst == undefined)
+        {
+            continue;
+        }
         if (!instance_exists(_inst))
         {
+            // deactivated here (off our screen): move it anyway, so our culling and the next activation see
+            // the NPC where the owner has it
+            try
+            {
+                _inst.x = _x;
+                _inst.y = _y;
+                _inst.coop_tx = _x;
+                _inst.coop_ty = _y;
+                _inst.hp = max(_hp, 1);
+            }
+            catch (_e) { }
             continue;
         }
         with (_inst)
@@ -655,7 +728,7 @@ function coop_npc_on_bark(_b)
 function coop_npc_check_step()
 {
     var _c = coop();
-    if (!coop_is_world_owner() || _c.frame mod 1800 != 900)
+    if (!coop_is_world_owner() || _c.frame mod (_c.test_mode ? 600 : 1800) != 300)
     {
         exit;
     }
@@ -666,7 +739,19 @@ function coop_npc_check_step()
     var _k = ds_map_find_first(_map);
     while (_k != undefined)
     {
+        // nid + where the owner has it (also deactivated NPCs): the replica measures its drift
+        var _px = -1;
+        var _py = -1;
+        var _inst = ds_map_find_value(_map, _k);
+        try
+        {
+            _px = _inst.x;
+            _py = _inst.y;
+        }
+        catch (_e) { }
         buffer_write(_b, buffer_u32, _k);
+        buffer_write(_b, buffer_f32, _px);
+        buffer_write(_b, buffer_f32, _py);
         _k = ds_map_find_next(_map, _k);
     }
     coop_msg_send(true);
@@ -681,11 +766,36 @@ function coop_npc_on_check(_b)
         exit;
     }
     var _owner = ds_map_create();
+    var _map = _c.npc_by_nid;
+    var _drift_max = 0;
+    var _drift_n = 0;
     for (var _i = 0; _i < _n; _i++)
     {
-        ds_map_set(_owner, buffer_read(_b, buffer_u32), true);
+        var _nid = buffer_read(_b, buffer_u32);
+        var _ox = buffer_read(_b, buffer_f32);
+        var _oy = buffer_read(_b, buffer_f32);
+        ds_map_set(_owner, _nid, true);
+        var _rep = ds_map_find_value(_map, _nid);
+        if (_rep != undefined && _ox >= 0)
+        {
+            try
+            {
+                var _d = point_distance(_rep.x, _rep.y, _ox, _oy);
+                _drift_max = max(_drift_max, _d);
+                if (_d > 160) _drift_n++;
+            }
+            catch (_e) { }
+        }
     }
-    var _map = _c.npc_by_nid;
+    // a replica far from the owner's NPC is a ghost (shots at it hit nothing on the owner)
+    if (_drift_n > 0)
+    {
+        coop_log("NPC DRIFT: ", _drift_n, " replicas > 160 px from the owner's NPC, max ", floor(_drift_max));
+    }
+    else if (_c.test_mode)
+    {
+        coop_log("npc drift ok: max ", floor(_drift_max));
+    }
     // extras: replicas the owner no longer has (a missed NPC_DIE/GONE)
     var _extra = 0;
     var _k = ds_map_find_first(_map);
