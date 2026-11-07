@@ -194,7 +194,8 @@ SCENARIOS = [
       checks=[("A", r"group: partner uses bandage weapon", 1), ("A", r"status: slot 1 is 2", 1),
               ("A", r"status: slot 1 is 3", 1), ("B", r"status: mine 2", 1),
               ("A", r"chat .*: Привет, it's the guest", 1), ("B", r"chat .*: host answers", 1), ("A", r"chat open, game blocked=1", 1),
-              ("A", r"chat .*: \[Enemy spotted\]", 1), ("A", r"chat .*: \[Need a medkit\]", 1)], timeout=300),
+              ("A", r"chat .*: \[Enemy spotted\]", 1), ("A", r"chat .*: \[Need a medkit\]", 1),
+              ("A", r"group: streamer name Player 2 me Player 1", 1), ("A", r"group: streamer off name SaWka", 1)], timeout=300),
     # friendly fire with half damage
     S("ff", "-coop_autoraid 1 -coop_scenario ff -coop_diff coop_friendly_fire=1,coop_friendly_fire_damage=0.5", "-coop_scenario ff",
       done=[("A", r"ff: done"), ("B", r"ff: done")], checks=[("A", r"setting 0.5", 1)], custom=ff_ok),

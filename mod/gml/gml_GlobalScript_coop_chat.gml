@@ -130,7 +130,7 @@ function coop_chat_draw()
         }
         var _a = _ch.open ? 1 : clamp((COOP_CHAT_SHOW_MS - _age) / 600, 0, 1);
         _y -= _lh;
-        var _nm = coop_streamer_name(_l.slot, _l.name) + ": ";
+        var _nm = ((_l.slot == max(0, _c.slot)) ? coop_my_shown_name() : coop_peer_name(_l.slot)) + ": ";
         var _w2 = string_width(_nm) + string_width(_l.text) + 20;
         coop_ui_rect(_x, _y, _x + _w2, _y + _lh, c_black, 0.5 * _a);
         var _col = coop_slot_colour(_l.slot);
@@ -139,12 +139,3 @@ function coop_chat_draw()
     }
 }
 
-// Streamer mode (item 32) hides names; until then names show as they are.
-function coop_streamer_name(_slot, _name)
-{
-    if (variable_global_exists("coop_state") && variable_struct_exists(global.coop_state, "streamer") && global.coop_state.streamer)
-    {
-        return coop_tf("Player {0}", "Игрок {0}", _slot + 1);
-    }
-    return _name;
-}

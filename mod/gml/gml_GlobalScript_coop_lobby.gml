@@ -215,7 +215,7 @@ function coop_friends_in_game()
 
 function coop_lobby_browser_label(_e)
 {
-    var _nm = (is_string(_e.name) && _e.name != "") ? _e.name : coop_t("Player", "Игрок");
+    var _nm = (is_string(_e.name) && _e.name != "" && !coop_streamer()) ? _e.name : coop_t("Player", "Игрок");
     var _w = (_e.where == "raid") ? coop_t("in a raid", "в рейде") : ((_e.where == "hub") ? coop_t("in the bunker", "в бункере") : coop_t("in the menu", "в меню"));
     return coop_ui_fit(_nm, 300) + "  " + string(_e.players) + "  · " + _w;
 }

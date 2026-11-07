@@ -162,7 +162,7 @@ function coop_group_draw()
         var _mid = _ry + _rh / 2 - 2;
         coop_ui_rect(_x + 4, _mid - 5, _x + 13, _mid + 4, coop_slot_colour(_k));
         draw_set_valign(fa_middle);
-        coop_ui_text(_x + 20, _mid, coop_ui_fit(_pp.name, 130), COOP_C_TEXT);
+        coop_ui_text(_x + 20, _mid, coop_ui_fit(coop_peer_name(_k), 130), COOP_C_TEXT);
         var _pup = coop_puppet_of(_k);
         var _st = coop_status_of(_k);
         if (instance_exists(_pup) && variable_instance_exists(_pup, "coop_hp"))

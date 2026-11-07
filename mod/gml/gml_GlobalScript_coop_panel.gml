@@ -21,6 +21,10 @@ function coop_panel_buttons()
     {
         return coop_panel_browser_buttons();
     }
+    if (_c.panel_page == "settings")
+    {
+        return coop_panel_settings_buttons();
+    }
     if (_c.panel_page == "visits")
     {
         var _vl = coop_panel_visit_buttons();
@@ -69,9 +73,7 @@ function coop_panel_buttons()
         }
         array_push(_b, { id: "leave", label: coop_t("Leave co-op", "Выйти из кооператива") });
     }
-    array_push(_b, { id: "fps", label: coop_t("Frame rate: ", "Частота кадров: ") + zs_fps_mode_label(zs_fps().mode) });
-    array_push(_b, { id: "conn", label: coop_t("Connection indicator: ", "Индикатор связи: ") + coop_conn_mode_label() });
-    array_push(_b, { id: "group", label: coop_t("Group panel: ", "Панель группы: ") + (coop_group_mode() ? coop_t("on", "вкл") : coop_t("off", "выкл")) });
+    array_push(_b, { id: "settings", label: coop_t("Settings...", "Настройки...") });
     array_push(_b, { id: "report", label: coop_t("Collect logs for a bug report", "Собрать логи для отчёта о баге") });
     if (room == r_menu)
     {
@@ -89,10 +91,22 @@ function coop_panel_visit_buttons()
     {
         if (coop_visit_can(_k))
         {
-            array_push(_out, { id: "visit_" + string(_k), label: coop_tf("Visit {0}'s bunker", "В гости к {0}", _ps[_k].name) });
+            array_push(_out, { id: "visit_" + string(_k), label: coop_tf("Visit {0}'s bunker", "В гости к {0}", coop_peer_name(_k)) });
         }
     }
     return _out;
+}
+
+// Page "settings": the local options.
+function coop_panel_settings_buttons()
+{
+    var _b = [];
+    array_push(_b, { id: "fps", label: coop_t("Frame rate: ", "Частота кадров: ") + zs_fps_mode_label(zs_fps().mode) });
+    array_push(_b, { id: "conn", label: coop_t("Connection indicator: ", "Индикатор связи: ") + coop_conn_mode_label() });
+    array_push(_b, { id: "streamer", label: coop_t("Streamer mode (hide names): ", "Режим стримера (скрыть ники): ") + (coop_streamer() ? coop_t("on", "вкл") : coop_t("off", "выкл")) });
+    array_push(_b, { id: "group", label: coop_t("Group panel: ", "Панель группы: ") + (coop_group_mode() ? coop_t("on", "вкл") : coop_t("off", "выкл")) });
+    array_push(_b, { id: "page_main", label: coop_t("Back", "Назад") });
+    return _b;
 }
 
 function coop_panel_title()
@@ -101,6 +115,7 @@ function coop_panel_title()
     {
         case "backups": return coop_t("SAVE BACKUPS", "РЕЗЕРВНЫЕ КОПИИ");
         case "lobby": return coop_t("PLAYERS AND LOBBY", "ИГРОКИ И ЛОББИ");
+        case "settings": return coop_t("CO-OP SETTINGS", "НАСТРОЙКИ КООПЕРАТИВА");
         case "browser": return coop_t("OPEN GAMES", "ОТКРЫТЫЕ ИГРЫ");
     }
     return coop_t("CO-OP", "КООПЕРАТИВ");
@@ -121,8 +136,8 @@ function coop_panel_lobby_buttons()
     {
         if (is_struct(_ps[_k]) && _ps[_k].connected)
         {
-            var _lab = (_c.kick_confirm == _k) ? coop_tf("Remove {0}? Click again", "Удалить {0}? Нажмите ещё раз", _ps[_k].name)
-                : coop_tf("Remove {0} from the session", "Удалить {0} из сессии", _ps[_k].name);
+            var _lab = (_c.kick_confirm == _k) ? coop_tf("Remove {0}? Click again", "Удалить {0}? Нажмите ещё раз", coop_peer_name(_k))
+                : coop_tf("Remove {0} from the session", "Удалить {0} из сессии", coop_peer_name(_k));
             array_push(_b, { id: "kick_" + string(_k), label: _lab });
         }
     }
@@ -147,11 +162,11 @@ function coop_panel_browser_buttons()
         {
             if (_fr[_i].lobby != 0)
             {
-                array_push(_b, { id: "fjoin_" + string(_i), label: coop_tf("Join friend {0}", "Присоединиться к другу {0}", coop_ui_fit(_fr[_i].name, 300)) });
+                array_push(_b, { id: "fjoin_" + string(_i), label: coop_tf("Join friend {0}", "Присоединиться к другу {0}", coop_ui_fit(coop_streamer() ? coop_tf("Friend {0}", "Друг {0}", _i + 1) : _fr[_i].name, 300)) });
             }
             else
             {
-                array_push(_b, { id: "none", label: coop_tf("{0} plays solo (no co-op lobby)", "{0} играет один (нет кооп-лобби)", coop_ui_fit(_fr[_i].name, 300)) });
+                array_push(_b, { id: "none", label: coop_tf("{0} plays solo (no co-op lobby)", "{0} играет один (нет кооп-лобби)", coop_ui_fit(coop_streamer() ? coop_tf("Friend {0}", "Друг {0}", _i + 1) : _fr[_i].name, 300)) });
             }
         }
     }
@@ -284,6 +299,12 @@ function coop_panel_click(_id)
     {
         coop_visit_end("panel");
         _c.panel = false;
+        exit;
+    }
+    if (_id == "settings")
+    {
+        _c.panel_page = "settings";
+        _c.panel_sel = 0;
         exit;
     }
     if (_id == "visits")
@@ -423,6 +444,9 @@ function coop_panel_click(_id)
         case "fps":
             zs_fps_cycle();
             break;
+        case "streamer":
+            coop_streamer_toggle();
+            break;
         case "group":
             coop_group_toggle();
             break;
@@ -497,7 +521,7 @@ function coop_panel_draw()
             {
                 continue;
             }
-            var _nm = coop_ui_fit(_me ? coop_my_name() : _pp.name, 300) + (_me ? coop_t(" (you)", " (вы)") : "");
+            var _nm = coop_ui_fit(_me ? coop_my_shown_name() : coop_peer_name(_k), 300) + (_me ? coop_t(" (you)", " (вы)") : "");
             if (_k == 0)
             {
                 _nm += coop_t("  - host", "  - хост");
@@ -538,7 +562,9 @@ function coop_panel_draw()
         coop_ui_text(_cx, _by, coop_t("Host IP address", "IP-адрес хоста"), COOP_C_DIM);
         coop_ui_slot(_l.x1 + 60, _by + 40, _l.x2 - 60, _by + 40 + _l.btn_h, true);
         draw_set_valign(fa_middle);
-        coop_ui_text(_cx, _by + 40 + _l.btn_h / 2, _c.last_ip + ((current_time div 400) mod 2 ? "_" : " "), COOP_C_KEY);
+        // streamer mode: the typed address stays hidden
+        var _ipt = coop_streamer() ? string_repeat("*", string_length(_c.last_ip)) : _c.last_ip;
+        coop_ui_text(_cx, _by + 40 + _l.btn_h / 2, _ipt + ((current_time div 400) mod 2 ? "_" : " "), COOP_C_KEY);
         draw_set_valign(fa_top);
         draw_set_halign(fa_left);
         coop_ui_prompt(_cx, _l.y2 - 48, "Enter", coop_t("connect   [Esc] back", "подключиться   [Esc] назад"));

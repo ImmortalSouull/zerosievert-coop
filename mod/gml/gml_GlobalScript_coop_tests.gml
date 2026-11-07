@@ -1813,6 +1813,10 @@ function coop_test_group_step()
             }
         }
         if (_t == 420) screen_save("wheel_seen_" + _c.tag + ".png");
+        // streamer mode: names hidden everywhere on screen (the setting is shared by the test windows: switch it back)
+        if (_t == 600) { coop_streamer_toggle(); _c.panel = true; coop_log("group: streamer name ", coop_peer_name(1), " me ", coop_my_shown_name()); }
+        if (_t == 620) screen_save("streamer_" + _c.tag + ".png");
+        if (_t == 630) { coop_streamer_toggle(); _c.panel = false; coop_log("group: streamer off name ", coop_peer_name(1)); }
         if (_t == 470) coop_log("group: partner status ", coop_status_of(1));
         if (_t == 330)
         {

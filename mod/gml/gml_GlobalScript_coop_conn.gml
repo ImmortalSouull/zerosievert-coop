@@ -121,7 +121,7 @@ function coop_conn_lines()
         {
             continue;
         }
-        var _txt = coop_ui_fit(_p.name, 220) + ": " + string(_q.ping) + coop_t(" ms", " мс")
+        var _txt = coop_ui_fit(coop_peer_name(_k), 220) + ": " + string(_q.ping) + coop_t(" ms", " мс")
             + coop_tf(", loss {0}%", ", потери {0}%", _q.loss);
         if (_q.silent > COOP_CONN_SILENT_MS)
         {
