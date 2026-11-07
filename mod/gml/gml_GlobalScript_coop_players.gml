@@ -334,9 +334,9 @@ function coop_puppet_on_state(_b)
     {
         exit;
     }
-    if (_slot == 0 && coop_in_raid())
+    if (_slot == coop_raid_owner() && coop_in_raid())
     {
-        coop_spawn_sync(_x, _y);
+        coop_spawn_sync(_x, _y); // next to the raid owner, wherever we joined from (item 42)
     }
     with (_p)
     {
@@ -606,7 +606,7 @@ function coop_puppet_draw_tag()
 function coop_spawn_sync(_hx, _hy)
 {
     var _c = coop();
-    if (_c.role != "guest" || _c.spawn_synced || !instance_exists(obj_player))
+    if (_c.spawn_synced || !instance_exists(obj_player))
     {
         exit;
     }
@@ -623,24 +623,48 @@ function coop_spawn_sync(_hx, _hy)
     {
         exit;
     }
-    // Nearest free spot around the host.
-    for (var _r = 16; _r <= 64; _r += 8)
+    // A free spot near the owner where enemies don't see us arrive: the free spot whose nearest hostile NPC (in
+    // view: no wall on the line) is furthest away; with no enemy around, simply the closest free spot.
+    instance_activate_region(_hx - 480, _hy - 480, 960, 960, true);
+    var _best = undefined;
+    var _best_score = -infinity;
+    for (var _r = 16; _r <= 96; _r += 8)
     {
         for (var _a = 0; _a < 360; _a += 45)
         {
             var _nx = _hx + lengthdir_x(_r, _a);
             var _ny = _hy + lengthdir_y(_r, _a);
+            var _free = false;
             with (obj_player)
             {
-                if (!place_meeting(_nx, _ny, obj_solid))
+                _free = !place_meeting(_nx, _ny, obj_solid);
+            }
+            if (!_free)
+            {
+                continue;
+            }
+            var _seen = 99999;
+            with (obj_npc_parent)
+            {
+                if (hp > 0 && object_is_ancestor(object_index, obj_npc_human_parent) && variable_instance_exists(id, "faction")
+                    && faction != "All Friend" && point_distance(x, y, _nx, _ny) < 400 && collision_line(x, y, _nx, _ny, obj_solid, false, true) == noone)
                 {
-                    x = _nx;
-                    y = _ny;
-                    coop_log("spawn synced next to host at ", floor(_nx), ",", floor(_ny));
-                    return;
+                    _seen = min(_seen, point_distance(x, y, _nx, _ny));
                 }
             }
+            var _score = min(_seen, 400) - _r * 0.5; // safer first, then closer to the group
+            if (_score > _best_score)
+            {
+                _best_score = _score;
+                _best = [_nx, _ny, _seen];
+            }
         }
+    }
+    if (_best != undefined)
+    {
+        obj_player.x = _best[0];
+        obj_player.y = _best[1];
+        coop_log("spawn synced next to the raid owner at ", floor(_best[0]), ",", floor(_best[1]), (_best[2] < 99999) ? " (nearest enemy in view " + string(floor(_best[2])) + " px)" : " (no enemy in view)");
     }
 }
 
