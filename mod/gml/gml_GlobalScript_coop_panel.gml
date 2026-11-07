@@ -780,7 +780,8 @@ function coop_panel_blocks_game()
     }
     var _c = global.coop_state;
     // the F7 panel or the chat line (coop_chat.gml) has the keyboard
-    return (variable_struct_exists(_c, "panel") && _c.panel) || (variable_struct_exists(_c, "chat") && _c.chat.open);
+    return (variable_struct_exists(_c, "panel") && _c.panel) || (variable_struct_exists(_c, "chat") && _c.chat.open)
+        || (variable_struct_exists(_c, "trade") && _c.trade.state == "open");
 }
 
 // obj_coop Step: the welcome window (main menu) - tutorial / later / never.

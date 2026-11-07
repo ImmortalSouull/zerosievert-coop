@@ -117,6 +117,7 @@ function coop_draw_gui()
         coop_chat_draw();
         coop_wheel_draw();
         coop_gear_draw();
+        coop_trade_draw();
     }
     if (is_in_hub())
     {

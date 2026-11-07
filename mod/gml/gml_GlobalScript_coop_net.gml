@@ -1020,6 +1020,9 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_RETURN:
             coop_fallen_on_return(_b);
             break;
+        case COOP_MSG_TRADE:
+            coop_trade_on_msg(_b);
+            break;
         case COOP_MSG_MARK:
             coop_mark_on_message(_b);
             break;

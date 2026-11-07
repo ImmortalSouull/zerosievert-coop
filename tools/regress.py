@@ -256,6 +256,12 @@ SCENARIOS = [
       checks=[("B", r"fallen: our things in a bag", 1), ("A", r"fallen: bag .* holds the things of slot 1", 1),
               ("A", r"fallen: host took ", 1), ("A", r"fallen: returned .* to slot 1", 1), ("B", r"fallen: got back ", 1),
               ("B", r"gift placed in the inventory|gift dropped in a bag", 1)], timeout=420, minutes=7),
+    # trading: ask, accept, one stack each, both ready -> swapped
+    S("trade", "-coop_autoraid 1 -coop_scenario trade", "-coop_scenario trade",
+      done=[("A", r"trade test: done"), ("B", r"trade test: done")],
+      checks=[("A", r"trade: sent 1 stacks to slot 1", 1), ("B", r"trade: sent 1 stacks to slot 0", 1),
+              ("A", r"trade: got 1 stacks from slot 1", 1), ("B", r"trade: got 1 stacks from slot 0", 1),
+              ("A", r"gift placed in the inventory|gift dropped in a bag", 1), ("B", r"gift placed in the inventory|gift dropped in a bag", 1)], timeout=300),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

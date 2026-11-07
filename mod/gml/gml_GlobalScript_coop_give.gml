@@ -68,9 +68,9 @@ function coop_give_step()
 {
     var _c = coop();
     var _g = coop_give();
-    if (is_in_hub())
+    if (is_in_hub() || coop_in_raid())
     {
-        coop_give_receive_pending();
+        coop_give_receive_pending(); // bunker gifts, trades, a fallen teammate's things
     }
     if (!_c.connected || !(coop_in_raid() || is_in_hub()) || !instance_exists(obj_player) || (variable_struct_exists(_c, "panel") && _c.panel))
     {
