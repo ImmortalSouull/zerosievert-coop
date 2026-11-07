@@ -268,6 +268,13 @@ SCENARIOS = [
       checks=[("A", r"voice test: t=400 got=[1-9]\d* gain=1 speaking=1", 1), ("A", r"voice test: t=700 got=[1-9]\d* gain=0 ", 1),
               ("A", r"voice test: t=1000 got=[1-9]\d* gain=0.80 speaking=1", 1),
               ("A", r"host without radio gain=0[^.]", 1), ("A", r"bar sells radio=1 name=", 1), ("B", r"guest radio=1", 1)], timeout=300),
+    # the co-op radio: quick slot raises it, talking over the radio only in hand, heard at any distance on the channel
+    S("radio", "-coop_autoraid 1 -coop_scenario radio", "-coop_scenario radio",
+      done=[("A", r"radio test: done"), ("B", r"radio test: done")],
+      checks=[("A", r"radio test: have=1 recipe=1 module=12 bar level=400 category=coop_radio", 1),
+              ("B", r"guest raised=1 talk channel=1", 1), ("B", r"shooting blocked=1", 1),
+              ("A", r"radio test: t=450 got=[1-9]\d* gain=0.80 radio drawn=1", 1), ("A", r"radio test: t=750 got=[1-9]\d* gain=0 radio drawn=0", 1),
+              ("B", r"guest lowered, in hand=0", 1)], timeout=300),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

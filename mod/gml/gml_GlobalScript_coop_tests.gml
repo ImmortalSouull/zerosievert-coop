@@ -43,6 +43,7 @@ function coop_test_ext_step()
     coop_test_fallen_step();
     coop_test_trade_step();
     coop_test_voice_step();
+    coop_test_radio_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2495,5 +2496,77 @@ function coop_test_voice_step()
             coop_log("voice test: t=", _t, " got=", is_struct(_s) ? _s.got : 0, " gain=", coop_voice_gain(1), " speaking=", coop_voice_speaking(1));
         }
         if (_t == 1100) coop_log("voice test: done");
+    }
+}
+
+// -coop_scenario radio: both get a radio (the guest's in quick slot 1). The guest, 60 m away, raises it with the quick
+// slot and talks (test tone): the host hears it on channel 1; lowered, the host hears nothing. Also checks the
+// workshop recipe and the barman's reputation gate.
+function coop_test_radio_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "radio" || !coop_shared_ready() || !instance_exists(obj_player)) exit;
+    if (!variable_struct_exists(_c, "rdt")) _c.rdt = 0;
+    _c.rdt++;
+    var _t = _c.rdt;
+    var _v = coop_voice();
+    with (obj_player) hp = hp_max;
+    if (_t == 100)
+    {
+        _v.mode = 1;
+        _v.channel = 1;
+        inventory_add_item(COOP_RADIO_ITEM, 1);
+        var _rec = -1;
+        for (var _i = 0; _i < array_length(global.craft_get); _i++) if (global.craft_get[_i] == COOP_RADIO_ITEM) _rec = _i;
+        var _lvl = -1;
+        var _items = variable_struct_get(global.trader_data, "bar").items;
+        for (var _i = 0; _i < array_length(_items); _i++) if (_items[_i].item == COOP_RADIO_ITEM) _lvl = _items[_i].level;
+        coop_log("radio test: have=", coop_radio_have(), " recipe=", _rec >= 0, " module=", (_rec >= 0) ? global.craft_req_module_id[_rec] : -1,
+            " bar level=", _lvl, " category=", item_get_category(COOP_RADIO_ITEM));
+    }
+    if (_c.role == "guest")
+    {
+        var _h = coop_puppet_of(0);
+        if (_t == 150 && instance_exists(_h)) { obj_player.x = _h.x + 1000; obj_player.y = _h.y; }
+        if (_t == 160)
+        {
+            // into quick slot 1 (as dragged in the inventory)
+            var _db = inventory_target_db();
+            db_open(_db);
+            var _arr = db_read("Inventory", "items", []);
+            for (var _i = 0; _i < array_length(_arr); _i++)
+            {
+                if (_arr[_i].placement == "quick slot 1") { _arr[_i].placement = "player inventory"; }
+            }
+            for (var _i = 0; _i < array_length(_arr); _i++)
+            {
+                if (_arr[_i].item == COOP_RADIO_ITEM) { _arr[_i].placement = "quick slot 1"; _arr[_i].x = 0; _arr[_i].y = 0; }
+            }
+            db_write("Inventory", "items", _arr);
+            db_close();
+        }
+        if (_t == 200)
+        {
+            inventory_use_quick_slot("quick slot 1");
+            coop_log("radio test: guest raised=", coop_radio_in_hand(), " talk channel=", coop_radio_talk_channel());
+            _c.voice_test_tone = 0;
+        }
+        if (_t == 260) coop_log("radio test: shooting blocked=", obj_player.shooting);
+        if (_t == 280) screen_save("radio_" + _c.tag + ".png");
+        if (_t == 500)
+        {
+            inventory_use_quick_slot("quick slot 1");
+            coop_log("radio test: guest lowered, in hand=", coop_radio_in_hand());
+        }
+        if (_t == 800) { variable_struct_remove(_c, "voice_test_tone"); coop_log("radio test: done"); }
+    }
+    else
+    {
+        if (_t == 450 || _t == 750)
+        {
+            var _s = _v.spk[1];
+            coop_log("radio test: t=", _t, " got=", is_struct(_s) ? _s.got : 0, " gain=", coop_voice_gain(1), " radio drawn=", instance_exists(coop_puppet_of(1)) && (coop_puppet_of(1).coop_flags & 32) != 0);
+        }
+        if (_t == 800) coop_log("radio test: done");
     }
 }

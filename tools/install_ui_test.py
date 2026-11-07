@@ -18,3 +18,15 @@ if n != 1:
     raise SystemExit("insert point not found")
 open(target, "w", encoding="utf-8", newline="").write(new)
 print("pda_map.ui patched")
+
+# quick slots take the co-op radio (installer step 2e)
+gb = os.path.join(GAME, "coop_backup", "inventory_exec_player_gear.ui")
+gt = os.path.join(GAME, "ZS_vanilla", "ui", "inventory_exec_player_gear.ui")
+if not os.path.exists(gb):
+    shutil.copy(gt, gb)  # first time: the installed file is still the game's own
+g = open(gb, encoding="utf-8", newline="").read()
+g2, n = re.subn(r'(category = \["medication", "injector", "grenade","consumable")', lambda m: m.group(1) + ', "coop_radio"', g)
+if n != 1:
+    raise SystemExit("quick slot categories not found")
+open(gt, "w", encoding="utf-8", newline="").write(g2)
+print("inventory_exec_player_gear.ui patched")

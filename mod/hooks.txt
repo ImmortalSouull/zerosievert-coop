@@ -1300,3 +1300,12 @@ if (coop_spectating()) exit;
     coop_radio_inject();
 }
 <<<END
+
+// [144] Quick slot with the co-op radio: raise / lower it instead of using it (coop_voice.gml).
+### findreplace gml_GlobalScript_inventory_use_quick_slot
+<<<FIND
+    var _loot = inventory_find_loot(arg0);
+<<<REPLACE
+    var _loot = inventory_find_loot(arg0);
+    if (coop_radio_quick_use(_loot)) exit;
+<<<END

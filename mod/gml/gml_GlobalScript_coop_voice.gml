@@ -144,7 +144,7 @@ function coop_voice_send()
     var _c = coop();
     var _v = coop_voice();
     var _b = coop_msg_begin(COOP_MSG_VOICE);
-    buffer_write(_b, buffer_u8, coop_radio_channel());
+    buffer_write(_b, buffer_u8, coop_radio_talk_channel());
     buffer_write(_b, buffer_u16, _v.out_n);
     buffer_copy(_v.out, 0, _v.out_n, _b, buffer_tell(_b));
     buffer_seek(_b, buffer_seek_relative, _v.out_n);
@@ -284,10 +284,14 @@ function coop_ulaw_decode(_u)
     return _sign ? -_m : _m;
 }
 
-// ---- the radio item (user's design: only bought, never found) ----
-// "coop_radio" is added to the game's item data after every gamedata load (hook [143]): a barter item with the
-// game's transmitter sprite, sold by the barman (the "bar" trader), in no loot table. Radio channels only work while
-// the radio is in your inventory - on both ends.
+// ---- the radio item (user's design: never found - bought later in the game, or crafted) ----
+// "coop_radio" is added to the game's data after every gamedata load (hook [143]): an item of its own category
+// "coop_radio" (the quick slots accept it: the installer adds the category to the inventory UI), the game's
+// transmitter sprite, in no loot table. Sold by the barman from trader level 400 (mid game, 12 000), crafted in the
+// workshop (module 12, level 1) from copper wire, wires, a battery, a military circuit and scrap with pliers and a
+// screwdriver. Its quick slot raises / lowers it: talking over the radio (C) works only with the radio in your hands
+// (no shooting meanwhile, the mouse wheel changes the channel); listening needs a radio in the inventory. Without it in
+// hand your voice is the normal proximity voice.
 #macro COOP_RADIO_ITEM "coop_radio"
 
 function coop_radio_inject()
@@ -303,9 +307,10 @@ function coop_radio_inject()
             var _it = json_parse(json_stringify(variable_struct_get(global.item_data, "smartphone")));
             _it.basic.name = "coop.item.radio";
             _it.basic.description = "coop.item.radio.desc";
+            _it.basic.category = "coop_radio";
             _it.basic.sprite_ingame = "s_item_transmitter";
             _it.basic.sprite_inv = "s_item_transmitter";
-            _it.basic.value = 15000;
+            _it.basic.value = 12000;
             _it.basic.weight = 0.4;
             _it.basic.stack_max = 1;
             variable_struct_set(global.item_data, COOP_RADIO_ITEM, _it);
@@ -319,7 +324,28 @@ function coop_radio_inject()
             {
                 if (_items[_i].item == COOP_RADIO_ITEM) _have = true;
             }
-            if (!_have) array_push(_items, { item: COOP_RADIO_ITEM, quantity: 3 });
+            if (!_have) array_push(_items, { item: COOP_RADIO_ITEM, level: 400, quantity: 2 });
+        }
+        if (variable_global_exists("category_data") && !variable_struct_exists(global.category_data, "coop_radio"))
+        {
+            variable_struct_set(global.category_data, "coop_radio", { debug_spawner: "generic" });
+            if (variable_global_exists("category_data_array")) array_push(global.category_data_array, "coop_radio");
+        }
+        // the workshop recipe (the game's own way for mods to add recipes; lista_craft builds them)
+        if (variable_global_exists("__Mods_Crafting_Recipes"))
+        {
+            var _has = false;
+            for (var _i = 0; _i < array_length(global.__Mods_Crafting_Recipes); _i++)
+            {
+                if (global.__Mods_Crafting_Recipes[_i].output_item[0] == COOP_RADIO_ITEM) _has = true;
+            }
+            if (!_has)
+            {
+                array_push(global.__Mods_Crafting_Recipes, { crafting_type: 3, required_module: 12, required_module_level: 1,
+                    required_items: [["copper_wire", 2], ["wires", 2], ["battery", 1], ["military_circuit", 1], ["scrap_material", 15], ["pliers", 1], ["screwdriver", 1]],
+                    output_item: [COOP_RADIO_ITEM, 1] });
+                if (variable_global_exists("craft_get") && is_array(global.craft_get)) lista_craft();
+            }
         }
         coop_log("radio item added (sold by the barman)");
     }
@@ -339,11 +365,105 @@ function coop_radio_have()
     return false;
 }
 
-// The channel we really use: the setting, if a radio is in the inventory.
+// The channel we listen to: the setting, while a radio is in the inventory.
 function coop_radio_channel()
 {
     var _v = coop_voice();
     return coop_radio_have() ? _v.channel : 0;
+}
+
+// The channel we talk on: only with the radio in our hands.
+function coop_radio_talk_channel()
+{
+    return coop_radio_in_hand() ? coop_radio_channel() : 0;
+}
+
+function coop_radio_in_hand()
+{
+    var _c = coop();
+    return variable_struct_exists(_c, "radio_hand") && _c.radio_hand && coop_radio_have();
+}
+
+// Hook [144]: a quick slot was pressed - the radio is raised / lowered instead of "used". true = handled.
+function coop_radio_quick_use(_loot)
+{
+    try
+    {
+        if (!is_struct(_loot) || _loot.item != COOP_RADIO_ITEM)
+        {
+            return false;
+        }
+        var _c = coop();
+        _c.radio_hand = !(variable_struct_exists(_c, "radio_hand") && _c.radio_hand);
+        if (_c.radio_hand && coop_voice().channel == 0)
+        {
+            coop_voice().channel = 1;
+            coop_voice_save();
+        }
+        audio_play_sound(snd_button_click_rad, 5, false);
+        coop_log("radio ", _c.radio_hand ? "raised" : "lowered", ", channel ", coop_voice().channel);
+        return true;
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    return false;
+}
+
+// obj_coop Begin Step: a raised radio blocks shooting (like the down state); the wheel changes the channel.
+function coop_radio_begin_step()
+{
+    var _c = coop();
+    if (!coop_radio_in_hand() || !instance_exists(obj_player))
+    {
+        if (variable_struct_exists(_c, "radio_hand") && _c.radio_hand && !coop_radio_have()) _c.radio_hand = false;
+        exit;
+    }
+    with (obj_player)
+    {
+        shooting = true;
+        aiming = false;
+    }
+    var _w = mouse_wheel_up() - mouse_wheel_down();
+    if (_w != 0)
+    {
+        var _v = coop_voice();
+        _v.channel = clamp(_v.channel + _w, 1, 8);
+        coop_voice_save();
+    }
+}
+
+// Draw (world): the radio in the hands of us and of teammates who raised theirs.
+function coop_radio_draw()
+{
+    if (coop_radio_in_hand() && instance_exists(obj_player))
+    {
+        with (obj_player) draw_sprite_ext(s_item_transmitter, 0, x + 5 * sign(image_xscale), y - 9, 0.5, 0.5, 0, c_white, 1);
+    }
+    with (obj_player_puppet)
+    {
+        if (variable_instance_exists(id, "coop_flags") && (coop_flags & 32) != 0)
+        {
+            draw_sprite_ext(s_item_transmitter, 0, x + 5 * sign(image_xscale), y - 9, 0.5, 0.5, 0, c_white, 1);
+        }
+    }
+}
+
+// Draw GUI: the channel while the radio is raised.
+function coop_radio_draw_gui()
+{
+    if (!coop_radio_in_hand() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    coop_ui_font(COOP_F_SMALL);
+    draw_set_halign(fa_center);
+    var _v = coop_voice();
+    var _tx = keyboard_check(COOP_VOICE_KEY);
+    coop_ui_text_ol(coop_ui_world_x(obj_player.x), coop_ui_world_y(obj_player.y) + 40,
+        coop_tf("Radio ch. {0} - hold C to talk, wheel: channel", "Рация, частота {0} - C: говорить, колесо: частота", _v.channel), _tx ? COOP_C_GREEN : COOP_C_KEY);
+    draw_set_halign(fa_left);
 }
 
 function coop_radio_sold()

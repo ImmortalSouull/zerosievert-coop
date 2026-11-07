@@ -56,13 +56,15 @@ $pda = Join-Path $game "ZS_vanilla\ui\pda_map.ui"
 $mmMain = Join-Path $game "ZS_vanilla\ui\mm_sidebar_main.ui"
 $mmPause = Join-Path $game "ZS_vanilla\ui\mm_sidebar_pause.ui"
 $mmMods = Join-Path $game "ZS_vanilla\ui\mm_mods.ui"
+$gear = Join-Path $game "ZS_vanilla\ui\inventory_exec_player_gear.ui"
 # game UI files the mod patches, with a text that only a patched file contains
 $uiFiles = @(
     @{ path = $ui; name = "mm_difficulty.ui"; mark = "coop\.difficulty\.tab" },
     @{ path = $pda; name = "pda_map.ui"; mark = "CoopPartnerOnMap|CoopMateOnMap" },
     @{ path = $mmMain; name = "mm_sidebar_main.ui"; mark = "CoopOpenPanel" },
     @{ path = $mmPause; name = "mm_sidebar_pause.ui"; mark = "CoopOpenPanel" },
-    @{ path = $mmMods; name = "mm_mods.ui"; mark = "CoopModVersion" }
+    @{ path = $mmMods; name = "mm_mods.ui"; mark = "CoopModVersion" },
+    @{ path = $gear; name = "inventory_exec_player_gear.ui"; mark = "coop_radio" }
 )
 $langDir = Join-Path $game "ZS_vanilla\languages"
 $backup = Join-Path $game "coop_backup"
@@ -141,6 +143,8 @@ Patch-Ui $pda '(\t\t\t//Allow scrolling around the minimap)' ([IO.File]::ReadAll
 $btn = [IO.File]::ReadAllText((Join-Path $here "ui_menu_button.txt"))
 Patch-Ui $mmMain '(\t\tbuild UiTextButton \{\r?\n\t\t\tlabel = "Settings")' $btn $true "CoopOpenPanel" "the main menu"
 Patch-Ui $mmPause '(\t\tbuild UiTextButton \{\r?\n\t\t\tlabel = "Settings")' $btn $true "CoopOpenPanel" "the pause menu"
+# 2e. Quick slots also take the co-op radio (an item category of its own)
+Patch-Ui $gear '(category = \["medication", "injector", "grenade","consumable")' ', "coop_radio"' $false "coop_radio" "the quick slots"
 # 2d. The co-op entry at the top of the Mods menu (the mod is a patch: the game itself does not list it)
 # (before the game's own list: with no mods installed UiModMapIDtoOrder(0) fails and the rest is not built)
 Patch-Ui $mmMods '(\t\tdata\.modding_menu_current = UiModMapIDtoOrder\(0\))' ([IO.File]::ReadAllText((Join-Path $here "ui_mods_entry.txt"))) $true "CoopModVersion" "the mods menu"

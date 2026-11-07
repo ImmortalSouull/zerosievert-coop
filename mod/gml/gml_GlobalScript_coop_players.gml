@@ -132,6 +132,7 @@ function coop_send_pstate()
         if (laser_on_general) _flags |= 8;
         // sprint key held while moving: the raid owner's AI hears running footsteps from further away
         if ((hspd != 0 || vspd != 0) && max(global.kb_hold[4], obj_gamepad.action[4].value) > 0) _flags |= 16;
+        if (coop_radio_in_hand()) _flags |= 32; // the co-op radio raised (drawn on the puppet)
         buffer_write(_b, buffer_u8, _flags);
         // hands animation (meds, food, drinks, smoking, grenade): class_player_arms
         var _arms = arms_holder;
