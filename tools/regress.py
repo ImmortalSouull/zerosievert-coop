@@ -236,6 +236,11 @@ SCENARIOS = [
       checks=[("B", r"rejoin: note written=1 host=", 1), ("B", r"rejoin: first button rejoin Rejoin ", 1),
               ("B", r"rejoin: back in the session", 1), ("A", r"guest connected: ", 2)],
       need_identical=False, timeout=200, minutes=3),
+    # PDA map: teammates in colour, ping marks, the owner's air drop marker on the guest's map
+    S("pda", "-coop_autoraid 1 -coop_scenario pda", "-coop_scenario pda",
+      done=[("A", r"pda: done"), ("B", r"pda: done")],
+      checks=[("B", r"air drop markers added: 1", 1), ("B", r"pda: air drop markers=[1-9] marks=1 mate on map=1 colour ok=1", 1),
+              ("A", r"pda: air drop markers=[1-9] marks=1 mate on map=1 colour ok=1", 1)], timeout=300),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

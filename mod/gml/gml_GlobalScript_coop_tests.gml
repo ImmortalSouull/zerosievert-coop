@@ -38,6 +38,7 @@ function coop_test_ext_step()
     coop_test_spectate_step();
     coop_test_drag_step();
     coop_test_rejoin_step();
+    coop_test_pda_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2231,4 +2232,36 @@ function coop_test_rejoin_step()
         coop_log("rejoin: done");
     }
     if (_c.role == "host" && _c.rj == 1800) { coop_rejoin_forget(); coop_log("rejoin: done"); }
+}
+
+// -coop_scenario pda: the host adds an air drop marker (as the owner's air drop roll does) and puts a ping mark;
+// both open the PDA map (screenshots): teammates in colour, the mark, the air drop on the guest's map too.
+function coop_test_pda_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "pda" || !coop_shared_ready() || !instance_exists(obj_player)) exit;
+    if (!variable_struct_exists(_c, "pd")) _c.pd = 0;
+    _c.pd++;
+    var _t = _c.pd;
+    if (_c.role == "host" && _t == 200)
+    {
+        minimap_add_interesting_marker(floor(obj_player.x / 16) + 6, floor(obj_player.y / 16) - 4, 3);
+        _c.sim_ping_at = [obj_player.x + 60, obj_player.y + 30];
+        _c.sim_ping = true;
+        coop_log("pda: host air drop marker + ping");
+    }
+    if (_c.role == "guest" && _t == 300)
+    {
+        var _h = coop_puppet_of(0);
+        if (instance_exists(_h)) { obj_player.x = _h.x - 120; obj_player.y = _h.y + 40; }
+    }
+    if (_t == 400)
+    {
+        var _n = 0;
+        for (var _k = 0; _k < ds_list_size(global.list_intresting_id); _k++) if (ds_list_find_value(global.list_intresting_id, _k) == 3) _n++;
+        coop_log("pda: air drop markers=", _n, " marks=", coop_minimap_mark_count(), " mate on map=", coop_minimap_mate_on_map(0), " colour ok=", coop_minimap_mate_color(0) == coop_slot_colour(coop_minimap_mate(0).coop_slot));
+        with (obj_player) player_action_open_minimap();
+    }
+    if (_t == 460) screen_save("pda_" + _c.tag + ".png");
+    if (_t == 480) { __uiGlobal().__defaultOnion.Clear(); coop_log("pda: done"); }
 }
