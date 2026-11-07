@@ -93,6 +93,10 @@ function coop_panel_buttons()
         {
             array_push(_b, { id: "lobby", label: coop_t("Players and lobby...", "Игроки и лобби...") });
         }
+        if (coop_arena_can_start())
+        {
+            array_push(_b, { id: "arena", label: coop_t("Start an arena (shooting range)", "Начать арену (тир)") });
+        }
         // the nearest teammate: trade / gear (also what a gamepad reaches)
         if (instance_exists(obj_player) && (coop_in_raid() || is_in_hub()))
         {
@@ -586,6 +590,10 @@ function coop_panel_click(_id)
         case "conn":
             coop_conn_cycle();
             break;
+        case "arena":
+            coop_arena_start();
+            _c.panel = false;
+            break;
         case "near_trade":
             _c.panel = false;
             _c.sim_trade_key = true; // the same as pressing U
@@ -819,7 +827,8 @@ function coop_panel_blocks_game()
     var _c = global.coop_state;
     // the F7 panel or the chat line (coop_chat.gml) has the keyboard
     return (variable_struct_exists(_c, "panel") && _c.panel) || (variable_struct_exists(_c, "chat") && _c.chat.open)
-        || (variable_struct_exists(_c, "trade") && _c.trade.state == "open");
+        || (variable_struct_exists(_c, "trade") && _c.trade.state == "open")
+        || (variable_struct_exists(_c, "arena") && _c.arena.on && _c.arena.pick); // the loadout picker uses 1..6
 }
 
 // obj_coop Step: the welcome window (main menu) - tutorial / later / never.

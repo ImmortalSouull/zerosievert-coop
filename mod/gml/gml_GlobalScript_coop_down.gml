@@ -117,6 +117,10 @@ function coop_down_grim_reaper_inner()
     {
         return false;
     }
+    if (coop_arena_on_lethal())
+    {
+        return true; // the arena: a frag, not a death
+    }
     var _d = coop_down();
     if (_d.force_death)
     {
@@ -706,6 +710,10 @@ function coop_nearest_standing_player_inner(_x, _y)
 // Friendly fire between the two players (host rule).
 function coop_friendly_fire_hit(_bull, _target)
 {
+    if (coop_arena_on() && object_is_player(_bull.shooter_id) && _bull.shooter_id != _target.id)
+    {
+        return true; // the arena
+    }
     if (!coop_active() || !coop_setting("friendly_fire"))
     {
         return false;
@@ -720,6 +728,12 @@ function coop_friendly_fire_mult(_bull)
     {
         if (coop_active() && instance_exists(_bull.shooter_id) && object_is_player(_bull.shooter_id))
         {
+            if (coop_arena_on())
+            {
+                // remember who hit us last (the frag goes to them)
+                if (variable_instance_exists(_bull.shooter_id, "coop_slot")) coop_arena().last_hit = _bull.shooter_id.coop_slot;
+                return 1;
+            }
             return clamp(coop_setting("friendly_fire_damage"), 0.1, 1);
         }
     }

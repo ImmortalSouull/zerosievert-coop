@@ -122,6 +122,7 @@ function coop_draw_gui()
     }
     if (is_in_hub())
     {
+        coop_arena_draw();
         coop_gather_draw();
         coop_hub_draw_gui();
         coop_give_draw_gui();

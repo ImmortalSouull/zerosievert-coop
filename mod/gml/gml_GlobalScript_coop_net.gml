@@ -1033,6 +1033,9 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_QKILL:
             coop_quest_on_msg(_b);
             break;
+        case COOP_MSG_ARENA:
+            coop_arena_on_msg(_b);
+            break;
         case COOP_MSG_MARK:
             coop_mark_on_message(_b);
             break;

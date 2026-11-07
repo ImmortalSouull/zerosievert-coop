@@ -1338,3 +1338,32 @@ if (coop_spectating()) exit;
     global.player_money += _money_reward;
     coop_quest_turned_in(_quest_id);
 <<<END
+
+// [148] The arena's preset weapon lives in memory only: the player's own weapon goes back before any save is written.
+### findreplace gml_GlobalScript_db_force_save
+<<<FIND
+function db_force_save(arg0)
+{
+<<<REPLACE
+function db_force_save(arg0)
+{
+    coop_arena_before_save();
+<<<END
+
+// [149] The bunker never lets a player die (health 10); in the arena that lethal hit is a frag (coop_arena.gml).
+### findreplace gml_GlobalScript_player_damage
+<<<FIND
+            if (instance_exists(obj_map_generator) && obj_map_generator.area == UnknownEnum.Value_10)
+            {
+                _player.hp = 10;
+            }
+<<<REPLACE
+            if (_player == player_get_local() && coop_arena_on_lethal())
+            {
+                // the arena: healed at a spawn point, the frag counted
+            }
+            else if (instance_exists(obj_map_generator) && obj_map_generator.area == UnknownEnum.Value_10)
+            {
+                _player.hp = 10;
+            }
+<<<END

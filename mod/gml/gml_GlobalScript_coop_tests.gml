@@ -47,6 +47,7 @@ function coop_test_ext_step()
     coop_test_event_step();
     coop_test_quest_step();
     coop_test_barq_step();
+    coop_test_arena_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2733,5 +2734,52 @@ function coop_test_barq_step()
         // leave the test save as it was
         for (var _i = 0; _i < 30; _i++) if (global.quest_state[_i].id == "coop_q_bandits") global.quest_state[_i] = new class_quest_state();
         coop_log("barq: done");
+    }
+}
+
+// -coop_scenario arena (bunker): the host starts the arena and takes the AK preset, the guest keeps its own gear and
+// shoots the host (frags); mid-fight the host writes a real save (its own weapon must go back first); the host ends it.
+function coop_test_arena_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "arena" || !is_in_hub() || !instance_exists(obj_player)) exit;
+    var _a = coop_arena();
+    if (!variable_struct_exists(_c, "ar")) _c.ar = 0;
+    if (!_c.connected || coop_player_count() < 2) exit;
+    _c.ar++;
+    var _t = _c.ar;
+    if (_c.role == "host")
+    {
+        if (_t == 300) { _c.ar_own = obj_player.arma_now; coop_log("arena test: own weapon ", _c.ar_own); coop_arena_start(); }
+        if (_t == 320) _c.sim_arena_pick = 2;
+        if (_t == 360) coop_log("arena test: host weapon now ", obj_player.arma_now, " swapped=", _a.swapped);
+        if (_t == 650) coop_log("arena test: host got bullets ", variable_struct_exists(_c, "bullets_recv") ? _c.bullets_recv : 0, " hp ", obj_player.hp, " at ", floor(obj_player.x), ",", floor(obj_player.y));
+        if (_t == 700) { db_force_save("pre_raid"); coop_log("arena test: after a save swapped=", _a.swapped, " weapon ", obj_player.arma_now); }
+        if (_t == 900)
+        {
+            coop_arena_send(2, 0, 0);
+            coop_arena_end("test");
+            var _w = player_loadout_get_loot(obj_player, "weapon slot 1", false);
+            coop_log("arena test: end, weapon back=", obj_player.arma_now == _c.ar_own || (is_struct(_w) && _w.item == _c.ar_own), " frags guest=", _a.frags[1], " hp full=", obj_player.hp == obj_player.hp_max);
+            screen_save("arena_end_" + _c.tag + ".png");
+        }
+        if (_t == 1000) coop_log("arena test: done");
+    }
+    else
+    {
+        if (_a.on && _a.pick && !variable_struct_exists(_c, "ar_p")) { _c.ar_p = true; _c.sim_arena_pick = -1; }
+        if (_a.on && !_a.pick && _t mod 20 == 0)
+        {
+            var _h = coop_puppet_of(0);
+            if (instance_exists(_h))
+            {
+                obj_player.x = _h.x - 50;
+                obj_player.y = _h.y;
+                with (obj_player) if (item_exists(arma_now) && item_get_category(arma_now) == "weapon") scr_shoot(point_direction(x, y, _h.x, _h.y - 6), 1, 300, 0);
+            }
+        }
+        if (_a.on && !_a.pick && !variable_struct_exists(_c, "ar_shot") && _t mod 20 == 10) { _c.ar_shot = true; screen_save("arena_" + _c.tag + ".png"); coop_log("arena test: guest weapon ", obj_player.arma_now, " at ", floor(obj_player.x), ",", floor(obj_player.y), " bullets ", instance_number(obj_bullet_parent)); }
+        if (!_a.on && variable_struct_exists(_c, "ar_p") && !variable_struct_exists(_c, "ar_done")) { _c.ar_done = _t; }
+        if (variable_struct_exists(_c, "ar_done") && _t == _c.ar_done + 100) coop_log("arena test: done");
     }
 }

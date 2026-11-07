@@ -8,7 +8,7 @@
 function coop_on_bullet_spawned_inner(_bull)
 {
     var _c = coop();
-    if (!coop_shared_ready())
+    if (!coop_shared_ready() && !coop_arena_on())
     {
         exit;
     }
@@ -95,7 +95,7 @@ function coop_bullet_on_message(_b)
     var _tk = buffer_read(_b, buffer_u8);
     var _cc = coop();
     _cc.bullets_recv = (variable_struct_exists(_cc, "bullets_recv") ? _cc.bullets_recv : 0) + 1;
-    if (!coop_in_raid() || !object_exists(_obj))
+    if ((!coop_in_raid() && !coop_arena_on()) || !object_exists(_obj))
     {
         exit;
     }

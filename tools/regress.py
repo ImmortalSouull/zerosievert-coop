@@ -302,6 +302,12 @@ SCENARIOS = [
       checks=[("A", r"barq: barman=1 list has bandits=1 mutants=1", 1), ("A", r"barq: accepted=1", 1),
               ("A", r"after the guest left, mutants offered=0 accepted kept=1", 1), ("B", r"barman co-op tasks offered", 1)],
       need_identical=False, timeout=240, minutes=4),
+    # the arena in the shooting range: preset weapon in memory only (back before any save), frags, own weapon back
+    S("arena", "-coop_scenario arena", "-coop_scenario arena",
+      done=[("A", r"arena test: done"), ("B", r"arena test: done")],
+      checks=[("A", r"host weapon now ak_74 swapped=1", 1), ("A", r"after a save swapped=0", 1),
+              ("A", r"end, weapon back=1 frags guest=[1-9]\d* hp full=1", 1), ("A", r"arena: frag by slot 1 on me", 1)],
+      need_identical=False, timeout=240, minutes=4),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),
