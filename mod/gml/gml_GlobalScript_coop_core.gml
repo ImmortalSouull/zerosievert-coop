@@ -185,11 +185,97 @@ function coop_test_mode()
 function coop_save_root_override(_root)
 {
     var _c = coop();
-    if (_c.test_mode)
+    _c.save_root_base = _c.test_mode ? _c.save_root : _root;
+    return coop_profile_root();
+}
+
+// ---- separate co-op character (2.0.0 item 38) ----
+// Optional: the save slots live in <save root>/coop_profile/ (three slots of their own), so co-op never touches the
+// usual characters. Steam Cloud is off while it is on (the cloud knows one set of slot files: it would overwrite
+// the usual slots). Game settings are copied over the first time. Switched in the main menu (co-op panel).
+
+function coop_profile_on()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "profile_on"))
     {
-        return _c.save_root;
+        ini_open("coop_local.ini");
+        _c.profile_on = ini_read_real("coop", "coop_profile", 0);
+        ini_close();
     }
-    return _root;
+    return _c.profile_on;
+}
+
+function coop_profile_root()
+{
+    var _c = coop();
+    var _base = variable_struct_exists(_c, "save_root_base") ? _c.save_root_base : global.database_savedata_root;
+    if (!coop_profile_on())
+    {
+        return _base;
+    }
+    var _r = _base + "coop_profile/";
+    if (!directory_exists(_r))
+    {
+        directory_create(_r);
+    }
+    var _copy = ["settings_shared.json", "settings.json"];
+    for (var _i = 0; _i < array_length(_copy); _i++)
+    {
+        if (!file_exists(_r + _copy[_i]) && file_exists(_base + _copy[_i]))
+        {
+            file_copy(_base + _copy[_i], _r + _copy[_i]);
+        }
+    }
+    return _r;
+}
+
+// Main menu only: switch, point the save databases at the other root and refresh the slot list.
+function coop_profile_toggle()
+{
+    var _c = coop();
+    if (room != r_menu)
+    {
+        return false;
+    }
+    if (coop_profile_on())
+    {
+        // back to the usual saves only through a restart: the start-up Steam Cloud sync must run for them first
+        // (switching here would use the local files, maybe older than the cloud, and push them up)
+        _c.profile_off_pending = !(variable_struct_exists(_c, "profile_off_pending") && _c.profile_off_pending);
+        ini_open("coop_local.ini");
+        ini_write_real("coop", "coop_profile", _c.profile_off_pending ? 0 : 1);
+        ini_close();
+        coop_log("co-op character off after a restart: ", _c.profile_off_pending);
+        return true;
+    }
+    _c.profile_on = 1;
+    ini_open("coop_local.ini");
+    ini_write_real("coop", "coop_profile", 1);
+    ini_close();
+    global.database_savedata_root = coop_profile_root();
+    var _names = variable_struct_get_names(global.database_struct);
+    for (var _i = 0; _i < array_length(_names); _i++)
+    {
+        var _db = variable_struct_get(global.database_struct, _names[_i]);
+        if (is_struct(_db) && variable_struct_exists(_db, "filename") && is_string(_db.filename) && string_pos("save_shared", _db.filename) == 1)
+        {
+            _db.loaded = false;
+        }
+    }
+    try
+    {
+        with (obj_main_menu)
+        {
+            mm_init_slot_metadata();
+        }
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    coop_log("co-op character ", _c.profile_on ? "on" : "off", ", save root ", global.database_savedata_root);
+    return true;
 }
 
 function coop_is_host()

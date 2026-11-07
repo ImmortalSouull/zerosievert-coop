@@ -16,12 +16,12 @@ global.database_savedata_root = platform_user_id() + "/";
 global.database_savedata_root = coop_save_root_override(global.database_savedata_root);
 <<<END
 
-// [2] Test mode: no Steam Cloud for the test save roots (the real save is never touched).
+// [2] Test mode and the separate co-op character: no Steam Cloud (the real save is never touched).
 ### findreplace gml_GlobalScript_db_cloud_enabled
 <<<FIND
 return platform_cloud_available();
 <<<REPLACE
-return !coop_test_mode() && platform_cloud_available();
+return !coop_test_mode() && !coop_profile_on() && platform_cloud_available();
 <<<END
 
 // [3] Starts the mod: creates the persistent controller obj_coop and reads the command line.

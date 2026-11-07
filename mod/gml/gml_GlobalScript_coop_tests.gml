@@ -1704,6 +1704,20 @@ function coop_test_report_step()
     {
         coop_report_make("prune", "");
     }
+    if (_c.rt == 140)
+    {
+        // separate co-op character: on at once, off only after a restart (the shared test ini is put back)
+        var _before = global.database_savedata_root;
+        coop_panel_click("profile");
+        var _on = global.database_savedata_root;
+        coop_log("report: profile on root changed=", _on != _before, " dir=", directory_exists(_on), " settings copied=", file_exists(_on + "settings_shared.json") || !file_exists(_before + "settings_shared.json"), " cloud=", db_cloud_enabled());
+        coop_panel_click("profile");
+        var _b3 = coop_panel_buttons();
+        var _lab = "";
+        for (var _i = 0; _i < array_length(_b3); _i++) if (_b3[_i].id == "profile") _lab = _b3[_i].label;
+        coop_log("report: profile off pending, root same=", global.database_savedata_root == _on, " label ", _lab);
+        ini_open("coop_local.ini"); ini_write_real("coop", "coop_profile", 0); ini_close();
+    }
     if (_c.rt == 170)
     {
         _c.panel = true;

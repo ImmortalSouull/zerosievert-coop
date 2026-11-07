@@ -77,6 +77,10 @@ function coop_panel_buttons()
     array_push(_b, { id: "report", label: coop_t("Collect logs for a bug report", "Собрать логи для отчёта о баге") });
     if (room == r_menu)
     {
+        var _pend = variable_struct_exists(_c, "profile_off_pending") && _c.profile_off_pending;
+        array_push(_b, { id: "profile", label: _pend ? coop_t("Characters: usual saves after a game restart", "Персонажи: обычные сохранения после перезапуска игры")
+            : (coop_profile_on() ? coop_t("Characters: separate co-op saves", "Персонажи: отдельные кооп-сохранения")
+            : coop_t("Characters: your usual saves", "Персонажи: ваши обычные сохранения")) });
         array_push(_b, { id: "backups", label: coop_t("Save backups...", "Резервные копии сохранений...") });
     }
     array_push(_b, { id: "close", label: coop_t("Close [F7]", "Закрыть [F7]") });
@@ -452,6 +456,9 @@ function coop_panel_click(_id)
             break;
         case "conn":
             coop_conn_cycle();
+            break;
+        case "profile":
+            coop_profile_toggle();
             break;
         case "report":
             coop_report_collect();
