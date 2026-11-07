@@ -15,8 +15,7 @@ function coop_barq_define()
     }
     var _defs = [
         ["coop_q_bandits", coop_t("Group task: bandit sweep", "Групповое задание: зачистка банд"),
-            coop_t("Bandit gangs are getting bolder. Take your group and thin them out - 12 of them. Share the pay among you.",
-                "Бандиты совсем обнаглели. Возьмите группу и проредите их - 12 человек. Плату поделите между собой."),
+            coop_t("Bandit gangs are getting bolder. Take your group and thin them out - 12 of them. Share the pay among you.", "Бандиты совсем обнаглели. Возьмите группу и проредите их - 12 человек. Плату поделите между собой."),
             ["bandit_novice", "bandit_regular", "bandit_rookie", "bandit_intermediate", "bandit_skilled", "bandit_expert", "bandit_veteran", "bandit_master", "bandit_boss_guard"], 12, 9000, 400, coop_t("Kill bandits", "Убить бандитов")],
         ["coop_q_mutants", coop_t("Group task: mutant hunt", "Групповое задание: охота на мутантов"),
             coop_t("Ghouls are nesting too close to the tracks. Clear 8 of them together.", "Гули гнездятся слишком близко к путям. Вместе уничтожьте 8 штук."),

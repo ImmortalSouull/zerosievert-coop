@@ -137,8 +137,7 @@ function coop_report_collect()
     {
         url_open(_full);
     }
-    coop_notify(coop_t("Logs collected, the folder path is copied - send the folder with your bug report",
-        "Логи собраны, путь к папке скопирован - отправьте папку вместе с описанием бага"));
+    coop_notify(coop_t("Logs collected, the folder path is copied - send the folder with your bug report", "Логи собраны, путь к папке скопирован - отправьте папку вместе с описанием бага"));
     return _dir;
 }
 
