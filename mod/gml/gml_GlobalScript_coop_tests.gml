@@ -48,6 +48,7 @@ function coop_test_ext_step()
     coop_test_quest_step();
     coop_test_barq_step();
     coop_test_arena_step();
+    coop_test_migrate_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2790,5 +2791,30 @@ function coop_test_arena_step()
         if (_a.on && !_a.pick && !variable_struct_exists(_c, "ar_shot") && _t mod 20 == 10) { _c.ar_shot = true; screen_save("arena_" + _c.tag + ".png"); coop_log("arena test: guest weapon ", obj_player.arma_now, " at ", floor(obj_player.x), ",", floor(obj_player.y), " bullets ", instance_number(obj_bullet_parent)); }
         if (!_a.on && variable_struct_exists(_c, "ar_p") && !variable_struct_exists(_c, "ar_done")) { _c.ar_done = _t; }
         if (variable_struct_exists(_c, "ar_done") && _t == _c.ar_done + 100) coop_log("arena test: done");
+    }
+}
+
+// -coop_scenario migrate (3 players in a raid): the host quits the game; slot 1 takes the session over, slot 2
+// reconnects to it, both stay in the raid and see each other again.
+function coop_test_migrate_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "migrate" || !coop_in_raid() || !instance_exists(obj_player)) exit;
+    if (!variable_struct_exists(_c, "mg")) { _c.mg = 0; _c.mg_was = _c.slot; }
+    _c.mg++;
+    var _t = _c.mg;
+    with (obj_player) hp = hp_max;
+    if (_c.role == "host" && _c.mg_was == 0 && _t == 700 && coop_player_count() >= 3)
+    {
+        coop_log("migrate test: host quits");
+        game_end();
+    }
+    if (_c.mg_was > 0 && _c.connected && _c.slot == 0 && !variable_struct_exists(_c, "mg_host")) { _c.mg_host = _t; coop_log("migrate test: I host now (was slot ", _c.mg_was, ")"); }
+    if (_c.mg_was > 0 && _c.role == "guest" && _c.connected && variable_struct_exists(_c, "mg_lost") && !variable_struct_exists(_c, "mg_back")) { _c.mg_back = _t; coop_log("migrate test: back in, slot ", _c.slot); }
+    if (_c.mg_was > 0 && !_c.connected && !variable_struct_exists(_c, "mg_lost")) _c.mg_lost = _t;
+    var _end = variable_struct_exists(_c, "mg_host") ? _c.mg_host : (variable_struct_exists(_c, "mg_back") ? _c.mg_back : -1);
+    if (_end >= 0 && _t == _end + 900)
+    {
+        coop_log("migrate test: done players=", coop_player_count(), " puppets=", array_length(coop_puppets()), " owner me=", coop_is_world_owner(), " in raid=", coop_in_raid());
     }
 }

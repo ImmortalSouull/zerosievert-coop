@@ -1153,6 +1153,8 @@ function coop_send_roster()
         var _on = (_i == 0) || (is_struct(_p) && _p.connected);
         buffer_write(_c.send_buf, buffer_u8, _on);
         buffer_write(_c.send_buf, buffer_string, _on ? ((_i == 0) ? coop_my_name() : _p.name) : "");
+        // where the others can reach this player if the session moves to it (host migration, coop_migrate.gml)
+        buffer_write(_c.send_buf, buffer_string, (_on && _i > 0) ? ((_c.transport == "steam") ? string(_p.steam) : string(_p.ip)) : "");
     }
     coop_msg_send(true);
 }
@@ -1170,6 +1172,11 @@ function coop_net_on_roster(_b)
     {
         var _on = buffer_read(_b, buffer_u8);
         var _name = buffer_read(_b, buffer_string);
+        var _addr = buffer_read(_b, buffer_string);
+        if (_i == _c.slot)
+        {
+            _c.my_addr = _addr;
+        }
         if (_i == 0 || _i == _c.slot)
         {
             continue;
@@ -1186,6 +1193,7 @@ function coop_net_on_roster(_b)
         {
             _p.connected = true;
             _p.name = _name;
+            _p.addr = _addr;
         }
         else if (is_struct(_p))
         {
@@ -1214,10 +1222,13 @@ function coop_peer_left(_slot, _quiet)
     coop_puppet_remove_slot(_slot);
     if (_slot == 0 && _c.role == "guest")
     {
-        // the host is gone: drop the session, keep saying hello so we reconnect when it is back
+        // the host is gone: another player takes the session over (coop_migrate.gml); with nobody left keep saying
+        // hello so we reconnect when it is back
+        var _next = coop_migrate_pick();
         coop_puppet_remove_all();
         coop_on_disconnected();
         coop_guest_reset_host();
+        coop_migrate_go(_next);
         if (_was_in)
         {
             coop_down_on_player_gone();

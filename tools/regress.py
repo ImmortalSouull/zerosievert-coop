@@ -308,6 +308,12 @@ SCENARIOS = [
       checks=[("A", r"host weapon now ak_74 swapped=1", 1), ("A", r"after a save swapped=0", 1),
               ("A", r"end, weapon back=1 frags guest=[1-9]\d* hp full=1", 1), ("A", r"arena: frag by slot 1 on me", 1)],
       need_identical=False, timeout=240, minutes=4),
+    # host migration: the host quits mid-raid, slot 1 hosts, slot 2 reconnects, the raid goes on
+    S("migrate", "-coop_autoraid 1 -coop_scenario migrate", "-coop_scenario migrate",
+      done=[("BC", r"migrate test: done players=2 puppets=1 owner me=1"), ("BC", r"migrate test: done players=2 puppets=1 owner me=0")],
+      checks=[("A", r"migrate test: host quits", 1), ("BC", r"migrate: the host left, successor slot 1 \(me\)", 1),
+              ("BC", r"migrate: the host left, successor slot 1 at 127.0.0.1", 1), ("BC", r"I host now", 1), ("BC", r"back in, slot 1", 1)],
+      need_identical=False, timeout=420, minutes=7, players=3),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),
