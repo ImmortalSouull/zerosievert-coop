@@ -1289,3 +1289,14 @@ if (coop_spectate_step(id)) exit;
 ### prepend gml_Object_obj_exit_screen_Draw_64
 if (coop_spectating()) exit;
 <<<END
+
+// [143] The co-op radio item (bought from the barman only) is added to the game's data after every gamedata load.
+### findreplace gml_GlobalScript_gamedata_initialize_and_load
+<<<FIND
+    gamedata_load_train_skin();
+}
+<<<REPLACE
+    gamedata_load_train_skin();
+    coop_radio_inject();
+}
+<<<END

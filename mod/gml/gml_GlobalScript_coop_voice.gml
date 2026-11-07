@@ -48,7 +48,12 @@ function coop_voice_mode_label()
 function coop_voice_channel_label()
 {
     var _ch = coop_voice().channel;
-    return (_ch == 0) ? coop_t("off", "выключена") : coop_tf("channel {0}", "частота {0}", _ch);
+    var _l = (_ch == 0) ? coop_t("off", "выключена") : coop_tf("channel {0}", "частота {0}", _ch);
+    if (_ch != 0 && instance_exists(obj_player) && !coop_radio_have())
+    {
+        _l += coop_t(" (you need a radio - the barman sells it)", " (нужна рация - продаёт бармен)");
+    }
+    return _l;
 }
 
 // ---- sending ----
@@ -139,7 +144,7 @@ function coop_voice_send()
     var _c = coop();
     var _v = coop_voice();
     var _b = coop_msg_begin(COOP_MSG_VOICE);
-    buffer_write(_b, buffer_u8, _v.channel);
+    buffer_write(_b, buffer_u8, coop_radio_channel());
     buffer_write(_b, buffer_u16, _v.out_n);
     buffer_copy(_v.out, 0, _v.out_n, _b, buffer_tell(_b));
     buffer_seek(_b, buffer_seek_relative, _v.out_n);
@@ -224,7 +229,7 @@ function coop_voice_gain(_k)
     {
         _g = 1; // both in menus: plain voice
     }
-    if (is_struct(_s) && _s.ch != 0 && _s.ch == _v.channel)
+    if (is_struct(_s) && _s.ch != 0 && _s.ch == coop_radio_channel())
     {
         _g = max(_g, 0.8); // same radio channel: any distance
     }
@@ -277,4 +282,73 @@ function coop_ulaw_decode(_u)
     var _mant = _u & 15;
     var _m = (((_mant << 3) + 132) << _exp) - 132;
     return _sign ? -_m : _m;
+}
+
+// ---- the radio item (user's design: only bought, never found) ----
+// "coop_radio" is added to the game's item data after every gamedata load (hook [143]): a barter item with the
+// game's transmitter sprite, sold by the barman (the "bar" trader), in no loot table. Radio channels only work while
+// the radio is in your inventory - on both ends.
+#macro COOP_RADIO_ITEM "coop_radio"
+
+function coop_radio_inject()
+{
+    try
+    {
+        if (!variable_global_exists("item_data") || !variable_struct_exists(global.item_data, "smartphone"))
+        {
+            exit;
+        }
+        if (!variable_struct_exists(global.item_data, COOP_RADIO_ITEM))
+        {
+            var _it = json_parse(json_stringify(variable_struct_get(global.item_data, "smartphone")));
+            _it.basic.name = "coop.item.radio";
+            _it.basic.description = "coop.item.radio.desc";
+            _it.basic.sprite_ingame = "s_item_transmitter";
+            _it.basic.sprite_inv = "s_item_transmitter";
+            _it.basic.value = 15000;
+            _it.basic.weight = 0.4;
+            _it.basic.stack_max = 1;
+            variable_struct_set(global.item_data, COOP_RADIO_ITEM, _it);
+            array_push(global.item_data_array, COOP_RADIO_ITEM);
+        }
+        if (variable_global_exists("trader_data") && variable_struct_exists(global.trader_data, "bar"))
+        {
+            var _items = variable_struct_get(global.trader_data, "bar").items;
+            var _have = false;
+            for (var _i = 0; _i < array_length(_items); _i++)
+            {
+                if (_items[_i].item == COOP_RADIO_ITEM) _have = true;
+            }
+            if (!_have) array_push(_items, { item: COOP_RADIO_ITEM, quantity: 3 });
+        }
+        coop_log("radio item added (sold by the barman)");
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+}
+
+function coop_radio_have()
+{
+    try
+    {
+        return instance_exists(obj_player) && inventory_item_exists(COOP_RADIO_ITEM);
+    }
+    catch (_e) { }
+    return false;
+}
+
+// The channel we really use: the setting, if a radio is in the inventory.
+function coop_radio_channel()
+{
+    var _v = coop_voice();
+    return coop_radio_have() ? _v.channel : 0;
+}
+
+function coop_radio_sold()
+{
+    var _items = variable_struct_get(global.trader_data, "bar").items;
+    for (var _i = 0; _i < array_length(_items); _i++) if (_items[_i].item == COOP_RADIO_ITEM) return true;
+    return false;
 }

@@ -2482,12 +2482,13 @@ function coop_test_voice_step()
         var _h = coop_puppet_of(0);
         if (_t == 150 && instance_exists(_h)) { obj_player.x = _h.x + 40; obj_player.y = _h.y; _c.voice_test_tone = 0; }
         if (_t == 450 && instance_exists(_h)) { obj_player.x = _h.x + 1000; }
-        if (_t == 750) _v.channel = 3;
+        if (_t == 750) { _v.channel = 3; inventory_add_item(COOP_RADIO_ITEM, 1); coop_log("voice test: guest radio=", coop_radio_have()); }
         if (_t == 1100) { variable_struct_remove(_c, "voice_test_tone"); coop_log("voice test: done"); }
     }
     else
     {
-        if (_t == 750) _v.channel = 3;
+        if (_t == 750) _v.channel = 3; // no radio in the host's inventory yet: channel 3 does nothing
+        if (_t == 850) { coop_log("voice test: host without radio gain=", coop_voice_gain(1)); inventory_add_item(COOP_RADIO_ITEM, 1); coop_log("voice test: bar sells radio=", coop_radio_sold(), " name=", item_get_name(COOP_RADIO_ITEM)); }
         if (_t == 400 || _t == 700 || _t == 1000)
         {
             var _s = _v.spk[1];
