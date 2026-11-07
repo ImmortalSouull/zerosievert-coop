@@ -21,6 +21,12 @@ function coop_panel_buttons()
     {
         return coop_panel_browser_buttons();
     }
+    if (_c.panel_page == "visits")
+    {
+        var _vl = coop_panel_visit_buttons();
+        array_push(_vl, { id: "page_main", label: coop_t("Back", "Назад") });
+        return _vl;
+    }
     if (_c.role == "none")
     {
         array_push(_b, { id: "steam_host", label: coop_t("Host via Steam (invite a friend)", "Создать игру в Steam (пригласить друга)") });
@@ -42,13 +48,15 @@ function coop_panel_buttons()
         }
         else if (coop_hub_ready())
         {
-            var _ps = coop_peers();
-            for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++)
+            // one friend: a direct button; more (up to 7): a page of their own
+            var _vb = coop_panel_visit_buttons();
+            if (array_length(_vb) == 1)
             {
-                if (coop_visit_can(_k))
-                {
-                    array_push(_b, { id: "visit_" + string(_k), label: coop_tf("Visit {0}'s bunker", "В гости к {0}", _ps[_k].name) });
-                }
+                array_push(_b, _vb[0]);
+            }
+            else if (array_length(_vb) > 1)
+            {
+                array_push(_b, { id: "visits", label: coop_t("Visit a friend's bunker...", "В гости к другу...") });
             }
         }
         if (_c.role == "host" && _c.transport == "steam")
@@ -71,6 +79,20 @@ function coop_panel_buttons()
     }
     array_push(_b, { id: "close", label: coop_t("Close [F7]", "Закрыть [F7]") });
     return _b;
+}
+
+function coop_panel_visit_buttons()
+{
+    var _out = [];
+    var _ps = coop_peers();
+    for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++)
+    {
+        if (coop_visit_can(_k))
+        {
+            array_push(_out, { id: "visit_" + string(_k), label: coop_tf("Visit {0}'s bunker", "В гости к {0}", _ps[_k].name) });
+        }
+    }
+    return _out;
 }
 
 function coop_panel_title()
@@ -262,6 +284,12 @@ function coop_panel_click(_id)
     {
         coop_visit_end("panel");
         _c.panel = false;
+        exit;
+    }
+    if (_id == "visits")
+    {
+        _c.panel_page = "visits";
+        _c.panel_sel = 0;
         exit;
     }
     if (_id == "lobby" || _id == "page_main")

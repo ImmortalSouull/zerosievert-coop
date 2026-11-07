@@ -12,7 +12,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORK = os.path.join(os.path.dirname(ROOT), "zerosievert-coop-work")
 SAVES = os.path.join(os.environ["LOCALAPPDATA"], "ZERO_Sievert")
 BASH = r"C:\Program Files\Git\bin\bash.exe"
-LOGS = {k: os.path.join(SAVES, f"coop_coop{k}.log") for k in "ABCD"}
+LOGS = {k: os.path.join(SAVES, f"coop_coop{k}.log") for k in "ABCDEFGH"}
 
 
 def S(name, host, guest, done, checks, minutes=4, timeout=260, custom=None, need_identical=True, tags="", players=2):
@@ -95,7 +95,7 @@ def livechest_ok(logs):
 def handoff_ok(logs):
     """Whoever got slot 2 killed NPCs after the host left and got the credit from the new owner (slot 1)."""
     by_slot = {}
-    for k in "ABCD":
+    for k in "ABCDEFGH":
         m = re.search(r"handoff: t=\d+ slot (\d)", logs.get(k, ""))
         if m:
             by_slot[int(m.group(1))] = k
@@ -220,6 +220,14 @@ SCENARIOS = [
               + [("B", r"ping mark removed at", 1)] + [(k, r"ping mark removed by slot 1", 1) for k in "ACD"],
       custom=lambda logs: None if (re.search(r"received .* from slot 3", logs["A"]) and any(re.search(r"gave .* to slot 0", logs[k]) for k in "BCD")) else "item give slot 3 -> host failed",
       timeout=420, minutes=7, players=4),
+    # eight players (2.0.0): the quad scenario with everybody
+    S("octo", "-coop_autoraid 1 -coop_scenario quad -coop_fps 60", "-coop_scenario quad -coop_fps 60",
+      done=[(k, r"quad: done") for k in "ABCDEFGH"],
+      checks=[(k, r"players=8 puppets=7", 1) for k in "ABCDEFGH"] + [("A", r"maps identical with partner", 7),
+              ("A", r"revived partner .* slot 2", 1), ("BCDEFGH", r"kill credited", 1)]
+              + [(k, r"ping mark from slot", 7) for k in "ABCDEFGH"],
+      custom=lambda logs: None if (re.search(r"received .* from slot 7", logs["A"]) and any(re.search(r"gave .* to slot 0", logs[k]) for k in "BCDEFGH")) else "item give slot 7 -> host failed",
+      timeout=600, minutes=9, players=8),
     S("handoff", "-coop_autoraid 1 -coop_scenario handoff -coop_fps 60", "-coop_scenario handoff -coop_fps 60",
       done=[(k, r"handoff: done") for k in "BCD"],
       checks=[(k, r"raid owner: slot 1", 1) for k in "BCD"] + [("A", r"handoff: host leaves", 1)], custom=handoff_ok,
@@ -355,7 +363,7 @@ def run(sc, outdir, extra):
     problems = []
     if status != "done":
         problems.append(status)
-    keys = "ABCD"[:sc["players"]]
+    keys = "ABCDEFGH"[:sc["players"]]
     for k in keys:
         for line in logs[k].splitlines():
             if "CRASH" in line or "ERROR" in line or "NPC DRIFT" in line:

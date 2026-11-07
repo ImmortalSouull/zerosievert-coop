@@ -149,8 +149,9 @@ function coop_mark_on_message(_b)
 // Colour of a player's marker, the same as on the PDA map.
 function coop_slot_colour(_slot)
 {
-    static _cols = [c_lime, c_aqua, c_yellow, c_orange];
-    return _cols[clamp(_slot, 0, 3)];
+    // 8 players: well apart in hue and brightness
+    static _cols = [c_lime, c_aqua, c_yellow, c_orange, make_colour_rgb(255, 110, 200), make_colour_rgb(170, 130, 255), c_white, make_colour_rgb(255, 80, 80)];
+    return _cols[clamp(_slot, 0, array_length(_cols) - 1)];
 }
 
 // Draw GUI (UI space, set by coop_draw_gui).
