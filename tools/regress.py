@@ -291,6 +291,11 @@ SCENARIOS = [
       checks=[("A", r"event: offered type", 1), ("A", r"survivor moved [0-2] px", 1), ("B", r"event: offered by the owner", 1), ("A", r"event: slot 1 took the job", 1),
               ("A", r"event: wave 1/", 1), ("A", r"event: commander hp \d+", 1), ("A", r"event: done, reward bag with [1-9] stacks", 1), ("B", r"event: done \(owner\)", 1),
               ("B", r"container spawned from partner .* tipo discard", 1)], timeout=420, minutes=7),
+    # shared quest progress: both have a kill task, kills of either count for both, rewards split by the work
+    S("quest", "-coop_autoraid 1 -coop_scenario quest", "-coop_scenario quest",
+      done=[("A", r"quest test: done"), ("B", r"quest test: done")],
+      checks=[("A", r"quest test: progress=5 me=2 others=3 money=400", 1), ("B", r"quest test: progress=5 me=3 others=2 money=600", 1),
+              ("A", r"kill of .* counted for", 1)], timeout=360, minutes=6),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

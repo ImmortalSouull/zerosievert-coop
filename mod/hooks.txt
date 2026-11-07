@@ -1309,3 +1309,32 @@ if (coop_spectating()) exit;
     var _loot = inventory_find_loot(arg0);
     if (coop_radio_quick_use(_loot)) exit;
 <<<END
+
+// [145] Shared quest progress (coop_quests.gml): our kill also counts for teammates with the same kill objective.
+### findreplace gml_GlobalScript_kill_check_quest
+<<<FIND
+        skills_update_masteries();
+<<<REPLACE
+        skills_update_masteries();
+        coop_quest_on_kill(arg0);
+<<<END
+
+// [146] Shared quest progress: the turn-in reward is split by each player's share of the work.
+### findreplace gml_GlobalScript_npc_dialogue_quest_turn_in
+<<<FIND
+    var _rep_reward = round(_quest_data.experience * global.sk_k[UnknownEnum.Value_25]);
+    var _money_reward = round(_quest_data.money * global.sk_k[UnknownEnum.Value_25] * difficulty_get("pro_quest_money"));
+<<<REPLACE
+    var _rep_reward = coop_quest_reward(_quest_id, round(_quest_data.experience * global.sk_k[UnknownEnum.Value_25]));
+    var _money_reward = coop_quest_reward(_quest_id, round(_quest_data.money * global.sk_k[UnknownEnum.Value_25] * difficulty_get("pro_quest_money")));
+    _reward_item_quantity = max(1, coop_quest_reward(_quest_id, _reward_item_quantity));
+<<<END
+
+// [147] ... and its work counts are done with.
+### findreplace gml_GlobalScript_npc_dialogue_quest_turn_in
+<<<FIND
+    global.player_money += _money_reward;
+<<<REPLACE
+    global.player_money += _money_reward;
+    coop_quest_turned_in(_quest_id);
+<<<END

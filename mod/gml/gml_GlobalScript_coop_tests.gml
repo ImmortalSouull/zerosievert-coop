@@ -45,6 +45,7 @@ function coop_test_ext_step()
     coop_test_voice_step();
     coop_test_radio_step();
     coop_test_event_step();
+    coop_test_quest_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2605,4 +2606,78 @@ function coop_test_event_step()
     }
     if (_e.state == "done" && !variable_struct_exists(_c, "ev_done")) { _c.ev_done = _c.evt; }
     if (variable_struct_exists(_c, "ev_done") && _c.evt == _c.ev_done + 240) coop_log("event test: done");
+}
+
+// -coop_scenario quest (item 8): both have the same kill task (a test quest: 20 kills of the humans on this map). The
+// guest kills 3 (credited by the host, the owner), the host kills 2: each machine counts both, and the reward shares
+// are 3/5 and 2/5.
+function coop_test_quest_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "quest" || !coop_shared_ready() || !instance_exists(obj_player)) exit;
+    if (!variable_struct_exists(_c, "qt2")) { _c.qt2 = 0; _c.q_kills = 0; }
+    _c.qt2++;
+    var _t = _c.qt2;
+    with (obj_player) hp = hp_max;
+    if (_t == 120)
+    {
+        var _ids = [];
+        instance_activate_object(obj_npc_parent);
+        with (obj_npc_parent)
+        {
+            if (object_is_ancestor(object_index, obj_npc_human_parent) && variable_instance_exists(id, "npc_id") && !array_contains(_ids, npc_id)) array_push(_ids, npc_id);
+        }
+        variable_struct_set(global.quest_database, "coop_test_quest", { objective: [{ type: "kill", map: -1, array_kill: _ids, amount_max: 20 }], money: 1000, experience: 100, reputation: 0 });
+        for (var _i = 0; _i < 30; _i++)
+        {
+            if (global.quest_state[_i].id == "")
+            {
+                var _q = new class_quest_state();
+                _q.id = "coop_test_quest";
+                _q.state = "active";
+                global.quest_state[_i] = _q;
+                _c.q_slot = _i;
+                break;
+            }
+        }
+        coop_log("quest test: task with ", array_length(_ids), " npc types");
+    }
+    var _want = (_c.role == "guest") ? 3 : 2;
+    var _qw = coop_qwork();
+    _c.q_kills = variable_struct_exists(_qw, "coop_test_quest") ? variable_struct_get(_qw, "coop_test_quest").me : 0;
+    if (_t > 200 && _t mod 20 == 0 && _c.q_kills < _want && !variable_struct_exists(_c, "q_wait"))
+    {
+        // kill one human: the guest by shooting (the owner credits it), the host directly
+        instance_activate_object(obj_npc_parent);
+        var _best = -4;
+        var _bd = infinity;
+        with (obj_npc_parent)
+        {
+            if (hp > 1 && object_is_ancestor(object_index, obj_npc_human_parent) && !(variable_instance_exists(id, "coop_event_giver")))
+            {
+                var _d = point_distance(x, y, obj_player.x, obj_player.y);
+                if (_d < _bd) { _bd = _d; _best = id; }
+            }
+        }
+        if (instance_exists(_best))
+        {
+            obj_player.x = _best.x - 40;
+            obj_player.y = _best.y;
+            var _tg = _best;
+            with (obj_player)
+            {
+                if (item_exists(arma_now) && item_get_category(arma_now) == "weapon") scr_shoot(point_direction(x, y, _tg.x, _tg.y), 1, 999, 0);
+            }
+        }
+    }
+    if (_t == 1400)
+    {
+        var _s = global.quest_state[_c.q_slot];
+        var _w = coop_qwork();
+        var _e = variable_struct_exists(_w, "coop_test_quest") ? variable_struct_get(_w, "coop_test_quest") : { me: 0, others: 0 };
+        coop_log("quest test: progress=", _s.amount_now[0], " me=", _e.me, " others=", _e.others, " money=", coop_quest_reward("coop_test_quest", 1000));
+        global.quest_state[_c.q_slot] = new class_quest_state();
+        coop_quest_turned_in("coop_test_quest");
+        coop_log("quest test: done");
+    }
 }
