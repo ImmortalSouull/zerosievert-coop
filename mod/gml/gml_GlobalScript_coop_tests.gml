@@ -34,6 +34,7 @@ function coop_test_ext_step()
     coop_test_ff_step();
     coop_test_kick_step();
     coop_test_extract_step();
+    coop_test_tutorial_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2038,4 +2039,17 @@ function coop_test_extract_step()
         obj_player.x = _ex + 4;
         obj_player.y = _ey + 10;
     }
+}
+
+// -coop_scenario tutorial (1 window, main menu): the tutorial opens by itself; both pages are shot.
+function coop_test_tutorial_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "tutorial" || room != r_menu) exit;
+    if (!variable_struct_exists(_c, "tt")) _c.tt = 0;
+    _c.tt++;
+    if (_c.tt == 100) { coop_log("tutorial: panel=", _c.panel, " page=", _c.panel_page); screen_save("tutorial_1.png"); }
+    if (_c.tt == 110) coop_panel_click("help2");
+    if (_c.tt == 140) { screen_save("tutorial_2.png"); coop_panel_click("page_main"); }
+    if (_c.tt == 150) { coop_log("tutorial: closed page=", _c.panel_page); coop_log("tutorial: done"); }
 }

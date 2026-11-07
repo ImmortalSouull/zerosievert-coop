@@ -21,6 +21,10 @@ function coop_panel_buttons()
     {
         return coop_panel_browser_buttons();
     }
+    if (_c.panel_page == "help" || _c.panel_page == "help2")
+    {
+        return coop_panel_help_buttons(_c.panel_page == "help2");
+    }
     if (_c.panel_page == "partners")
     {
         return coop_panel_partner_buttons();
@@ -79,6 +83,7 @@ function coop_panel_buttons()
     }
     array_push(_b, { id: "settings", label: coop_t("Settings...", "Настройки...") });
     array_push(_b, { id: "partners", label: coop_t("Raids with friends...", "Рейды с друзьями...") });
+    array_push(_b, { id: "help", label: coop_t("How co-op works...", "Как играть вместе...") });
     array_push(_b, { id: "report", label: coop_t("Collect logs for a bug report", "Собрать логи для отчёта о баге") });
     if (room == r_menu)
     {
@@ -140,6 +145,32 @@ function coop_panel_partner_buttons()
     return _b;
 }
 
+// Pages "help"/"help2": the short tutorial (opened by itself once, on the first start with the mod).
+function coop_panel_help_buttons(_second)
+{
+    var _b = [];
+    if (!_second)
+    {
+        array_push(_b, { id: "none", label: coop_t("F7 - this panel: host a game, invite, join, settings", "F7 - эта панель: создать игру, пригласить, подключиться, настройки") });
+        array_push(_b, { id: "none", label: coop_t("Enter - chat,  Z (hold) - command wheel", "Enter - чат,  Z (удерживать) - колесо команд") });
+        array_push(_b, { id: "none", label: coop_t("Middle mouse button - mark a spot (again - remove it)", "Средняя кнопка мыши - метка (ещё раз - убрать)") });
+        array_push(_b, { id: "none", label: coop_t("X - give an item to the nearest teammate", "X - передать предмет ближайшему напарнику") });
+        array_push(_b, { id: "none", label: coop_t("I - look at the nearest teammate's gear", "I - посмотреть снаряжение ближайшего напарника") });
+        array_push(_b, { id: "help2", label: coop_t("Next", "Дальше") });
+    }
+    else
+    {
+        array_push(_b, { id: "none", label: coop_t("Raid: the host takes the train, a zone appears next to it", "Рейд: хост садится в поезд, рядом появляется зона") });
+        array_push(_b, { id: "none", label: coop_t("Who stands in the zone when the timer ends goes along", "Кто стоит в зоне, когда кончится таймер, - едет с ним") });
+        array_push(_b, { id: "none", label: coop_t("The others can join the running raid any time", "Остальные могут присоединиться к рейду в любой момент") });
+        array_push(_b, { id: "none", label: coop_t("Lethal damage downs you: a teammate revives you with E", "Смертельный урон - вы ранены: напарник поднимает вас на E") });
+        array_push(_b, { id: "none", label: coop_t("Extraction waits for the group (10 s), alone also works", "Эвакуация ждёт группу (10 с), уйти одному тоже можно") });
+        array_push(_b, { id: "help", label: coop_t("Back", "Назад") });
+    }
+    array_push(_b, { id: "page_main", label: coop_t("Close tutorial", "Закрыть обучение") });
+    return _b;
+}
+
 function coop_panel_title()
 {
     switch (coop().panel_page)
@@ -148,6 +179,8 @@ function coop_panel_title()
         case "lobby": return coop_t("PLAYERS AND LOBBY", "ИГРОКИ И ЛОББИ");
         case "settings": return coop_t("CO-OP SETTINGS", "НАСТРОЙКИ КООПЕРАТИВА");
         case "partners": return coop_t("RAIDS WITH FRIENDS", "РЕЙДЫ С ДРУЗЬЯМИ");
+        case "help": return coop_t("HOW CO-OP WORKS (1/2)", "КАК ИГРАТЬ ВМЕСТЕ (1/2)");
+        case "help2": return coop_t("HOW CO-OP WORKS (2/2)", "КАК ИГРАТЬ ВМЕСТЕ (2/2)");
         case "browser": return coop_t("OPEN GAMES", "ОТКРЫТЫЕ ИГРЫ");
     }
     return coop_t("CO-OP", "КООПЕРАТИВ");
@@ -333,6 +366,12 @@ function coop_panel_click(_id)
         _c.panel = false;
         exit;
     }
+    if (_id == "help" || _id == "help2")
+    {
+        _c.panel_page = _id;
+        _c.panel_sel = 0;
+        exit;
+    }
     if (_id == "partners")
     {
         _c.panel_page = "partners";
@@ -510,7 +549,8 @@ function coop_panel_layout()
     var _c = coop();
     var _lines = 1 + (_c.connected ? coop_player_count() : 0) + ((!variable_struct_exists(_c, "panel_page") || _c.panel_page == "main") ? array_length(coop_files_state().diffs) : 0);
     var _nb = array_length(coop_panel_buttons());
-    var _w = 760;
+    // the tutorial lines are long (and longer in other languages)
+    var _w = (variable_struct_exists(_c, "panel_page") && string_copy(_c.panel_page, 1, 4) == "help") ? 1300 : 760;
     var _x1 = COOP_GW / 2 - _w / 2;
     var _btn_h = 46;
     var _h = 66 + _lines * 34 + 16 + _nb * (_btn_h + 8) + ((coop_update_text() != "") ? 50 : 10);
@@ -629,6 +669,12 @@ function coop_panel_draw()
     {
         var _by = _l.btn_y0 + _i * (_l.btn_h + 8);
         var _sel = variable_struct_exists(_c, "panel_sel") && _c.panel_sel == _i;
+        if (_btn[_i].id == "none")
+        {
+            // an information line, not a button
+            coop_ui_text(_cx, _by + _l.btn_h / 2, coop_ui_fit(_btn[_i].label, _l.x2 - _l.x1 - 60), COOP_C_TEXT);
+            continue;
+        }
         coop_ui_slot(_l.x1 + 24, _by, _l.x2 - 24, _by + _l.btn_h, _sel, 0.85);
         coop_ui_text(_cx, _by + _l.btn_h / 2, coop_ui_fit(_btn[_i].label, _l.x2 - _l.x1 - 80), _sel ? COOP_C_KEY : COOP_C_TEXT);
     }
@@ -702,4 +748,26 @@ function coop_panel_blocks_game()
     var _c = global.coop_state;
     // the F7 panel or the chat line (coop_chat.gml) has the keyboard
     return (variable_struct_exists(_c, "panel") && _c.panel) || (variable_struct_exists(_c, "chat") && _c.chat.open);
+}
+
+// obj_coop Step: the tutorial opens by itself once (first start of the mod, main menu).
+function coop_tutorial_step()
+{
+    var _c = coop();
+    if (variable_struct_exists(_c, "tutorial_checked") || room != r_menu || (_c.test_mode && _c.scenario != "tutorial"))
+    {
+        exit;
+    }
+    _c.tutorial_checked = true;
+    ini_open("coop_local.ini");
+    var _seen = ini_read_real("coop", "tutorial_seen", 0);
+    if (!_c.test_mode) ini_write_real("coop", "tutorial_seen", 1); // the test windows share this ini with real play
+    ini_close();
+    if (!_seen || (_c.test_mode && _c.scenario == "tutorial"))
+    {
+        _c.panel = true;
+        _c.panel_page = "help";
+        _c.panel_sel = 0;
+        coop_log("tutorial opened");
+    }
 }
