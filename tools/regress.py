@@ -17,7 +17,55 @@ LOGS = {k: os.path.join(SAVES, f"coop_coop{k}.log") for k in "ABCDEFGH"}
 
 def S(name, host, guest, done, checks, minutes=4, timeout=260, custom=None, need_identical=True, tags="", players=2):
     return dict(name=name, host=host, guest=guest, done=done, checks=checks, minutes=minutes,
-                timeout=timeout, custom=custom, need_identical=need_identical, tags=tags, players=players)
+                timeout=timeout, custom=custom, need_identical=need_identical, tags=tags, players=players,
+                bystand_from=None)
+
+
+def with_bystanders(sc, n):
+    """"name@N": the same scenario with extra players (scenario bystand) up to N players in the session."""
+    v = dict(sc)
+    v["name"] = f"{sc['name']}@{n}"
+    v["players"] = n
+    v["bystand_from"] = sc["players"]
+    v["timeout"] = sc["timeout"] + 25 * (n - sc["players"])
+    v["minutes"] = sc["minutes"] + 2
+    v["tags"] = "variant"
+    return v
+
+
+def quad_n(n):
+    """The group scenario (see each other, maps, revive, kill credit, pings, give) with n players."""
+    L = "ABCDEFGH"[:n]
+    last = n - 1
+    return S(f"quad{n}", "-coop_autoraid 1 -coop_scenario quad -coop_fps 60", "-coop_scenario quad -coop_fps 60",
+             done=[(k, r"quad: done") for k in L],
+             checks=[(k, rf"players={n} puppets={n - 1}", 1) for k in L] + [("A", r"maps identical with partner", n - 1),
+                     ("A", r"revived partner .* slot 2", 1), (L[1:], r"kill credited", 1)]
+                     + [(k, r"ping mark from slot", n - 1) for k in L],
+             custom=lambda logs: None if (re.search(rf"received .* from slot {last}", logs["A"]) and any(re.search(r"gave .* to slot 0", logs[k]) for k in L[1:])) else f"item give slot {last} -> host failed",
+             timeout=300 + 40 * n, minutes=5 + n // 2, players=n, tags="variant")
+
+
+def handoff_n(n):
+    """The host extracts, slot 1 takes the raid's world over, slot 2 keeps getting credit (n players)."""
+    L = "ABCDEFGH"[:n]
+    return S(f"handoff{n}", "-coop_autoraid 1 -coop_scenario handoff -coop_fps 60", "-coop_scenario handoff -coop_fps 60",
+             done=[(k, r"handoff: done") for k in L[1:]],
+             checks=[(k, r"raid owner: slot 1", 1) for k in L[1:]] + [("A", r"handoff: host leaves", 1)], custom=handoff_ok,
+             timeout=360 + 40 * n, minutes=6 + n // 2, players=n, tags="variant")
+
+
+def resolve(name):
+    """A scenario by name, also quad<N> / handoff<N> and "<scenario>@<N>"."""
+    m = re.fullmatch(r"(quad|handoff)([3-8])", name)
+    if m:
+        return (quad_n if m.group(1) == "quad" else handoff_n)(int(m.group(2)))
+    if "@" in name:
+        base, n = name.split("@")
+        for sc in SCENARIOS:
+            if sc["name"] == base:
+                return with_bystanders(sc, int(n))
+    return None
 
 
 def chest_md5_equal(logs):
@@ -216,7 +264,7 @@ SCENARIOS = [
     S("extract", "-coop_autoraid 1 -coop_scenario extract", "-coop_scenario extract",
       done=[("A", r"extract: done"), ("B", r"extract: done")],
       checks=[("A", r"extract: host waiting=1 max=600", 1), ("B", r"extract: slot 0 is extracting", 1),
-              ("A", r"extract: done, summaries=2", 1), ("B", r"extract: done, summaries=2 kills=[1-9]", 1),
+              ("A", r"extract: done, summaries=[2-8]", 1), ("B", r"extract: done, summaries=[2-8] kills=[1-9]", 1),
               ("A", r"summary from slot 1: kills [1-9]", 1), ("A", r"partners page SaWka S4mple: raids [1-9]\d*, revived \d+, kills [1-9]", 1)], timeout=360, minutes=6),
     # watching teammates after the final death (revive off): the camera follows the host, back to the death screen
     S("spectate", "-coop_autoraid 1 -coop_scenario spectate -coop_diff coop_revive_enabled=0", "-coop_scenario spectate",
@@ -266,7 +314,8 @@ SCENARIOS = [
     S("voice", "-coop_autoraid 1 -coop_scenario voice", "-coop_scenario voice",
       done=[("A", r"voice test: done"), ("B", r"voice test: done")],
       checks=[("A", r"voice test: t=400 got=[1-9]\d* gain=1 speaking=1", 1), ("A", r"voice test: t=700 got=[1-9]\d* gain=0 ", 1),
-              ("A", r"voice test: t=1000 got=[1-9]\d* gain=0.80 speaking=1", 1),
+              # a radio only in the pocket does not transmit (talking needs it in hand - the radio test covers that)
+              ("A", r"voice test: t=1000 got=[1-9]\d* gain=0 speaking=0", 1),
               ("A", r"host without radio gain=0[^.]", 1), ("A", r"bar sells radio=1 name=", 1), ("B", r"guest radio=1", 1)], timeout=300),
     # the co-op radio: quick slot raises it, talking over the radio only in hand, heard at any distance on the channel
     S("radio", "-coop_autoraid 1 -coop_scenario radio", "-coop_scenario radio",
@@ -453,6 +502,10 @@ def run(sc, outdir, extra):
         script = "tools/test4.sh" if sc["players"] >= 3 else "tools/test2.sh"
         cmd = f'bash {script} {sc["minutes"]} "regress {sc["name"]}" "{extra} {sc["host"]}" "{extra} {sc["guest"]}"'
     env = dict(os.environ, COOP_PLAYERS=str(sc["players"]))
+    env.pop("COOP_BYSTAND_FROM", None)
+    if sc.get("bystand_from"):
+        env["COOP_BYSTAND_FROM"] = str(sc["bystand_from"])
+        env["COOP_BYSTAND_ARGS"] = f"{extra} -coop_scenario bystand -coop_fps 60"
     proc = subprocess.Popen([BASH, "-c", cmd], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
     t0 = time.time()
     status = "timeout"
@@ -508,7 +561,20 @@ def main():
         for sc in SCENARIOS:
             print(sc["name"])
         return 0
+    if args and args[0] == "--players":
+        # every scenario whose own player count is the given one (the ordered 1..8 run, tools/regress_players.sh)
+        for sc in SCENARIOS:
+            if sc["players"] == int(args[1]) and sc["tags"] != "variant":
+                print(sc["name"])
+        return 0
     pick = [sc for sc in SCENARIOS if (not args and sc["tags"] == "") or sc["name"] in args or sc["tags"] in args or "all" in args]
+    for a in args:
+        if not any(sc["name"] == a for sc in SCENARIOS):
+            v = resolve(a)
+            if v:
+                pick.append(v)
+            elif a != "all" and not any(sc["tags"] == a for sc in SCENARIOS):
+                print(f"unknown scenario {a}")
     extra = os.environ.get("COOP_REGRESS_ARGS", "")
     stamp = time.strftime("%Y%m%d-%H%M%S")
     base = os.path.join(WORK, "regress", stamp)

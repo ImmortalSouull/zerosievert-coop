@@ -50,6 +50,7 @@ function coop_test_ext_step()
     coop_test_arena_step();
     coop_test_migrate_step();
     coop_test_treefade_step();
+    coop_test_bystand_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
         exit;
@@ -1350,7 +1351,9 @@ function coop_test_aiguest_step()
             coop_log("aiguest: jumped next to ", object_get_name(_best.object_index), " ", _best.npc_id, " (", npc_get_faction(_best.npc_id), ")");
         }
     }
-    if (_t mod 600 == 190 && variable_struct_exists(_c, "ag_tg") && instance_exists(_c.ag_tg))
+    // the spot is picked again every 3 s: the enemy moves (takes cover, fights mutants) and a wall between us made the
+    // test flaky (the AI was right not to see the guest)
+    if (_t >= 190 && _t mod 180 == 10 && variable_struct_exists(_c, "ag_tg") && instance_exists(_c.ag_tg))
     {
         // trees and walls around the target are active now (culling re-activates the camera region every 20 ticks)
         var _spot = coop_test_open_spot(_c.ag_tg, 160);
@@ -2746,7 +2749,7 @@ function coop_test_barq_step()
         coop_log("barq: done");
     }
 }
-
+
 // -coop_scenario arena (bunker): the host starts the arena and takes the AK preset, the guest keeps its own gear and
 // shoots the host (frags); mid-fight the host writes a real save (its own weapon must go back first); the host ends it.
 function coop_test_arena_step()
@@ -2793,7 +2796,7 @@ function coop_test_arena_step()
         if (variable_struct_exists(_c, "ar_done") && _t == _c.ar_done + 100) coop_log("arena test: done");
     }
 }
-
+
 // -coop_scenario migrate (3 players in a raid): the host quits the game; slot 1 takes the session over, slot 2
 // reconnects to it, both stay in the raid and see each other again.
 function coop_test_migrate_step()
@@ -2825,4 +2828,37 @@ function coop_test_migrate_step()
     {
         coop_log("migrate test: done players=", coop_player_count(), " puppets=", array_length(coop_puppets()), " owner me=", coop_is_world_owner(), " in raid=", coop_in_raid());
     }
+}
+
+// -coop_scenario bystand: an extra player for the 3-8 player runs of the two-player scenarios (regress.py "name@N").
+// Joins, goes into the raid with the group (the train zone), follows the host there and never dies - so every
+// feature is checked with a full session around it, without taking part in the scripted steps.
+function coop_test_bystand_step()
+{
+    var _c = coop();
+    if (_c.scenario != "bystand" || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "bs_t")) { _c.bs_t = 0; coop_log("bystand: slot ", _c.slot, " ready"); }
+    _c.bs_t++;
+    with (obj_player) hp = hp_max;
+    // the group leaves together: walk to the exit the host is extracting at (players do the same)
+    var _xo = coop_extract().others[0];
+    if (coop_in_raid() && _c.bs_t mod 30 == 0 && is_struct(_xo) && _xo.in_zone && current_time - _xo.t < 3000)
+    {
+        with (obj_player) { x = _xo.px + 12 * max(1, coop().slot); y = _xo.py; }
+    }
+    else if (coop_in_raid() && _c.bs_t mod 60 == 0)
+    {
+        var _h = coop_puppet_of(0);
+        if (instance_exists(_h) && point_distance(obj_player.x, obj_player.y, _h.x, _h.y) > 600)
+        {
+            var _a = max(1, _c.slot) * 45;
+            var _nx = _h.x + lengthdir_x(260, _a);
+            var _ny = _h.y + lengthdir_y(260, _a);
+            with (obj_player) { if (!place_meeting(_nx, _ny, obj_solid)) { x = _nx; y = _ny; } else { x = _h.x; y = _h.y; } }
+        }
+    }
+    if (_c.bs_t mod 1800 == 0) coop_log("bystand: slot ", _c.slot, " alive, raid=", coop_in_raid(), " players=", coop_player_count());
 }
