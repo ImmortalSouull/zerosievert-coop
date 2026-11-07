@@ -1027,6 +1027,9 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_VOICE:
             coop_voice_on_msg(_b);
             break;
+        case COOP_MSG_EVENT:
+            coop_events_on_msg(_b);
+            break;
         case COOP_MSG_MARK:
             coop_mark_on_message(_b);
             break;

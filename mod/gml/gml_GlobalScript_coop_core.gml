@@ -107,6 +107,9 @@ function coop_parse_params()
             case "-coop_slot":
                 _c.autoslot = real(_v);
                 break;
+            case "-coop_event_type":
+                _c.event_type = real(_v);
+                break;
             case "-coop_autoraid":
                 _c.autoraid = real(_v);
                 break;

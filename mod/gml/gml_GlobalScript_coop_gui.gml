@@ -132,6 +132,7 @@ function coop_draw_gui()
         {
             coop_extract_draw();
             coop_ping_draw_gui();
+            coop_events_draw();
         }
         coop_summary_draw();
         coop_spectate_draw();

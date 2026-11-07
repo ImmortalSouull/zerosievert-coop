@@ -44,6 +44,7 @@ function coop_test_ext_step()
     coop_test_trade_step();
     coop_test_voice_step();
     coop_test_radio_step();
+    coop_test_event_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2569,4 +2570,38 @@ function coop_test_radio_step()
         }
         if (_t == 800) coop_log("radio test: done");
     }
+}
+
+// -coop_scenario event (the owner offers an event 8 s into the raid): both go to the survivor, the guest takes the
+// job (E); the host kills the event enemies wave by wave; at the end the reward bag appears.
+function coop_test_event_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "event" || !coop_shared_ready() || !instance_exists(obj_player)) exit;
+    var _e = coop_ev();
+    with (obj_player) hp = hp_max;
+    if (!variable_struct_exists(_c, "evt")) _c.evt = 0;
+    _c.evt++;
+    if (_e.state == "offered" || _e.state == "active")
+    {
+        // stand next to the survivor
+        if (_c.evt mod 30 == 0) { obj_player.x = _e.x + ((_c.role == "host") ? -20 : 20); obj_player.y = _e.y + 10; }
+        if (_c.role == "guest" && _e.state == "offered" && _c.evt mod 120 == 60) { _c.sim_event_e = true; coop_log("event test: guest presses E"); }
+        if (_e.state == "offered" && !variable_struct_exists(_c, "ev_shot") && _c.evt > 200) { _c.ev_shot = true; screen_save("event_" + _c.tag + ".png"); }
+        if (_c.role == "host" && _e.state == "offered" && !variable_struct_exists(_c, "ev_still") && _c.evt > 150 && instance_exists(_e.giver))
+        {
+            _c.ev_still = true;
+            coop_log("event test: survivor moved ", floor(point_distance(_e.giver.x, _e.giver.y, _e.x, _e.y)), " px");
+        }
+    }
+    // the host shoots the event enemies down (kills them on the owner)
+    if (_c.role == "host" && _e.state == "active" && _c.evt mod 90 == 0)
+    {
+        for (var _i = 0; _i < array_length(_e.npcs); _i++)
+        {
+            if (instance_exists(_e.npcs[_i]) && _e.npcs[_i].hp > 0) { _e.npcs[_i].hp = 0; break; }
+        }
+    }
+    if (_e.state == "done" && !variable_struct_exists(_c, "ev_done")) { _c.ev_done = _c.evt; }
+    if (variable_struct_exists(_c, "ev_done") && _c.evt == _c.ev_done + 240) coop_log("event test: done");
 }

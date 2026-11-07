@@ -21,6 +21,7 @@ coop_try(coop_wheel_step);
 coop_try(coop_need_step);
 coop_try(coop_trade_step);
 coop_try(coop_voice_step);
+coop_try(coop_events_step);
 coop_try(coop_summary_step);
 coop_try(coop_fallen_step);
 coop_try(coop_gear_step);

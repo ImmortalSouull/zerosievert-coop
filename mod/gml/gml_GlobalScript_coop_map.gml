@@ -95,26 +95,36 @@ function coop_minimap_mate_color(_i)
 }
 
 // Ping marks (coop_ping.gml) on the PDA map, minimap units (4 per 16 px tile).
+// (the raid event's SOS point comes after the players' marks, in red)
+function coop_minimap_event_on()
+{
+    var _e = coop_ev();
+    return _e.state == "offered" || _e.state == "active";
+}
+
 function coop_minimap_mark_count()
 {
-    return coop_in_raid() ? array_length(coop_marks()) : 0;
+    return coop_in_raid() ? array_length(coop_marks()) + (coop_minimap_event_on() ? 1 : 0) : 0;
 }
 
 function coop_minimap_mark_x(_i)
 {
     var _m = coop_marks();
+    if (_i == array_length(_m) && coop_minimap_event_on()) return (4 * coop_ev().x) div 16;
     return (_i < array_length(_m)) ? ((4 * _m[_i].x) div 16) : -infinity;
 }
 
 function coop_minimap_mark_y(_i)
 {
     var _m = coop_marks();
+    if (_i == array_length(_m) && coop_minimap_event_on()) return (4 * coop_ev().y) div 16;
     return (_i < array_length(_m)) ? ((4 * _m[_i].y) div 16) : -infinity;
 }
 
 function coop_minimap_mark_color(_i)
 {
     var _m = coop_marks();
+    if (_i == array_length(_m) && coop_minimap_event_on()) return c_red;
     return (_i < array_length(_m)) ? coop_slot_colour(_m[_i].slot) : c_white;
 }
 

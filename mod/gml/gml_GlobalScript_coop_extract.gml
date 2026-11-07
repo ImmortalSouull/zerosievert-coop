@@ -219,6 +219,7 @@ function coop_summary_reset()
     _c.summary_sent = false;
     _c.summary_raid = []; // slots that were in this raid with us
     coop_fallen_reset();
+    coop_events_reset();
     var _x = coop_extract();
     _x.mine = { in_zone: false, timer: 0, px: 0, py: 0 };
     _x.others = array_create(COOP_MAX_PLAYERS, undefined);
