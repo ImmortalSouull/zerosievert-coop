@@ -21,6 +21,16 @@ function coop_panel_buttons()
     {
         return coop_panel_browser_buttons();
     }
+    if (_c.panel_page == "welcome")
+    {
+        return [
+            { id: "none", label: coop_tf("Welcome to ZERO Sievert CO-OP v{0}!", "Добро пожаловать в ZERO Sievert CO-OP v{0}!", COOP_MOD_VERSION) },
+            { id: "none", label: coop_t("Raid together with up to 8 friends. F7 opens this panel any time.", "Ходите в рейды вместе, до 8 друзей. F7 открывает эту панель в любой момент.") },
+            { id: "help", label: coop_t("Show the tutorial", "Показать обучение") },
+            { id: "welcome_later", label: coop_t("Close (show again next time)", "Закрыть (показать при следующем запуске)") },
+            { id: "welcome_never", label: coop_t("Close and don't show again", "Закрыть и больше не показывать") }
+        ];
+    }
     if (_c.panel_page == "help" || _c.panel_page == "help2")
     {
         return coop_panel_help_buttons(_c.panel_page == "help2");
@@ -183,6 +193,7 @@ function coop_panel_title()
         case "lobby": return coop_t("PLAYERS AND LOBBY", "ИГРОКИ И ЛОББИ");
         case "settings": return coop_t("CO-OP SETTINGS", "НАСТРОЙКИ КООПЕРАТИВА");
         case "partners": return coop_t("RAIDS WITH FRIENDS", "РЕЙДЫ С ДРУЗЬЯМИ");
+        case "welcome": return coop_t("CO-OP MOD", "КООП-МОД");
         case "help": return coop_t("HOW CO-OP WORKS (1/2)", "КАК ИГРАТЬ ВМЕСТЕ (1/2)");
         case "help2": return coop_t("HOW CO-OP WORKS (2/2)", "КАК ИГРАТЬ ВМЕСТЕ (2/2)");
         case "browser": return coop_t("OPEN GAMES", "ОТКРЫТЫЕ ИГРЫ");
@@ -367,6 +378,19 @@ function coop_panel_click(_id)
     if (_id == "visit_end")
     {
         coop_visit_end("panel");
+        _c.panel = false;
+        exit;
+    }
+    if (_id == "welcome_later" || _id == "welcome_never")
+    {
+        if (_id == "welcome_never" && !_c.test_mode)
+        {
+            ini_open("coop_local.ini");
+            ini_write_real("coop", "welcome_never", 1);
+            ini_close();
+        }
+        coop_log("welcome: ", _id);
+        _c.panel_page = "main";
         _c.panel = false;
         exit;
     }
@@ -559,7 +583,7 @@ function coop_panel_layout()
     var _lines = 1 + (_c.connected ? coop_player_count() : 0) + ((!variable_struct_exists(_c, "panel_page") || _c.panel_page == "main") ? array_length(coop_files_state().diffs) : 0);
     var _nb = array_length(coop_panel_buttons());
     // the tutorial lines are long (and longer in other languages)
-    var _w = (variable_struct_exists(_c, "panel_page") && string_copy(_c.panel_page, 1, 4) == "help") ? 1300 : 760;
+    var _w = (variable_struct_exists(_c, "panel_page") && (string_copy(_c.panel_page, 1, 4) == "help" || _c.panel_page == "welcome")) ? 1300 : 760;
     var _x1 = COOP_GW / 2 - _w / 2;
     var _btn_h = 46;
     var _h = 66 + _lines * 34 + 16 + _nb * (_btn_h + 8) + ((coop_update_text() != "") ? 50 : 10);
@@ -759,7 +783,7 @@ function coop_panel_blocks_game()
     return (variable_struct_exists(_c, "panel") && _c.panel) || (variable_struct_exists(_c, "chat") && _c.chat.open);
 }
 
-// obj_coop Step: the tutorial opens by itself once (first start of the mod, main menu).
+// obj_coop Step: the welcome window (main menu) - tutorial / later / never.
 function coop_tutorial_step()
 {
     var _c = coop();
@@ -769,14 +793,14 @@ function coop_tutorial_step()
     }
     _c.tutorial_checked = true;
     ini_open("coop_local.ini");
-    var _seen = ini_read_real("coop", "tutorial_seen", 0);
-    if (!_c.test_mode) ini_write_real("coop", "tutorial_seen", 1); // the test windows share this ini with real play
+    var _never = ini_read_real("coop", "welcome_never", 0);
     ini_close();
-    if (!_seen || (_c.test_mode && _c.scenario == "tutorial"))
+    // the welcome window comes back on every start until "don't show again"
+    if (!_never || (_c.test_mode && _c.scenario == "tutorial"))
     {
         _c.panel = true;
-        _c.panel_page = "help";
+        _c.panel_page = "welcome";
         _c.panel_sel = 0;
-        coop_log("tutorial opened");
+        coop_log("welcome opened");
     }
 }

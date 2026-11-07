@@ -689,7 +689,7 @@ function coop_ui_edge_arrow(_gx, _gy, _label, _col)
 {
     // keep off the game's HUD: health/status/notes top left, ammo bottom left, hotbar bottom middle
     var _cx = clamp(_gx, 40, COOP_GW - 40);
-    var _ymin = (_cx < 800) ? 330 : 120;
+    var _ymin = (_cx < 800) ? 330 : ((_cx > COOP_GW - 360) ? max(120, coop_group_bottom() + 30) : 120);
     var _ymax = (_cx < 220) ? COOP_GH - 300 : COOP_GH - 150;
     var _cy = clamp(_gy, _ymin, _ymax);
     var _dir = point_direction(COOP_GW / 2, COOP_GH / 2, _gx, _gy);

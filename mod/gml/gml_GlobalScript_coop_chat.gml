@@ -106,6 +106,7 @@ function coop_chat_draw()
         exit;
     }
     var _ch = coop_chat();
+    if (!_ch.open && coop_hud_hidden()) exit; // aiming
     coop_ui_font(COOP_F_SMALL);
     var _x = 16;
     var _y = COOP_GH - 220;

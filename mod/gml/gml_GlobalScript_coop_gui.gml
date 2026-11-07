@@ -22,7 +22,9 @@ function coop_draw_gui()
     }
     var _x = 16;
     var _y = 128;
-    if (_c.role != "none")
+    // aiming: the co-op HUD steps aside (the game hides its own bars itself)
+    var _hide = coop_hud_hidden();
+    if (_c.role != "none" && !_hide)
     {
         // rebuilt only when something in it changes (this runs every frame)
         var _key = _c.role + _c.transport + string(_c.connected) + _c.peer_name + string(round(_c.ping)) + string(coop_player_count()) + (variable_global_exists("language_current") ? string(global.language_current) : "");
@@ -80,6 +82,11 @@ function coop_draw_gui()
             array_delete(_c.notes, _i, 1);
             continue;
         }
+        if (_hide)
+        {
+            _i++;
+            continue;
+        }
         var _nh = string_height("A") + 8;
         var _a = clamp((_n.t_end - current_time) / 400, 0, 1);
         coop_ui_rect(_x, _y, _x + string_width(_n.text) + 20, _y + _nh, c_black, 0.7 * _a);
@@ -100,7 +107,7 @@ function coop_draw_gui()
         }
         coop_ui_begin(COOP_F_SMALL);
     }
-    if (instance_exists(obj_player) && (coop_in_raid() || is_in_hub()))
+    if (instance_exists(obj_player) && (coop_in_raid() || is_in_hub()) && !_hide)
     {
         coop_puppet_draw_tag_gui();
     }
@@ -119,10 +126,14 @@ function coop_draw_gui()
     }
     if (coop_in_raid())
     {
-        coop_extract_draw();
+        if (!_hide)
+        {
+            coop_extract_draw();
+            coop_ping_draw_gui();
+        }
         coop_summary_draw();
         coop_spectate_draw();
-        coop_ping_draw_gui();
+        coop_hud_hp_draw();
         coop_give_draw_gui();
         coop_down_draw_gui();
     }

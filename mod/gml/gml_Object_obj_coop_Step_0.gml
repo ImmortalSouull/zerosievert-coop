@@ -12,6 +12,7 @@ coop_try(coop_files_step);
 coop_try(coop_files_pending_step);
 coop_try(coop_conn_step);
 coop_try(coop_status_step);
+coop_try(coop_hud_step);
 coop_try(coop_lobby_step);
 coop_try(coop_kick_step);
 coop_try(coop_chat_step);

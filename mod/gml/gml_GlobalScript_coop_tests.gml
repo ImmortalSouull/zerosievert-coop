@@ -1833,6 +1833,11 @@ function coop_test_group_step()
         }
         if (_t == 420) screen_save("wheel_seen_" + _c.tag + ".png");
         if (_t == 680) coop_gear_request(1);
+        // aiming hides the co-op HUD; a hit while aiming shows the health bar
+        if (_t >= 760 && _t <= 860) with (obj_player) aiming = true;
+        if (_t == 780) { coop_log("group: aiming hud hidden=", coop_hud_hidden()); screen_save("aim_" + _c.tag + ".png"); }
+        if (_t == 800) with (obj_player) hp -= 5;
+        if (_t == 810) { coop_log("group: hit while aiming, hp shown=", current_time - _c.hud_hit_t < 3000); screen_save("aim_hit_" + _c.tag + ".png"); }
         if (_t == 740) { screen_save("gear_" + _c.tag + ".png"); coop_gear().open = false; }
         // streamer mode: names hidden everywhere on screen (the setting is shared by the test windows: switch it back)
         if (_t == 600) { coop_streamer_toggle(); _c.panel = true; coop_log("group: streamer name ", coop_peer_name(1), " me ", coop_my_shown_name()); }
@@ -2051,10 +2056,11 @@ function coop_test_tutorial_step()
     if (!_c.test_mode || _c.scenario != "tutorial" || room != r_menu) exit;
     if (!variable_struct_exists(_c, "tt")) _c.tt = 0;
     _c.tt++;
-    if (_c.tt == 100) { coop_log("tutorial: panel=", _c.panel, " page=", _c.panel_page); screen_save("tutorial_1.png"); }
-    if (_c.tt == 110) coop_panel_click("help2");
+    if (_c.tt == 100) { coop_log("tutorial: panel=", _c.panel, " page=", _c.panel_page); screen_save("tutorial_0.png"); coop_panel_click("help"); }
+    if (_c.tt == 110) { screen_save("tutorial_1.png"); coop_panel_click("help2"); }
     if (_c.tt == 140) { screen_save("tutorial_2.png"); coop_panel_click("page_main"); }
-    if (_c.tt == 150) { coop_log("tutorial: closed page=", _c.panel_page); coop_log("tutorial: done"); }
+    if (_c.tt == 150) { coop_log("tutorial: closed page=", _c.panel_page); _c.panel = true; _c.panel_page = "welcome"; coop_panel_click("welcome_never"); }
+    if (_c.tt == 160) { coop_log("tutorial: after never panel=", _c.panel); coop_log("tutorial: done"); }
 }
 
 // -coop_scenario spectate (host: revive off): the guest dies for real, watches the host from the death screen,

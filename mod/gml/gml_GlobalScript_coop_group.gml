@@ -127,16 +127,21 @@ function coop_group_toggle()
     ini_close();
 }
 
-// Draw GUI (raid and hub). Left edge, under the game's status icons.
-function coop_group_draw()
+// Draw GUI (raid and hub): a compact list at the top right (where the raid HUD is empty). One 26 px row per
+// teammate: colour, name, HP bar (or DOWN), distance, the weapon and the item being used as small icons.
+#macro COOP_GROUP_X1 (COOP_GW - 330)
+#macro COOP_GROUP_Y1 16
+#macro COOP_GROUP_RH 26
+
+function coop_group_rows()
 {
     var _c = coop();
-    if (!_c.connected || !coop_group_mode() || !instance_exists(obj_player))
+    var _rows = [];
+    if (!_c.connected || !coop_group_mode() || !instance_exists(obj_player) || coop_hud_hidden())
     {
-        exit;
+        return _rows;
     }
     var _ps = coop_peers();
-    var _rows = [];
     for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++)
     {
         if (_k != _c.slot && is_struct(_ps[_k]) && _ps[_k].connected)
@@ -144,60 +149,128 @@ function coop_group_draw()
             array_push(_rows, _k);
         }
     }
+    return _rows;
+}
+
+// Lowest y the panel uses (edge arrows on the right stay below it).
+function coop_group_bottom()
+{
+    var _n = array_length(coop_group_rows());
+    return (_n == 0) ? 0 : COOP_GROUP_Y1 + _n * COOP_GROUP_RH + 8;
+}
+
+function coop_group_draw()
+{
+    var _rows = coop_group_rows();
     if (array_length(_rows) == 0)
     {
         exit;
     }
+    var _ps = coop_peers();
     coop_ui_font(COOP_F_SMALL);
-    var _x = 16;
-    var _y = 420;
-    var _rh = 44;
-    var _w = 470;
-    coop_ui_rect(_x - 4, _y - 4, _x + _w, _y + array_length(_rows) * _rh, c_black, 0.55);
+    var _x = COOP_GROUP_X1;
+    var _y = COOP_GROUP_Y1;
+    var _rh = COOP_GROUP_RH;
+    coop_ui_rect(_x - 6, _y - 4, COOP_GW - 10, _y + array_length(_rows) * _rh + 2, c_black, 0.4);
+    draw_set_valign(fa_middle);
     for (var _i = 0; _i < array_length(_rows); _i++)
     {
         var _k = _rows[_i];
         var _pp = _ps[_k];
-        var _ry = _y + _i * _rh;
-        var _mid = _ry + _rh / 2 - 2;
-        coop_ui_rect(_x + 4, _mid - 5, _x + 13, _mid + 4, coop_slot_colour(_k));
-        draw_set_valign(fa_middle);
-        coop_ui_text(_x + 20, _mid, coop_ui_fit(coop_peer_name(_k), 130), COOP_C_TEXT);
+        var _mid = _y + _i * _rh + _rh / 2;
+        coop_ui_rect(_x, _mid - 4, _x + 7, _mid + 3, coop_slot_colour(_k));
+        coop_ui_text(_x + 12, _mid, coop_ui_fit(coop_peer_name(_k), 104), COOP_C_TEXT);
         var _pup = coop_puppet_of(_k);
         var _st = coop_status_of(_k);
         if (instance_exists(_pup) && variable_instance_exists(_pup, "coop_hp"))
         {
-            var _down = (_pup.coop_flags & 2) != 0;
-            if (_down)
+            if ((_pup.coop_flags & 2) != 0)
             {
-                coop_ui_text(_x + 156, _mid, coop_t("DOWN", "РАНЕН"), COOP_C_RED);
+                coop_ui_text(_x + 122, _mid, coop_t("DOWN", "РАНЕН"), COOP_C_RED);
             }
             else
             {
-                coop_ui_bar(_x + 156, _mid - 4, 80, 8, clamp(_pup.coop_hp / max(1, _pup.coop_hp_max), 0, 1), COOP_C_GREEN);
+                coop_ui_bar(_x + 122, _mid - 3, 50, 6, clamp(_pup.coop_hp / max(1, _pup.coop_hp_max), 0, 1), COOP_C_GREEN);
             }
             var _m = floor(point_distance(obj_player.x, obj_player.y, _pup.x, _pup.y) / 16);
-            coop_ui_text(_x + 246, _mid, string(_m) + coop_t("m", "м"), COOP_C_DIM);
-            // weapon in hand, then the item being used
-            // inventory-like cells, so dark item sprites stay readable
-            coop_ui_slot(_x + 294, _mid - 17, _x + 394, _mid + 17, false, 0.8);
+            coop_ui_text(_x + 178, _mid, string(_m) + coop_t("m", "м"), COOP_C_DIM);
             if (variable_instance_exists(_pup, "arma_now") && item_exists(_pup.arma_now))
             {
-                coop_ui_item_icon_wh(_pup.arma_now, _x + 344, _mid, 94, 30);
+                coop_ui_item_icon_wh(_pup.arma_now, _x + 248, _mid, 56, 20);
             }
-            var _using = variable_instance_exists(_pup, "coop_arms_item") && _pup.coop_arms_item != "" && item_exists(_pup.coop_arms_item);
-            coop_ui_slot(_x + 404, _mid - 17, _x + 442, _mid + 17, _using, 0.8);
-            if (_using)
+            if (variable_instance_exists(_pup, "coop_arms_item") && _pup.coop_arms_item != "" && item_exists(_pup.coop_arms_item))
             {
-                coop_ui_item_icon_wh(_pup.coop_arms_item, _x + 423, _mid, 32, 30);
+                coop_ui_rect(_x + 280, _mid - 11, _x + 302, _mid + 11, COOP_C_KEY, 0.35);
+                coop_ui_item_icon_wh(_pup.coop_arms_item, _x + 291, _mid, 20, 20);
             }
         }
         else
         {
             var _where = (_pp.loc == 2) ? coop_t("in a raid", "в рейде") : ((_pp.loc == 1) ? coop_t("in the bunker", "в бункере") : coop_t("in the menu", "в меню"));
-            if (_st != 0) _where += " · " + coop_status_text(_st);
-            coop_ui_text(_x + 156, _mid, _where, COOP_C_DIM);
+            if (_st != 0) _where = coop_status_text(_st);
+            coop_ui_text(_x + 122, _mid, coop_ui_fit(_where, 190), COOP_C_DIM);
         }
-        draw_set_valign(fa_top);
     }
+    draw_set_valign(fa_top);
+}
+
+// ---- HUD while aiming (2.0.0, user's request) ----
+// Aiming hides the co-op HUD (the game hides its own bars itself). Taking damage while aiming shows the health bar
+// (the game's own sprites) for 3 s after the last hit, then it fades out again.
+#macro COOP_HUD_HIT_MS 3000
+
+function coop_hud_aiming()
+{
+    return instance_exists(obj_player) && variable_instance_exists(obj_player, "aiming") && obj_player.aiming;
+}
+
+// Co-op HUD hidden: aiming (the wheel, chat line, revive and down screens still show).
+function coop_hud_hidden()
+{
+    return coop_hud_aiming();
+}
+
+// obj_coop Step: remember when we last lost health.
+function coop_hud_step()
+{
+    var _c = coop();
+    if (!instance_exists(obj_player))
+    {
+        exit;
+    }
+    var _hp = obj_player.hp;
+    if (variable_struct_exists(_c, "hud_hp_last") && _hp < _c.hud_hp_last - 0.01)
+    {
+        _c.hud_hit_t = current_time;
+    }
+    _c.hud_hp_last = _hp;
+}
+
+// Draw GUI: the health bar while aiming and hit recently, drawn like the game's (480x270 GUI, s_hp_bar).
+function coop_hud_hp_draw()
+{
+    var _c = coop();
+    if (!coop_hud_aiming() || !variable_struct_exists(_c, "hud_hit_t"))
+    {
+        exit;
+    }
+    var _age = current_time - _c.hud_hit_t;
+    if (_age > COOP_HUD_HIT_MS)
+    {
+        exit;
+    }
+    var _a = clamp((COOP_HUD_HIT_MS - _age) / 500, 0, 1);
+    var _p = obj_player;
+    var _hp = max(0, _p.hp);
+    var _hpm = variable_instance_exists(_p, "hp_max_total") ? _p.hp_max_total : _p.hp_max;
+    display_set_gui_size(480, 270);
+    var _sx = 5;
+    var _sy = 5;
+    var _bw = (37 / max(1, _hpm)) * _hp;
+    draw_set_alpha(_a);
+    draw_rectangle_colour(_sx + 23, _sy + 2, _sx + 61, _sy + 13, 8421504, 8421504, 8421504, 8421504, false);
+    draw_sprite_part_ext(s_hp_bar, 0, 0, 0, 23, 16, _sx, _sy, 1, 1, c_white, _a);
+    draw_sprite_part_ext(s_hp_bar, 1, 24, 2, 1, 12, _sx + 24, _sy + 2, ceil(_bw), 1, c_white, _a);
+    draw_set_alpha(1);
+    display_set_gui_size(COOP_GW, COOP_GH);
 }
