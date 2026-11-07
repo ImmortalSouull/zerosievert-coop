@@ -6,8 +6,9 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 ## Read first
 - `MODLOG.md` — full journal: every engine fact, gotcha, decision and test result. Read it before changing code.
 - Current release: **v1.2.0** (game 1.4.13 / new enemy AI; up to 4 players, hub lobby + bunker visits,
-  game-style UI), network protocol `COOP_VERSION 8` (all players must match). v1.2.0 is built locally but NOT
-  published: the user said (2026-11-05) not to push/release on GitHub until they say so.
+  game-style UI), network protocol `COOP_VERSION 8` (all players must match). v1.2.0 was published on GitHub on
+  2026-11-07 (user's order). The next big version is **2.0.0** (plan in Claude's memory): build it locally, NEVER
+  publish it yourself - the user releases it.
   `COOP_MOD_VERSION` in coop_update.gml must equal the release version (update check compares GitHub tags).
 
 ## Layout
