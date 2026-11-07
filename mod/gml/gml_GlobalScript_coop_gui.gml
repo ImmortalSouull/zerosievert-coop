@@ -68,6 +68,7 @@ function coop_draw_gui()
         }
         coop_ui_text(_sx + 4, _y + 4, _c.hud_txt, COOP_C_TEXT);
         _y += _h + 6;
+        _y = coop_conn_draw(_x, _y);
     }
     coop_ui_font(COOP_F_BODY);
     var _i = 0;

@@ -174,6 +174,11 @@ SCENARIOS = [
     S("leave", "-coop_autoraid 1 -coop_scenario leave", "-coop_scenario leave",
       done=[("B", r"peer_in_raid=0(.|\n)*peer_in_raid=0")],
       checks=[("A", r"host leaves the extraction screen", 1)], timeout=320, minutes=6),
+    # connection indicator: the host's link is slow and lossy, both sides show the problem
+    S("conn", "-coop_scenario conn -coop_netsim 260,12,0", "-coop_scenario conn",
+      done=[("A", r"conn: test done"), ("B", r"conn: test done")],
+      checks=[("A", r"conn: problem shown", 1), ("B", r"conn: problem shown", 1), ("A", r"conn: slot 1 ping 2[5-9]\d", 1)],
+      need_identical=False, timeout=150, minutes=3),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

@@ -49,6 +49,7 @@ function coop_panel_buttons()
         array_push(_b, { id: "leave", label: coop_t("Leave co-op", "Выйти из кооператива") });
     }
     array_push(_b, { id: "fps", label: coop_t("Frame rate: ", "Частота кадров: ") + zs_fps_mode_label(zs_fps().mode) });
+    array_push(_b, { id: "conn", label: coop_t("Connection indicator: ", "Индикатор связи: ") + coop_conn_mode_label() });
     array_push(_b, { id: "report", label: coop_t("Collect logs for a bug report", "Собрать логи для отчёта о баге") });
     if (room == r_menu)
     {
@@ -240,6 +241,9 @@ function coop_panel_click(_id)
             break;
         case "fps":
             zs_fps_cycle();
+            break;
+        case "conn":
+            coop_conn_cycle();
             break;
         case "report":
             coop_report_collect();

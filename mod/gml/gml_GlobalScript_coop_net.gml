@@ -839,6 +839,7 @@ function coop_handle_message_inner(_b, _size)
             if (is_struct(_fp))
             {
                 _fp.ping = current_time - _t2;
+                coop_conn_on_pong(_fp, _t2);
             }
             coop_peers_refresh();
             break;
@@ -1276,8 +1277,9 @@ function coop_net_step()
     }
     if (_c.connected && _c.frame mod 60 == 0)
     {
+        var _pt = current_time;
         coop_msg_begin(COOP_MSG_PING);
-        buffer_write(_c.send_buf, buffer_f64, current_time);
+        buffer_write(_c.send_buf, buffer_f64, _pt);
         if (_c.role == "host")
         {
             coop_msg_send_to(COOP_ALL, false);
@@ -1286,6 +1288,7 @@ function coop_net_step()
         {
             coop_msg_send_to(0, false);
         }
+        coop_conn_on_ping_sent((_c.role == "host") ? COOP_ALL : 0, _pt);
         coop_send_raid_state();
     }
     if (_c.netsim != undefined)
