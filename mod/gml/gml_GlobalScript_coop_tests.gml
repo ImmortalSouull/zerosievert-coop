@@ -31,6 +31,7 @@ function coop_test_ext_step()
     coop_test_report_step();
     coop_test_panelraid_step();
     coop_test_group_step();
+    coop_test_ff_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -1800,6 +1801,42 @@ function coop_test_group_step()
             coop_log("group: partner status ", coop_status_of(1), " weapon ", instance_exists(_pup) ? _pup.arma_now : "?");
             screen_save("group_away_" + _c.tag + ".png");
             coop_log("group: done");
+        }
+    }
+}
+
+// -coop_scenario ff (host: -coop_diff coop_friendly_fire=1,coop_friendly_fire_damage=0.5): the guest shoots the
+// host once from close by; the host logs how much health it lost (half of the bullet's damage at most).
+function coop_test_ff_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "ff" || !coop_shared_ready() || !instance_exists(obj_player) || !_c.peer_in_raid)
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "fft")) _c.fft = 0;
+    _c.fft++;
+    var _t = _c.fft;
+    if (_c.role == "guest")
+    {
+        var _host = coop_partner();
+        with (obj_player)
+        {
+            if (_t == 150 && instance_exists(_host)) { x = _host.x + 40; y = _host.y; }
+            if (_t == 240 && instance_exists(_host))
+            {
+                scr_shoot(point_direction(x, y, _host.x, _host.y - 6), 1, 40, 0);
+                coop_log("ff: guest shot the host, damage 40");
+            }
+        }
+        if (_t == 420) coop_log("ff: done");
+    }
+    else
+    {
+        with (obj_player)
+        {
+            if (_t == 100) { hp = hp_max; _c.ff_hp = hp; coop_log("ff: host hp ", hp, " setting ", coop_setting("friendly_fire_damage")); }
+            if (_t == 400) { coop_log("ff: host lost ", _c.ff_hp - hp); coop_log("ff: done"); }
         }
     }
 }

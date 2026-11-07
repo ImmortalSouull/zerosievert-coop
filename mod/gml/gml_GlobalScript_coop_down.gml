@@ -598,6 +598,23 @@ function coop_friendly_fire_hit(_bull, _target)
     return object_is_player(_bull.shooter_id) && _bull.shooter_id != _target.id;
 }
 
+// Hook [138]: damage multiplier of a bullet hitting a player (a teammate's bullet: the friendly fire share).
+function coop_friendly_fire_mult(_bull)
+{
+    try
+    {
+        if (coop_active() && instance_exists(_bull.shooter_id) && object_is_player(_bull.shooter_id))
+        {
+            return clamp(coop_setting("friendly_fire_damage"), 0.1, 1);
+        }
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    return 1;
+}
+
 // Kill the local player for real while down (the down clamp must stop first).
 function coop_down_force_death(_why)
 {

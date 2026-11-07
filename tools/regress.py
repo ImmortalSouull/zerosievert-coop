@@ -55,6 +55,15 @@ def files_ok(logs):
     return None if a == 1 and b == 1 else f"FILES DIFFER lines A={a} B={b} (expected 1 each)"
 
 
+def ff_ok(logs):
+    """A teammate's 40-damage bullet took more than 0 and at most half (friendly fire damage 0.5)."""
+    m = re.findall(r"ff: host lost ([0-9.]+)", logs["A"])
+    if not m:
+        return "no ff line"
+    lost = float(m[0])
+    return None if 0 < lost <= 20.5 else f"host lost {lost} hp (expected 0 < x <= 20)"
+
+
 def ownerjoin_ok(logs):
     """Slot 2 (whichever instance got it) stayed in the hub, then joined the raid slot 1 owns."""
     j = [k for k in "BC" if "ownerjoin: stays in the hub" in logs[k]]
@@ -184,6 +193,11 @@ SCENARIOS = [
       done=[("A", r"group: done"), ("B", r"group: done")],
       checks=[("A", r"group: partner uses bandage weapon", 1), ("A", r"group: partner status 2", 1),
               ("A", r"group: partner status 3", 1), ("B", r"status: mine 2", 1)], timeout=300),
+    # friendly fire with half damage
+    S("ff", "-coop_autoraid 1 -coop_scenario ff -coop_diff coop_friendly_fire=1,coop_friendly_fire_damage=0.5", "-coop_scenario ff",
+      done=[("A", r"ff: done"), ("B", r"ff: done")], checks=[("A", r"setting 0.5", 1)], custom=ff_ok),
+    S("ff_full", "-coop_autoraid 1 -coop_scenario ff -coop_diff coop_friendly_fire=1,coop_friendly_fire_damage=1", "-coop_scenario ff",
+      done=[("A", r"ff: done"), ("B", r"ff: done")], checks=[("A", r"setting 1", 1), ("A", r"host lost [1-9]", 1)]),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),
