@@ -633,5 +633,6 @@ function coop_panel_blocks_game()
         return false;
     }
     var _c = global.coop_state;
-    return variable_struct_exists(_c, "panel") && _c.panel;
+    // the F7 panel or the chat line (coop_chat.gml) has the keyboard
+    return (variable_struct_exists(_c, "panel") && _c.panel) || (variable_struct_exists(_c, "chat") && _c.chat.open);
 }

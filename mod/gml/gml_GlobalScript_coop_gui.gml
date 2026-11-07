@@ -107,6 +107,7 @@ function coop_draw_gui()
     if (coop_in_raid() || is_in_hub())
     {
         coop_group_draw();
+        coop_chat_draw();
     }
     if (is_in_hub())
     {

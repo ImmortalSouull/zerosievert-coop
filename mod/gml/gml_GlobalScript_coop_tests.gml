@@ -1787,6 +1787,7 @@ function coop_test_group_step()
                 coop_log("group: guest uses bandage");
             }
         }
+        if (_t == 300) coop_chat_send("Привет, it's the guest: " + chr(1046) + "!");
         if (_t == 400) _c.panel = true;
         if (_t == 520) _c.panel = false;
         if (_t == 530) _c.afk_test_ms = 2000;
@@ -1805,6 +1806,15 @@ function coop_test_group_step()
             }
         }
         if (_t == 470) coop_log("group: partner status ", coop_status_of(1));
+        if (_t == 330)
+        {
+            var _ch = coop_chat();
+            _ch.open = true; // as if Enter was pressed: the game's input is muted
+            coop_log("group: chat open, game blocked=", coop_panel_blocks_game());
+            screen_save("chat_" + _c.tag + ".png");
+            _ch.open = false;
+            coop_chat_send("host answers");
+        }
         if (_t == 800)
         {
             coop_log("group: partner status ", coop_status_of(1), " weapon ", instance_exists(_pup) ? _pup.arma_now : "?");
