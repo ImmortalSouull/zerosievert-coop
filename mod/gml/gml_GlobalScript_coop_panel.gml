@@ -41,6 +41,10 @@ function coop_panel_buttons()
     }
     if (_c.role == "none")
     {
+        if (is_struct(coop_rejoin_offer()))
+        {
+            array_push(_b, { id: "rejoin", label: coop_rejoin_label() });
+        }
         array_push(_b, { id: "steam_host", label: coop_t("Host via Steam (invite a friend)", "Создать игру в Steam (пригласить друга)") });
         array_push(_b, { id: "ip_host", label: coop_t("Host by IP (UDP port 47777)", "Создать игру по IP (UDP порт 47777)") });
         array_push(_b, { id: "ip_join", label: coop_t("Join by IP...", "Подключиться по IP...") });
@@ -513,6 +517,7 @@ function coop_panel_click(_id)
             _c.panel = false;
             break;
         case "leave":
+            coop_rejoin_forget();
             coop_on_disconnected();
             coop_net_stop();
             coop_notify(coop_t("Left co-op", "Вы вышли из кооператива"));
@@ -529,6 +534,10 @@ function coop_panel_click(_id)
             break;
         case "conn":
             coop_conn_cycle();
+            break;
+        case "rejoin":
+            coop_rejoin_go();
+            _c.panel = false;
             break;
         case "profile":
             coop_profile_toggle();

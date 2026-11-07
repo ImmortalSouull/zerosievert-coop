@@ -230,6 +230,12 @@ SCENARIOS = [
               ("B", r"dragged-only bleed per 60 ticks = (1[5-9]|2[0-5])", 1), ("A", r"revive cancelled: slot 1 moved", 1),
               ("B", r"down: moved while being revived", 1), ("B", r"timer after cancel kept=1", 1), ("B", r"revived with", 2)],
       timeout=420, minutes=7),
+    # back into the session after a crash: the panel offers Rejoin {host}
+    S("rejoin", "-coop_scenario rejoin", "-coop_scenario rejoin",
+      done=[("B", r"rejoin: done")],
+      checks=[("B", r"rejoin: note written=1 host=", 1), ("B", r"rejoin: first button rejoin Rejoin ", 1),
+              ("B", r"rejoin: back in the session", 1), ("A", r"guest connected: ", 2)],
+      need_identical=False, timeout=200, minutes=3),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

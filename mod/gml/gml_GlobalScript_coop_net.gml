@@ -1438,6 +1438,7 @@ function coop_on_connected(_slot)
     coop_settings_send();
     coop_send_loadout();
     coop_files_on_connected();
+    coop_rejoin_remember();
 }
 
 function coop_on_disconnected()

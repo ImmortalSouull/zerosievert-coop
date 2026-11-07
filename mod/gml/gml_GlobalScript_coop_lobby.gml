@@ -129,6 +129,7 @@ function coop_kick_on_msg()
         exit;
     }
     coop_log("kicked by the host");
+    coop_rejoin_forget();
     if (_c.test_mode) _c.kicks = (variable_struct_exists(_c, "kicks") ? _c.kicks : 0) + 1;
     coop_on_disconnected();
     coop_net_stop();

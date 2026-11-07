@@ -37,6 +37,7 @@ function coop_test_ext_step()
     coop_test_tutorial_step();
     coop_test_spectate_step();
     coop_test_drag_step();
+    coop_test_rejoin_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2182,4 +2183,46 @@ function coop_test_drag_step()
             if (_k > 100 && !coop_partner_is_down()) { coop_log("drag: done"); _c.dhs = 5; }
             break;
     }
+}
+
+// -coop_scenario rejoin (hub): the guest's session drops like after a crash (the rejoin note stays), the co-op panel
+// offers "Rejoin {host}", the guest clicks it and is back; at the end the note is cleaned up.
+function coop_test_rejoin_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "rejoin") exit;
+    if (!variable_struct_exists(_c, "rj")) { _c.rj = 0; _c.rj_n = 0; }
+    _c.rj++;
+    if (_c.role == "guest" && _c.connected && is_in_hub() && _c.rj_n == 0 && _c.rj > 300)
+    {
+        _c.rj_n = 1;
+        ini_open("coop_local.ini");
+        coop_log("rejoin: note written=", ini_read_real("rejoin", "active", 0), " host=", ini_read_string("rejoin", "host", ""));
+        ini_close();
+        // a crash: no BYE, no clean leave - just gone
+        coop_on_disconnected();
+        if (_c.sock >= 0) { network_destroy(_c.sock); _c.sock = -1; }
+        _c.role = "none";
+        _c.connected = false;
+        _c.rj_t = _c.rj;
+    }
+    if (_c.role == "none" && _c.rj_n == 1 && _c.rj == _c.rj_t + 120)
+    {
+        variable_struct_remove(_c, "rejoin_offer"); // as on the next start
+        var _b = coop_panel_buttons();
+        coop_log("rejoin: first button ", _b[0].id, " ", _b[0].label);
+        coop_panel_click(_b[0].id);
+        _c.rj_n = 2;
+    }
+    if (_c.role == "guest" && _c.connected && _c.rj_n == 2)
+    {
+        _c.rj_n = 3;
+        coop_log("rejoin: back in the session");
+    }
+    if (_c.rj_n == 3 && _c.rj == _c.rj_t + 600)
+    {
+        coop_rejoin_forget();
+        coop_log("rejoin: done");
+    }
+    if (_c.role == "host" && _c.rj == 1800) { coop_rejoin_forget(); coop_log("rejoin: done"); }
 }
