@@ -255,7 +255,7 @@ function coop_panel_click(_id)
 function coop_panel_layout()
 {
     var _c = coop();
-    var _lines = 1 + (_c.connected ? coop_player_count() : 0);
+    var _lines = 1 + (_c.connected ? coop_player_count() : 0) + ((!variable_struct_exists(_c, "panel_page") || _c.panel_page == "main") ? array_length(coop_files_state().diffs) : 0);
     var _nb = array_length(coop_panel_buttons());
     var _w = 760;
     var _x1 = COOP_GW / 2 - _w / 2;
@@ -329,6 +329,16 @@ function coop_panel_draw()
             }
             coop_ui_rect(_cx - string_width(_nm) / 2 - 22, _y + 11, _cx - string_width(_nm) / 2 - 12, _y + 21, coop_slot_colour(_k));
             coop_ui_text(_cx, _y, _nm, COOP_C_TEXT);
+            _y += 34;
+        }
+    }
+    if (_c.panel_page == "main")
+    {
+        // different game files / mods (coop_files.gml)
+        var _df = coop_files_state().diffs;
+        for (var _i = 0; _i < array_length(_df); _i++)
+        {
+            coop_ui_text(_cx, _y, coop_ui_fit(_df[_i].text, _l.x2 - _l.x1 - 60), COOP_C_KEY);
             _y += 34;
         }
     }

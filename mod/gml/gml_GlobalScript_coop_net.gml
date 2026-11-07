@@ -947,6 +947,9 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_GATHER:
             coop_gather_on_msg(_b);
             break;
+        case COOP_MSG_FILES:
+            coop_files_on_msg(_b);
+            break;
         case COOP_MSG_MARK:
             coop_mark_on_message(_b);
             break;
@@ -1106,6 +1109,7 @@ function coop_peer_left(_slot, _quiet)
         exit;
     }
     var _was_in = _p.in_raid;
+    coop_files_on_peer_left(_slot);
     if (!_quiet)
     {
         coop_log("player left: ", _p.name, " slot ", _slot);
@@ -1363,6 +1367,7 @@ function coop_on_connected(_slot)
     coop_send_raid_state();
     coop_settings_send();
     coop_send_loadout();
+    coop_files_on_connected();
 }
 
 function coop_on_disconnected()

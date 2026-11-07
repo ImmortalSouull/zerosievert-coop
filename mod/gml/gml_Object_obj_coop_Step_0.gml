@@ -6,6 +6,8 @@ coop_try(coop_update_step);
 coop_try(coop_steam_step);
 coop_try(coop_panel_step);
 coop_try(coop_backup_step);
+coop_try(coop_files_step);
+coop_try(coop_files_pending_step);
 coop_try(coop_autopilot_step);
 coop_try(coop_pending_raid_step);
 coop_try(coop_gather_step);

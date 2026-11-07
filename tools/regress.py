@@ -49,6 +49,12 @@ def grouphp_ok(logs):
     return None if a[0][1] == b[0][1] else f"hp sum differs A={a[0][1]} B={b[0][1]}"
 
 
+def files_ok(logs):
+    """Each side reports the difference once (no fingerprint ping-pong)."""
+    a, b = logs["A"].count("FILES DIFFER"), logs["B"].count("FILES DIFFER")
+    return None if a == 1 and b == 1 else f"FILES DIFFER lines A={a} B={b} (expected 1 each)"
+
+
 def ownerjoin_ok(logs):
     """Slot 2 (whichever instance got it) stayed in the hub, then joined the raid slot 1 owns."""
     j = [k for k in "BC" if "ownerjoin: stays in the hub" in logs[k]]
@@ -139,6 +145,13 @@ SCENARIOS = [
     S("v3", "-coop_autoraid 1 -coop_scenario v3", "-coop_scenario v3",
       done=[("A", r"v3: done"), ("B", r"v3: done")],
       checks=[("B", r"kill credited", 1), ("B", r"emission started by host", 1), ("A", r"v3: host unpaused, player exists=1", 1)]),
+    # game files / mods check: the guest fakes a changed languages folder and an extra mod
+    S("files", "-coop_scenario files", "-coop_scenario files",
+      done=[("A", r"files: test done"), ("B", r"files: test done")],
+      checks=[("A", r"FILES DIFFER from slot 1: game=languages only_them=testmod only_me= mods_diff=\s", 1),
+              ("B", r"FILES DIFFER from slot 0: game=languages only_them= only_me=testmod mods_diff=\s", 1),
+              ("A", r"files: \d+ groups hashed", 1)], custom=files_ok,
+      need_identical=False, timeout=150, minutes=3),
     S("revive", "-coop_autoraid 1 -coop_scenario revive", "-coop_scenario revive",
       done=[("B", r"revived with \d+ hp")],
       checks=[("A", r"revived partner with", 1), ("B", r"down #1 timer", 1)]),
