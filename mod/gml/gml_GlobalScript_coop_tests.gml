@@ -1827,6 +1827,9 @@ function coop_test_group_step()
             }
         }
         if (_t == 300) coop_chat_send("Привет, it's the guest: " + chr(1046) + "!");
+        // appearance: scientist body (shows without armor) and the navy tint; put back at the end (shared test ini)
+        if (_t == 160) { coop_look().body = 3; coop_look().tint = 2; coop_look_save(); }
+        if (_t == 880) { coop_look().body = 0; coop_look().tint = 0; coop_look_save(); }
         // quick-command wheel: open, point down-right (sector 3), release; then the icon page, sector 1
         if (_t == 320) { _c.sim_wheel = true; _c.sim_wheel_dir = -45; }
         if (_t == 340) _c.sim_wheel = false;
@@ -1854,6 +1857,12 @@ function coop_test_group_step()
         }
         if (_t == 420) screen_save("wheel_seen_" + _c.tag + ".png");
         if (_t == 680) coop_gear_request(1);
+        if (_t == 690)
+        {
+            var _gp = coop_puppet_of(1);
+            coop_log("group: partner tint=", instance_exists(_gp) && variable_instance_exists(_gp, "coop_tint") ? _gp.coop_tint : -1,
+                " blend tinted=", instance_exists(_gp) && _gp.image_blend != c_white, " sprite ", instance_exists(_gp) ? sprite_get_name(_gp.sprite_index) : "?");
+        }
         // aiming hides the co-op HUD; a hit while aiming shows the health bar
         if (_t >= 760 && _t <= 860) with (obj_player) aiming = true;
         if (_t == 780) { coop_log("group: aiming hud hidden=", coop_hud_hidden()); screen_save("aim_" + _c.tag + ".png"); }

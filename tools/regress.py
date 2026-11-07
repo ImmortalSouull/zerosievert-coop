@@ -200,7 +200,7 @@ SCENARIOS = [
               ("A", r"chat .*: Привет, it's the guest", 1), ("B", r"chat .*: host answers", 1), ("A", r"chat open, game blocked=1", 1),
               ("A", r"chat .*: \[Enemy spotted\]", 1), ("A", r"chat .*: \[Need a medkit\]", 1),
               ("A", r"group: streamer name Player 2 me Player 1", 1), ("A", r"group: streamer off name SaWka", 1),
-              ("B", r"gear: sent to slot 0 equip [1-9]", 1), ("A", r"gear: got slot 1 equip [1-9] items", 1), ("A", r"aiming hud hidden=1", 1), ("A", r"hit while aiming, hp shown=1", 1), ("A", r"chat .*: \[Need: ", 1)], timeout=300),
+              ("B", r"gear: sent to slot 0 equip [1-9]", 1), ("A", r"gear: got slot 1 equip [1-9] items", 1), ("A", r"aiming hud hidden=1", 1), ("A", r"group: partner tint=2 blend tinted=1", 1), ("A", r"hit while aiming, hp shown=1", 1), ("A", r"chat .*: \[Need: ", 1)], timeout=300),
     # friendly fire with half damage
     S("ff", "-coop_autoraid 1 -coop_scenario ff -coop_diff coop_friendly_fire=1,coop_friendly_fire_damage=0.5", "-coop_scenario ff",
       done=[("A", r"ff: done"), ("B", r"ff: done")], checks=[("A", r"setting 0.5", 1)], custom=ff_ok),

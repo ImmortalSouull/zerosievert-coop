@@ -183,7 +183,8 @@ function coop_send_loadout()
             headset_now: headset_now,
             weapon_slot_now: weapon_slot_now,
             w1: coop_loot_to_struct(player_loadout_get_loot(self, "weapon slot 1", false)),
-            w2: coop_loot_to_struct(player_loadout_get_loot(self, "weapon slot 2", false))
+            w2: coop_loot_to_struct(player_loadout_get_loot(self, "weapon slot 2", false)),
+            tint: coop_look().tint // appearance (coop_look.gml)
         };
         buffer_write(_b, buffer_string, json_stringify(_data));
     }
@@ -524,6 +525,7 @@ function coop_puppet_apply_loadout(_p, _data)
     with (_p)
     {
         arma_now = _data.arma_now;
+        coop_tint = variable_struct_exists(_data, "tint") ? _data.tint : 0;
         armor_now = _data.armor_now;
         backpack_now = _data.backpack_now;
         headset_now = _data.headset_now;
