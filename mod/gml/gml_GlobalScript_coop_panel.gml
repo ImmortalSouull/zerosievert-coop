@@ -21,6 +21,10 @@ function coop_panel_buttons()
     {
         return coop_panel_browser_buttons();
     }
+    if (_c.panel_page == "partners")
+    {
+        return coop_panel_partner_buttons();
+    }
     if (_c.panel_page == "settings")
     {
         return coop_panel_settings_buttons();
@@ -74,6 +78,7 @@ function coop_panel_buttons()
         array_push(_b, { id: "leave", label: coop_t("Leave co-op", "Выйти из кооператива") });
     }
     array_push(_b, { id: "settings", label: coop_t("Settings...", "Настройки...") });
+    array_push(_b, { id: "partners", label: coop_t("Raids with friends...", "Рейды с друзьями...") });
     array_push(_b, { id: "report", label: coop_t("Collect logs for a bug report", "Собрать логи для отчёта о баге") });
     if (room == r_menu)
     {
@@ -113,6 +118,28 @@ function coop_panel_settings_buttons()
     return _b;
 }
 
+// Page "partners": lifetime stats per partner, most raids first (read only).
+function coop_panel_partner_buttons()
+{
+    var _all = coop_partners_load();
+    var _names = variable_struct_get_names(_all);
+    array_sort(_names, function(_a, _b) { return variable_struct_get(coop_partners_load(), _b).raids - variable_struct_get(coop_partners_load(), _a).raids; });
+    var _b = [];
+    for (var _i = 0; _i < array_length(_names) && _i < 10; _i++)
+    {
+        var _e = variable_struct_get(_all, _names[_i]);
+        var _nm = coop_streamer() ? coop_tf("Friend {0}", "Друг {0}", _i + 1) : coop_ui_fit(_names[_i], 220);
+        array_push(_b, { id: "none", label: coop_tf("{0}: raids {1}, revived {2}, kills {3}, made {4}", "{0}: рейдов {1}, подняли {2}, убил {3}, заработали {4}",
+            _nm, _e.raids, _e.revived, _e.kills, _e.value) });
+    }
+    if (array_length(_b) == 0)
+    {
+        array_push(_b, { id: "none", label: coop_t("No raids with friends yet", "Рейдов с друзьями пока нет") });
+    }
+    array_push(_b, { id: "page_main", label: coop_t("Back", "Назад") });
+    return _b;
+}
+
 function coop_panel_title()
 {
     switch (coop().panel_page)
@@ -120,6 +147,7 @@ function coop_panel_title()
         case "backups": return coop_t("SAVE BACKUPS", "РЕЗЕРВНЫЕ КОПИИ");
         case "lobby": return coop_t("PLAYERS AND LOBBY", "ИГРОКИ И ЛОББИ");
         case "settings": return coop_t("CO-OP SETTINGS", "НАСТРОЙКИ КООПЕРАТИВА");
+        case "partners": return coop_t("RAIDS WITH FRIENDS", "РЕЙДЫ С ДРУЗЬЯМИ");
         case "browser": return coop_t("OPEN GAMES", "ОТКРЫТЫЕ ИГРЫ");
     }
     return coop_t("CO-OP", "КООПЕРАТИВ");
@@ -303,6 +331,12 @@ function coop_panel_click(_id)
     {
         coop_visit_end("panel");
         _c.panel = false;
+        exit;
+    }
+    if (_id == "partners")
+    {
+        _c.panel_page = "partners";
+        _c.panel_sel = 0;
         exit;
     }
     if (_id == "settings")

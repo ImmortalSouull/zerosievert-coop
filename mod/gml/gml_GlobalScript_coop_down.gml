@@ -467,6 +467,9 @@ function coop_revive_step()
             coop_msg_send_to(_pp.coop_slot, true);
             coop_log("revived partner with ", _r.opt.name, " (", _r.opt.hp, " hp) slot ", _pp.coop_slot);
             coop_stat_add("revives", 1);
+            var _rk = "rev" + string(_pp.coop_slot); // per partner (coop_partners)
+            if (!variable_struct_exists(coop().my_stats, _rk)) variable_struct_set(coop().my_stats, _rk, 0);
+            coop_stat_add(_rk, 1);
             coop_notify(coop_tf("{0} revived", "{0} поднят", coop_peer_name(_pp.coop_slot)));
         }
     }

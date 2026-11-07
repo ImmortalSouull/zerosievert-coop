@@ -1969,6 +1969,8 @@ function coop_test_extract_step()
             var _n = 0;
             for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++) if (is_struct(_c.summary[_k])) _n++;
             coop_log("extract: done, summaries=", _n, " kills=", _c.my_stats.kills);
+            var _pb = coop_panel_partner_buttons();
+            coop_log("extract: partners page ", _pb[0].label);
         }
         exit;
     }

@@ -263,6 +263,7 @@ function coop_summary_step()
         buffer_write(_b, buffer_string, json_stringify(_me));
         coop_msg_send(true);
         coop_log("summary sent: ", json_stringify(_me));
+        coop_partners_on_raid_end(_value);
     }
 }
 
@@ -274,7 +275,9 @@ function coop_summary_on_msg(_b)
     if (_c.msg_from >= 0 && _c.msg_from < COOP_MAX_PLAYERS && is_struct(_d))
     {
         _d.slot = _c.msg_from;
+        var _was = is_struct(_c.summary[_c.msg_from]);
         _c.summary[_c.msg_from] = _d;
+        if (!_was) coop_partners_on_summary(_c.msg_from, _d);
         coop_log("summary from slot ", _c.msg_from, ": kills ", _d.kills, " damage ", _d.damage, " revives ", _d.revives, " value ", _d.value);
     }
 }
@@ -324,4 +327,82 @@ function coop_summary_draw()
         }
         _y += _rh;
     }
+}
+
+// ---- lifetime stats per partner (2.0.0 item 45) ----
+// coop_partners.json in the save area: per partner name { raids, revived (by us), kills (theirs, in raids with us),
+// value (made together: ours + theirs) , last }. Updated when our raid ends and when a partner's summary arrives.
+
+function coop_partners_load()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "partners"))
+    {
+        _c.partners = {};
+        if (file_exists("coop_partners.json"))
+        {
+            try
+            {
+                var _b = buffer_load("coop_partners.json");
+                _c.partners = json_parse(buffer_read(_b, buffer_text));
+                buffer_delete(_b);
+            }
+            catch (_e)
+            {
+                _c.partners = {};
+            }
+        }
+    }
+    return _c.partners;
+}
+
+function coop_partners_save()
+{
+    var _t = json_stringify(coop_partners_load());
+    var _b = buffer_create(string_byte_length(_t) + 1, buffer_fixed, 1);
+    buffer_write(_b, buffer_text, _t);
+    buffer_save(_b, "coop_partners.json");
+    buffer_delete(_b);
+}
+
+function coop_partner_entry(_name)
+{
+    var _all = coop_partners_load();
+    if (!variable_struct_exists(_all, _name))
+    {
+        variable_struct_set(_all, _name, { raids: 0, revived: 0, kills: 0, value: 0, last: "" });
+    }
+    return variable_struct_get(_all, _name);
+}
+
+// Our raid ended (coop_summary_step): one raid more with everybody who shared it; our revives per partner.
+function coop_partners_on_raid_end(_my_value)
+{
+    var _c = coop();
+    for (var _i = 0; _i < array_length(_c.summary_raid); _i++)
+    {
+        var _k = _c.summary_raid[_i];
+        var _p = coop_peer(_k);
+        if (!is_struct(_p)) continue;
+        var _e = coop_partner_entry(_p.name);
+        _e.raids++;
+        _e.value += max(0, _my_value);
+        var _rk = "rev" + string(_k);
+        if (variable_struct_exists(_c.my_stats, _rk)) _e.revived += variable_struct_get(_c.my_stats, _rk);
+        _e.last = date_date_string(date_current_datetime());
+    }
+    coop_partners_save();
+}
+
+// A partner's summary of a raid we shared.
+function coop_partners_on_summary(_slot, _d)
+{
+    var _c = coop();
+    if (!array_contains(_c.summary_raid, _slot)) exit;
+    var _p = coop_peer(_slot);
+    if (!is_struct(_p)) exit;
+    var _e = coop_partner_entry(_p.name);
+    _e.kills += _d.kills;
+    _e.value += max(0, _d.value);
+    coop_partners_save();
 }

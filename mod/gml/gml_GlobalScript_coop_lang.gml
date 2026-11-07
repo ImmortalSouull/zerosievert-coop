@@ -24,10 +24,11 @@ function coop_t(_en, _ru)
     return (_l == "russian") ? _ru : _en;
 }
 
-// coop_t with {0} / {1} filled in (names, item names, versions): word order differs between languages.
-function coop_tf(_en, _ru, _a0 = "", _a1 = "")
+// coop_t with {0}..{4} filled in (names, item names, versions): word order differs between languages.
+function coop_tf(_en, _ru, _a0 = "", _a1 = "", _a2 = "", _a3 = "", _a4 = "")
 {
-    return string_replace_all(string_replace_all(coop_t(_en, _ru), "{0}", string(_a0)), "{1}", string(_a1));
+    var _s = string_replace_all(string_replace_all(coop_t(_en, _ru), "{0}", string(_a0)), "{1}", string(_a1));
+    return string_replace_all(string_replace_all(string_replace_all(_s, "{2}", string(_a2)), "{3}", string(_a3)), "{4}", string(_a4));
 }
 
 // The languages the table covers (english first).
