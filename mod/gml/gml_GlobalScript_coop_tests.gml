@@ -193,7 +193,8 @@ function coop_test_v3_step()
         {
             if (variable_instance_exists(id, "coop_nid") && coop_nid < 40 && object_is_ancestor(object_index, obj_npc_human_parent))
             {
-                _sum += hp; // nobody has shot yet
+                // max hp: 1.4 squads may already fight each other, and host and guest measure at slightly different moments
+                _sum += variable_instance_exists(id, "hp_max") ? hp_max : hp;
                 _n++;
             }
         }
