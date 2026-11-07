@@ -799,7 +799,8 @@ function coop_net_relayable(_type)
 // Steam relays need the original reliability (UDP kind is visible in the header).
 function coop_net_reliable_type(_type)
 {
-    return _type != COOP_MSG_PSTATE && _type != COOP_MSG_NPC_SNAP && _type != COOP_MSG_PING && _type != COOP_MSG_PONG && _type != COOP_MSG_BULLET && _type != COOP_MSG_PSND;
+    return _type != COOP_MSG_PSTATE && _type != COOP_MSG_NPC_SNAP && _type != COOP_MSG_PING && _type != COOP_MSG_PONG && _type != COOP_MSG_BULLET && _type != COOP_MSG_PSND
+        && _type != COOP_MSG_VOICE;
 }
 
 function coop_net_relay(_from, _to, _b, _size, _reliable)
@@ -1022,6 +1023,9 @@ function coop_handle_message_inner(_b, _size)
             break;
         case COOP_MSG_TRADE:
             coop_trade_on_msg(_b);
+            break;
+        case COOP_MSG_VOICE:
+            coop_voice_on_msg(_b);
             break;
         case COOP_MSG_MARK:
             coop_mark_on_message(_b);

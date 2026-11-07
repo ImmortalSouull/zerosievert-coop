@@ -753,6 +753,14 @@ function coop_puppet_draw_tag_gui_one(_p)
         draw_set_halign(fa_center);
         draw_set_valign(fa_bottom);
         coop_ui_text_ol(_gx, _gy - 60, _name, _down ? COOP_C_RED : COOP_C_TEXT);
+        if (coop_voice_speaking(_slot))
+        {
+            // speaking: a small pulsing sound mark right of the name
+            var _sw = string_width(_name) / 2 + 10;
+            var _ph = 3 + ((current_time div 120) mod 3) * 2;
+            coop_ui_rect(_gx + _sw, _gy - 66 - _ph, _gx + _sw + 3, _gy - 66 + _ph, COOP_C_GREEN);
+            coop_ui_rect(_gx + _sw + 6, _gy - 66 - _ph - 2, _gx + _sw + 9, _gy - 66 + _ph + 2, COOP_C_GREEN);
+        }
         // in the inventory / in a menu / away (coop_group.gml)
         var _st = coop_status_of(_slot);
         if (_st != 0)

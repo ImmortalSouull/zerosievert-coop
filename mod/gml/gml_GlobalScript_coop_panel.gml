@@ -149,6 +149,8 @@ function coop_panel_settings_buttons()
     array_push(_b, { id: "fps", label: coop_t("Frame rate: ", "Частота кадров: ") + zs_fps_mode_label(zs_fps().mode) });
     array_push(_b, { id: "conn", label: coop_t("Connection indicator: ", "Индикатор связи: ") + coop_conn_mode_label() });
     array_push(_b, { id: "streamer", label: coop_t("Streamer mode (hide names): ", "Режим стримера (скрыть ники): ") + (coop_streamer() ? coop_t("on", "вкл") : coop_t("off", "выкл")) });
+    array_push(_b, { id: "voice", label: coop_t("Voice chat: ", "Голосовой чат: ") + coop_voice_mode_label() });
+    array_push(_b, { id: "radio", label: coop_t("Radio: ", "Рация: ") + coop_voice_channel_label() });
     array_push(_b, { id: "group", label: coop_t("Group panel: ", "Панель группы: ") + (coop_group_mode() ? coop_t("on", "вкл") : coop_t("off", "выкл")) });
     array_push(_b, { id: "page_main", label: coop_t("Back", "Назад") });
     return _b;
@@ -569,6 +571,14 @@ function coop_panel_click(_id)
             break;
         case "streamer":
             coop_streamer_toggle();
+            break;
+        case "voice":
+            coop_voice().mode = (coop_voice().mode + 1) mod 3;
+            coop_voice_save();
+            break;
+        case "radio":
+            coop_voice().channel = (coop_voice().channel + 1) mod 9;
+            coop_voice_save();
             break;
         case "group":
             coop_group_toggle();

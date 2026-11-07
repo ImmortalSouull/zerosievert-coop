@@ -262,6 +262,11 @@ SCENARIOS = [
       checks=[("A", r"trade: sent 1 stacks to slot 1", 1), ("B", r"trade: sent 1 stacks to slot 0", 1),
               ("A", r"trade: got 1 stacks from slot 1", 1), ("B", r"trade: got 1 stacks from slot 0", 1),
               ("A", r"gift placed in the inventory|gift dropped in a bag", 1), ("B", r"gift placed in the inventory|gift dropped in a bag", 1)], timeout=300),
+    # voice: a test tone next to the host (full), far away (silent), on the same radio channel (heard)
+    S("voice", "-coop_autoraid 1 -coop_scenario voice", "-coop_scenario voice",
+      done=[("A", r"voice test: done"), ("B", r"voice test: done")],
+      checks=[("A", r"voice test: t=400 got=[1-9]\d* gain=1 speaking=1", 1), ("A", r"voice test: t=700 got=[1-9]\d* gain=0 ", 1),
+              ("A", r"voice test: t=1000 got=[1-9]\d* gain=0.80 speaking=1", 1)], timeout=300),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

@@ -42,6 +42,7 @@ function coop_test_ext_step()
     coop_test_questloot_step();
     coop_test_fallen_step();
     coop_test_trade_step();
+    coop_test_voice_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2461,5 +2462,37 @@ function coop_test_trade_step()
         if (variable_struct_exists(_c, "td_open") && _t == _c.td_open + 40) _c.sim_trade_click = [400, 300]; // first row
         if (variable_struct_exists(_c, "td_open") && _t == _c.td_open + 160) { screen_save("trade_" + _c.tag + ".png"); _c.sim_trade_click = [500, 850]; }
         if (variable_struct_exists(_c, "td_open") && _t == _c.td_open + 460) coop_log("trade test: done");
+    }
+}
+
+// -coop_scenario voice: the guest "speaks" a test tone next to the host (full volume), then 60 m away (silent), then
+// both tune the radio to channel 3 (heard again at any distance). The host logs what it gets.
+function coop_test_voice_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "voice" || !coop_shared_ready() || !instance_exists(obj_player)) exit;
+    if (!variable_struct_exists(_c, "vt")) _c.vt = 0;
+    _c.vt++;
+    var _t = _c.vt;
+    var _v = coop_voice();
+    if (_t == 100) { _v.mode = 1; _v.channel = 0; coop_log("voice: recorders=", audio_get_recorder_count()); }
+    with (obj_player) hp = hp_max;
+    if (_c.role == "guest")
+    {
+        var _h = coop_puppet_of(0);
+        if (_t == 150 && instance_exists(_h)) { obj_player.x = _h.x + 40; obj_player.y = _h.y; _c.voice_test_tone = 0; }
+        if (_t == 450 && instance_exists(_h)) { obj_player.x = _h.x + 1000; }
+        if (_t == 750) _v.channel = 3;
+        if (_t == 1100) { variable_struct_remove(_c, "voice_test_tone"); coop_log("voice test: done"); }
+    }
+    else
+    {
+        if (_t == 750) _v.channel = 3;
+        if (_t == 400 || _t == 700 || _t == 1000)
+        {
+            var _s = _v.spk[1];
+            coop_log("voice test: t=", _t, " got=", is_struct(_s) ? _s.got : 0, " gain=", coop_voice_gain(1), " speaking=", coop_voice_speaking(1));
+        }
+        if (_t == 1100) coop_log("voice test: done");
     }
 }
