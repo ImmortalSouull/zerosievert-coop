@@ -13,11 +13,20 @@ function coop_panel_buttons()
     {
         return coop_panel_backup_buttons();
     }
+    if (_c.panel_page == "lobby")
+    {
+        return coop_panel_lobby_buttons();
+    }
+    if (_c.panel_page == "browser")
+    {
+        return coop_panel_browser_buttons();
+    }
     if (_c.role == "none")
     {
         array_push(_b, { id: "steam_host", label: coop_t("Host via Steam (invite a friend)", "Создать игру в Steam (пригласить друга)") });
         array_push(_b, { id: "ip_host", label: coop_t("Host by IP (UDP port 47777)", "Создать игру по IP (UDP порт 47777)") });
         array_push(_b, { id: "ip_join", label: coop_t("Join by IP...", "Подключиться по IP...") });
+        array_push(_b, { id: "browser", label: coop_t("Find open games...", "Найти открытые игры...") });
     }
     else
     {
@@ -46,6 +55,10 @@ function coop_panel_buttons()
         {
             array_push(_b, { id: "steam_invite", label: coop_t("Invite friend", "Пригласить друга") });
         }
+        if (_c.role == "host")
+        {
+            array_push(_b, { id: "lobby", label: coop_t("Players and lobby...", "Игроки и лобби...") });
+        }
         array_push(_b, { id: "leave", label: coop_t("Leave co-op", "Выйти из кооператива") });
     }
     array_push(_b, { id: "fps", label: coop_t("Frame rate: ", "Частота кадров: ") + zs_fps_mode_label(zs_fps().mode) });
@@ -57,6 +70,70 @@ function coop_panel_buttons()
         array_push(_b, { id: "backups", label: coop_t("Save backups...", "Резервные копии сохранений...") });
     }
     array_push(_b, { id: "close", label: coop_t("Close [F7]", "Закрыть [F7]") });
+    return _b;
+}
+
+function coop_panel_title()
+{
+    switch (coop().panel_page)
+    {
+        case "backups": return coop_t("SAVE BACKUPS", "РЕЗЕРВНЫЕ КОПИИ");
+        case "lobby": return coop_t("PLAYERS AND LOBBY", "ИГРОКИ И ЛОББИ");
+        case "browser": return coop_t("OPEN GAMES", "ОТКРЫТЫЕ ИГРЫ");
+    }
+    return coop_t("CO-OP", "КООПЕРАТИВ");
+}
+
+// Page "lobby" (host): lobby type (Steam), one Kick button per player (click twice).
+function coop_panel_lobby_buttons()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "kick_confirm")) _c.kick_confirm = -1;
+    var _b = [];
+    if (_c.transport == "steam")
+    {
+        array_push(_b, { id: "lobby_type", label: coop_t("Lobby: ", "Лобби: ") + coop_lobby_type_label() });
+    }
+    var _ps = coop_peers();
+    for (var _k = 1; _k < COOP_MAX_PLAYERS; _k++)
+    {
+        if (is_struct(_ps[_k]) && _ps[_k].connected)
+        {
+            var _lab = (_c.kick_confirm == _k) ? coop_tf("Remove {0}? Click again", "Удалить {0}? Нажмите ещё раз", _ps[_k].name)
+                : coop_tf("Remove {0} from the session", "Удалить {0} из сессии", _ps[_k].name);
+            array_push(_b, { id: "kick_" + string(_k), label: _lab });
+        }
+    }
+    array_push(_b, { id: "page_main", label: coop_t("Back", "Назад") });
+    return _b;
+}
+
+// Page "browser": public lobbies of this mod version.
+function coop_panel_browser_buttons()
+{
+    var _c = coop();
+    var _b = [];
+    if (!steam_initialised())
+    {
+        array_push(_b, { id: "none", label: coop_t("Steam is not running", "Steam не запущен") });
+    }
+    else if (!variable_struct_exists(_c, "browser") || !is_struct(_c.browser) || _c.browser.loading)
+    {
+        array_push(_b, { id: "none", label: coop_t("Searching...", "Поиск...") });
+    }
+    else if (array_length(_c.browser.list) == 0)
+    {
+        array_push(_b, { id: "none", label: coop_t("No open games right now", "Сейчас нет открытых игр") });
+    }
+    else
+    {
+        for (var _i = 0; _i < array_length(_c.browser.list); _i++)
+        {
+            array_push(_b, { id: "bjoin_" + string(_i), label: coop_lobby_browser_label(_c.browser.list[_i]) });
+        }
+    }
+    array_push(_b, { id: "browser", label: coop_t("Refresh", "Обновить") });
+    array_push(_b, { id: "page_main", label: coop_t("Back", "Назад") });
     return _b;
 }
 
@@ -168,6 +245,51 @@ function coop_panel_click(_id)
         _c.panel = false;
         exit;
     }
+    if (_id == "lobby" || _id == "page_main")
+    {
+        _c.panel_page = (_id == "lobby") ? "lobby" : "main";
+        _c.kick_confirm = -1;
+        _c.panel_sel = 0;
+        exit;
+    }
+    if (_id == "browser")
+    {
+        _c.panel_page = "browser";
+        _c.panel_sel = 0;
+        coop_lobby_browser_open();
+        exit;
+    }
+    if (_id == "none")
+    {
+        exit;
+    }
+    if (_id == "lobby_type")
+    {
+        coop_lobby_type_cycle();
+        exit;
+    }
+    if (string_copy(_id, 1, 5) == "kick_")
+    {
+        var _ks = real(string_delete(_id, 1, 5));
+        if (_c.kick_confirm != _ks)
+        {
+            _c.kick_confirm = _ks;
+            exit;
+        }
+        _c.kick_confirm = -1;
+        coop_kick(_ks);
+        exit;
+    }
+    if (string_copy(_id, 1, 6) == "bjoin_")
+    {
+        var _bi = real(string_delete(_id, 1, 6));
+        if (variable_struct_exists(_c, "browser") && is_struct(_c.browser) && _bi < array_length(_c.browser.list))
+        {
+            coop_steam_join_lobby(_c.browser.list[_bi].id);
+            _c.panel = false;
+        }
+        exit;
+    }
     if (_id == "backups" || _id == "bk_back")
     {
         _c.panel_page = (_id == "backups") ? "backups" : "main";
@@ -220,6 +342,7 @@ function coop_panel_click(_id)
             break;
         case "ip_host":
             coop_net_stop();
+            _c.kicked = [];
             _c.role = "host";
             _c.transport = "udp";
             coop_net_start();
@@ -297,7 +420,7 @@ function coop_panel_draw()
     }
     coop_ui_begin(COOP_F_BODY);
     var _l = coop_panel_layout();
-    var _y = coop_ui_panel(_l.x1, _l.y1, _l.x2, _l.y2, (_c.panel_page == "backups") ? coop_t("SAVE BACKUPS", "РЕЗЕРВНЫЕ КОПИИ") : coop_t("CO-OP", "КООПЕРАТИВ"), COOP_PANEL_ALPHA);
+    var _y = coop_ui_panel(_l.x1, _l.y1, _l.x2, _l.y2, coop_panel_title(), COOP_PANEL_ALPHA);
     var _cx = (_l.x1 + _l.x2) / 2;
     var _status = (_c.role == "none") ? coop_t("Not connected", "Не подключено")
         : (_c.connected ? (coop_t("Players: ", "Игроков: ") + string(coop_player_count()) + "/" + string(COOP_MAX_PLAYERS) + "   " + ((_c.role == "host") ? coop_t("you are the host", "вы хост") : coop_t("you are a guest", "вы гость")))

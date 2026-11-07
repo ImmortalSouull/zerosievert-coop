@@ -198,6 +198,12 @@ SCENARIOS = [
       done=[("A", r"ff: done"), ("B", r"ff: done")], checks=[("A", r"setting 0.5", 1)], custom=ff_ok),
     S("ff_full", "-coop_autoraid 1 -coop_scenario ff -coop_diff coop_friendly_fire=1,coop_friendly_fire_damage=1", "-coop_scenario ff",
       done=[("A", r"ff: done"), ("B", r"ff: done")], checks=[("A", r"setting 1", 1), ("A", r"host lost [1-9]", 1)]),
+    # lobby: the host removes the guest, who cannot come back
+    S("kick", "-coop_scenario kick", "-coop_scenario kick",
+      done=[("A", r"kick: done"), ("B", r"kick: done")],
+      checks=[("A", r"kicked SaWka|kicked \S+ slot 1", 1), ("B", r"kicked by the host", 2), ("A", r"tried to come back - refused", 1),
+              ("A", r"kick: host players now 1", 1), ("A", r"confirm label Remove .*Click again", 1)],
+      need_identical=False, timeout=200, minutes=3),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

@@ -758,6 +758,7 @@ function coop_net_relayable(_type)
         case COOP_MSG_FP:
         case COOP_MSG_ROSTER:
         case COOP_MSG_REJOIN:
+        case COOP_MSG_KICK:
             return false;
     }
     return true;
@@ -954,6 +955,9 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_PSTATUS:
             coop_status_on_msg(_b);
             break;
+        case COOP_MSG_KICK:
+            coop_kick_on_msg();
+            break;
         case COOP_MSG_MARK:
             coop_mark_on_message(_b);
             break;
@@ -1000,9 +1004,19 @@ function coop_net_on_hello(_b)
         coop_peer_drop(_p.slot);
         exit;
     }
+    _p.name = _name; // the IP ban key has the name in it
+    if (coop_is_kicked(_p))
+    {
+        coop_log("kicked player ", _name, " tried to come back - refused");
+        _p.hello = true;
+        coop_msg_begin(COOP_MSG_KICK);
+        coop_msg_send_to(_p.slot, true);
+        _p.hello = false;
+        coop_peer_drop(_p.slot);
+        exit;
+    }
     var _new = !_p.connected;
     _p.connected = true;
-    _p.name = _name;
     coop_msg_begin(COOP_MSG_WELCOME);
     buffer_write(_c.send_buf, buffer_u16, COOP_VERSION);
     buffer_write(_c.send_buf, buffer_string, coop_my_name());

@@ -16,7 +16,8 @@ function coop_steam_host()
     _c.transport = "steam";
     _c.peer_steam = 0;
     coop_net_start();
-    steam_lobby_create(1, COOP_MAX_PLAYERS); // friends only
+    _c.kicked = [];
+    steam_lobby_create(coop_lobby_type(), COOP_MAX_PLAYERS); // friends only / invite only / public (coop_lobby.gml)
     coop_notify(coop_t("Creating Steam lobby...", "Создаём лобби Steam..."));
     coop_log("steam lobby create requested");
 }
@@ -82,6 +83,7 @@ function coop_steam_on_async()
                 steam_lobby_set_data("zs_coop", string(COOP_VERSION));
                 // who hosts: when the host quits, Steam hands the lobby to a guest who is not hosting
                 steam_lobby_set_data("zs_host", string(steam_get_user_steam_id()));
+                coop_lobby_apply_type();
                 // Friends can also use "Join game" in the Steam friends list.
                 steam_set_rich_presence("connect", "+connect_lobby " + string(_c.lobby));
                 steam_set_rich_presence("status", "ZERO Sievert co-op");

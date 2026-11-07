@@ -32,6 +32,7 @@ function coop_test_ext_step()
     coop_test_panelraid_step();
     coop_test_group_step();
     coop_test_ff_step();
+    coop_test_kick_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -1702,8 +1703,16 @@ function coop_test_report_step()
     {
         coop_report_make("prune", "");
     }
+    if (_c.rt == 170)
+    {
+        _c.panel = true;
+        coop_panel_click("browser");
+    }
     if (_c.rt == 200)
     {
+        var _bb = coop_panel_buttons();
+        coop_log("report: browser first button ", _bb[0].label, " loading=", _c.browser.loading);
+        _c.panel = false;
         var _n = 0;
         var _f = file_find_first(COOP_REPORT_DIR + "report_*", 16);
         while (_f != "") { _n++; _f = file_find_next(); }
@@ -1838,5 +1847,65 @@ function coop_test_ff_step()
             if (_t == 100) { hp = hp_max; _c.ff_hp = hp; coop_log("ff: host hp ", hp, " setting ", coop_setting("friendly_fire_damage")); }
             if (_t == 400) { coop_log("ff: host lost ", _c.ff_hp - hp); coop_log("ff: done"); }
         }
+    }
+}
+
+// -coop_scenario kick (hub): the host removes the guest from the "Players and lobby" page (two clicks); the guest
+// tries to connect again and is refused.
+function coop_test_kick_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "kick")
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "kt")) { _c.kt = 0; _c.kicks = 0; }
+    if (_c.role == "host" && _c.connected && is_in_hub())
+    {
+        _c.kt++;
+        if (_c.kt == 300)
+        {
+            _c.panel = true;
+            coop_panel_click("lobby");
+        }
+        if (_c.kt == 330)
+        {
+            var _b = coop_panel_buttons();
+            coop_log("kick: page buttons ", array_length(_b), " first ", _b[0].id);
+            screen_save("kick_page_" + _c.tag + ".png");
+            coop_panel_click("kick_1");
+            var _b2 = coop_panel_buttons();
+            coop_log("kick: confirm label ", _b2[0].label);
+            coop_panel_click("kick_1");
+            _c.panel = false;
+        }
+    }
+    if (_c.role == "host" && _c.kt >= 330)
+    {
+        _c.kt++;
+        if (_c.kt == 1000)
+        {
+            coop_log("kick: host players now ", coop_player_count());
+            coop_log("kick: done");
+        }
+    }
+    if (_c.role == "none" && variable_struct_exists(_c, "was_guest"))
+    {
+        _c.kt++;
+        if (_c.kt == 120 && _c.kicks == 1)
+        {
+            coop_log("kick: guest tries again");
+            _c.role = "guest";
+            _c.transport = "udp";
+            _c.peer_ip = "127.0.0.1";
+            _c.peer_port = COOP_PORT;
+            coop_net_start();
+        }
+        if (_c.kt == 400) coop_log("kick: done");
+    }
+    if (_c.role == "guest")
+    {
+        _c.was_guest = true;
+        _c.kt = 0;
     }
 }
