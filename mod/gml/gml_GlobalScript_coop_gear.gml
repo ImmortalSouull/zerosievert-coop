@@ -42,7 +42,7 @@ function coop_gear_step()
     }
     if (_g.open)
     {
-        if (keyboard_check_pressed(vk_escape) || keyboard_check_pressed(COOP_GEAR_KEY))
+        if (keyboard_check_pressed(vk_escape) || keyboard_check_pressed(COOP_GEAR_KEY) || coop_pad_pressed(gp_face2))
         {
             _g.open = false;
             keyboard_clear(vk_escape);

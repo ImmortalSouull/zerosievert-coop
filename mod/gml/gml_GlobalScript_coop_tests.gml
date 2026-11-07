@@ -2456,7 +2456,7 @@ function coop_test_trade_step()
     }
     else
     {
-        if (_t == 300) _c.sim_trade_key = true;
+        if (_t == 300) { _c.panel = true; coop_panel_click("near_trade"); } // the panel button (gamepad route)
         if (_tr.state == "open" && !variable_struct_exists(_c, "td_open")) _c.td_open = _t;
         if (variable_struct_exists(_c, "td_open") && _t == _c.td_open + 40) _c.sim_trade_click = [400, 300]; // first row
         if (variable_struct_exists(_c, "td_open") && _t == _c.td_open + 160) { screen_save("trade_" + _c.tag + ".png"); _c.sim_trade_click = [500, 850]; }

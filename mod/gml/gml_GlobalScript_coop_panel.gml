@@ -93,6 +93,16 @@ function coop_panel_buttons()
         {
             array_push(_b, { id: "lobby", label: coop_t("Players and lobby...", "Игроки и лобби...") });
         }
+        // the nearest teammate: trade / gear (also what a gamepad reaches)
+        if (instance_exists(obj_player) && (coop_in_raid() || is_in_hub()))
+        {
+            var _near = coop_trade_nearest();
+            if (_near >= 0)
+            {
+                array_push(_b, { id: "near_trade", label: coop_tf("Trade with {0} [U]", "Обмен с {0} [U]", coop_peer_name(_near)) });
+                array_push(_b, { id: "near_gear", label: coop_tf("{0}'s gear [I]", "Снаряжение {0} [I]", coop_peer_name(_near)) });
+            }
+        }
         array_push(_b, { id: "leave", label: coop_t("Leave co-op", "Выйти из кооператива") });
     }
     array_push(_b, { id: "settings", label: coop_t("Settings...", "Настройки...") });
@@ -565,6 +575,14 @@ function coop_panel_click(_id)
             break;
         case "conn":
             coop_conn_cycle();
+            break;
+        case "near_trade":
+            _c.panel = false;
+            _c.sim_trade_key = true; // the same as pressing U
+            break;
+        case "near_gear":
+            _c.panel = false;
+            if (coop_trade_nearest() >= 0) coop_gear_request(coop_trade_nearest());
             break;
         case "update":
             coop_update_start();

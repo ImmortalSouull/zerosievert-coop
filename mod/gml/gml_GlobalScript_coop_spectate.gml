@@ -62,7 +62,7 @@ function coop_spectate_step_inner(_screen)
         return false;
     }
     var _t = coop_spec_targets();
-    var _key = keyboard_check_pressed(ord("F")) || (_c.test_mode && variable_struct_exists(_c, "sim_spec") && _c.sim_spec);
+    var _key = keyboard_check_pressed(ord("F")) || coop_pad_pressed(gp_face4) || (_c.test_mode && variable_struct_exists(_c, "sim_spec") && _c.sim_spec);
     if (_c.test_mode) _c.sim_spec = false;
     if (!_s.on)
     {
@@ -75,7 +75,7 @@ function coop_spectate_step_inner(_screen)
         }
         return false;
     }
-    if (_key || keyboard_check_pressed(vk_escape) || array_length(_t) == 0)
+    if (_key || keyboard_check_pressed(vk_escape) || coop_pad_pressed(gp_face2) || array_length(_t) == 0)
     {
         _s.on = false;
         keyboard_clear(vk_escape);
@@ -86,7 +86,8 @@ function coop_spectate_step_inner(_screen)
     {
         _s.slot = _t[0]; // the watched teammate died or left
     }
-    var _dir = (keyboard_check_pressed(ord("D")) || keyboard_check_pressed(vk_right)) - (keyboard_check_pressed(ord("A")) || keyboard_check_pressed(vk_left));
+    var _dir = (keyboard_check_pressed(ord("D")) || keyboard_check_pressed(vk_right) || coop_pad_pressed(gp_padr) || coop_pad_pressed(gp_shoulderr))
+        - (keyboard_check_pressed(ord("A")) || keyboard_check_pressed(vk_left) || coop_pad_pressed(gp_padl) || coop_pad_pressed(gp_shoulderl));
     if (_c.test_mode && variable_struct_exists(_c, "sim_spec_next") && _c.sim_spec_next) { _dir = 1; _c.sim_spec_next = false; }
     if (_dir != 0)
     {
@@ -130,6 +131,10 @@ function coop_spectate_draw()
     if (_s.on)
     {
         var _txt = coop_tf("Watching {0}  -  A / D: switch,  F: back", "Наблюдение: {0}  -  A / D: другой игрок,  F: назад", coop_peer_name(_s.slot));
+        if (instance_exists(obj_gamepad) && !obj_gamepad.last_input_keyboard)
+        {
+            _txt = coop_tf("Watching {0}  -  LB / RB: switch,  B: back", "Наблюдение: {0}  -  LB / RB: другой игрок,  B: назад", coop_peer_name(_s.slot));
+        }
         var _w = string_width(_txt) / 2 + 20;
         coop_ui_rect(COOP_GW / 2 - _w, 40, COOP_GW / 2 + _w, 88, c_black, 0.7);
         coop_ui_rect(COOP_GW / 2 - _w, 85, COOP_GW / 2 + _w, 88, coop_slot_colour(_s.slot));
@@ -137,7 +142,8 @@ function coop_spectate_draw()
     }
     else if (array_length(coop_spec_targets()) > 0)
     {
-        coop_ui_text_ol(COOP_GW / 2, COOP_GH - 300, coop_t("F - watch your teammates", "F - смотреть за напарниками"), COOP_C_KEY);
+        var _pad = instance_exists(obj_gamepad) && !obj_gamepad.last_input_keyboard;
+        coop_ui_text_ol(COOP_GW / 2, COOP_GH - 300, _pad ? coop_t("Y - watch your teammates", "Y - смотреть за напарниками") : coop_t("F - watch your teammates", "F - смотреть за напарниками"), COOP_C_KEY);
     }
     draw_set_halign(fa_left);
 }

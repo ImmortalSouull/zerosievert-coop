@@ -106,7 +106,7 @@ function coop_trade_step()
         exit;
     }
     var _key = keyboard_check_pressed(COOP_TRADE_KEY) && !coop_chat_is_open() && !(variable_struct_exists(_c, "panel") && _c.panel);
-    if (_c.test_mode && variable_struct_exists(_c, "sim_trade_key")) { _key = true; variable_struct_remove(_c, "sim_trade_key"); }
+    if (variable_struct_exists(_c, "sim_trade_key")) { _key = true; variable_struct_remove(_c, "sim_trade_key"); } // panel button / tests
     switch (_tr.state)
     {
         case "none":
@@ -287,7 +287,31 @@ function coop_trade_input()
     _tr.opts = coop_give_options();
     // more than 14 stacks: the wheel scrolls the list
     if (!variable_struct_exists(_tr, "scroll")) _tr.scroll = 0;
+    if (!variable_struct_exists(_tr, "sel")) _tr.sel = -1;
     _tr.scroll = clamp(_tr.scroll + mouse_wheel_down() - mouse_wheel_up(), 0, max(0, array_length(_tr.opts) - 14));
+    // gamepad (item 47): d-pad picks a stack, A offers / takes it back, Y ready, B cancel
+    var _np = array_length(_tr.opts);
+    if (coop_pad_pressed(gp_padd)) _tr.sel = min(_np - 1, _tr.sel + 1);
+    if (coop_pad_pressed(gp_padu)) _tr.sel = max(0, _tr.sel - 1);
+    if (_tr.sel >= 0)
+    {
+        if (_tr.sel < _tr.scroll) _tr.scroll = _tr.sel;
+        if (_tr.sel >= _tr.scroll + 14) _tr.scroll = _tr.sel - 13;
+    }
+    if (coop_pad_pressed(gp_face1) && _tr.sel >= 0 && _tr.sel < _np)
+    {
+        var _pl = _tr.opts[_tr.sel].loot;
+        var _pk = coop_trade_find(_tr.offer, _pl);
+        if (_pk >= 0) array_delete(_tr.offer, _pk, 1); else array_push(_tr.offer, _pl);
+        coop_trade_offer_changed();
+    }
+    if (coop_pad_pressed(gp_face4)) coop_trade_set_ready(!_tr.ready);
+    if (coop_pad_pressed(gp_face2))
+    {
+        coop_trade_send(_tr.slot, 4, "");
+        coop_trade_close("cancelled by us");
+        exit;
+    }
     if (!mouse_check_button_pressed(mb_left) && !(_c.test_mode && variable_struct_exists(_c, "sim_trade_click")))
     {
         exit;
@@ -354,7 +378,7 @@ function coop_trade_draw()
         var _o = _tr.opts[_i + _sc];
         var _on = coop_trade_find(_tr.offer, _o.loot) >= 0;
         var _ry = _y0 + _i * _L.row;
-        coop_ui_slot(_L.x1 + 20, _ry + 2, _mid - 10, _ry + _L.row - 2, _on, 0.85);
+        coop_ui_slot(_L.x1 + 20, _ry + 2, _mid - 10, _ry + _L.row - 2, _on || (variable_struct_exists(_tr, "sel") && _tr.sel == _i + _sc), 0.85);
         coop_ui_item_icon_wh(_o.loot.item, _L.x1 + 52, _ry + _L.row / 2, 52, 30);
         coop_ui_text(_L.x1 + 90, _ry + _L.row / 2, coop_ui_fit(_o.name, _mid - _L.x1 - 130), _on ? COOP_C_KEY : COOP_C_TEXT);
     }
