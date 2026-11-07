@@ -179,6 +179,23 @@ function coop_ui_item_icon(_item, _cx, _cy, _box)
     return true;
 }
 
+// Item icon fitted into a _w x _h box (long weapons need a wide one), any scale.
+function coop_ui_item_icon_wh(_item, _cx, _cy, _bw, _bh)
+{
+    var _spr = item_exists(_item) ? item_get_sprite_inv(_item) : -1;
+    if (!sprite_exists(_spr))
+    {
+        return false;
+    }
+    var _w = sprite_get_width(_spr);
+    var _h = sprite_get_height(_spr);
+    var _s = min(_bw / max(1, _w), _bh / max(1, _h));
+    var _ox = sprite_get_xoffset(_spr);
+    var _oy = sprite_get_yoffset(_spr);
+    draw_sprite_ext(_spr, 0, _cx - (_w / 2 - _ox) * _s, _cy - (_h / 2 - _oy) * _s, _s, _s, 0, c_white, 1);
+    return true;
+}
+
 // _s shortened with ".." to fit _w pixels in the current font.
 function coop_ui_fit(_s, _w)
 {

@@ -30,6 +30,7 @@ function coop_test_ext_step()
     coop_test_backup_step();
     coop_test_report_step();
     coop_test_panelraid_step();
+    coop_test_group_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -1707,6 +1708,20 @@ function coop_test_report_step()
         while (_f != "") { _n++; _f = file_find_next(); }
         file_find_close();
         coop_log("report: kept=", _n);
+        // hooks [136]/[137]: an empty and a cut mods file read as {} (a test file, not the real one)
+        var _tf = file_text_open_write("coop_test_mods.json");
+        file_text_close(_tf);
+        var _bb = coop_mods_json_load("coop_test_mods.json");
+        var _e1 = buffer_read(_bb, buffer_text);
+        buffer_delete(_bb);
+        _tf = file_text_open_write("coop_test_mods.json");
+        file_text_write_string(_tf, "{" + chr(34) + "a");
+        file_text_close(_tf);
+        _bb = coop_mods_json_load("coop_test_mods.json");
+        var _e2 = buffer_read(_bb, buffer_text);
+        buffer_delete(_bb);
+        file_delete("coop_test_mods.json");
+        coop_log("report: mods json safe=", _e1 == "{}" && _e2 == "{}");
         coop_log("report: done");
     }
 }
@@ -1731,5 +1746,60 @@ function coop_test_panelraid_step()
     {
         _c.panel = false;
         coop_log("panelraid: done");
+    }
+}
+
+// -coop_scenario group: the guest bandages next to the host (group panel: action icon), opens the co-op panel
+// (status "in a menu"), then idles (status "away"); the host logs what it sees and takes screenshots.
+function coop_test_group_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "group" || !coop_shared_ready() || !instance_exists(obj_player) || !_c.peer_in_raid)
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "gt")) _c.gt = 0;
+    _c.gt++;
+    var _t = _c.gt;
+    if (_c.role == "guest")
+    {
+        var _host = coop_partner();
+        with (obj_player)
+        {
+            if (_t == 150 && instance_exists(_host))
+            {
+                x = _host.x + 40;
+                y = _host.y;
+            }
+            if (_t == 200 && arms_holder == undefined)
+            {
+                arms_holder = new class_player_arms(id, "bandage", item_med_get_animation("bandage"));
+                coop_log("group: guest uses bandage");
+            }
+        }
+        if (_t == 400) _c.panel = true;
+        if (_t == 520) _c.panel = false;
+        if (_t == 530) _c.afk_test_ms = 2000;
+        if (_t == 900) coop_log("group: done");
+    }
+    else
+    {
+        var _pup = coop_puppet_of(1);
+        if (_t == 240 || _t == 250 || _t == 260)
+        {
+            if (instance_exists(_pup) && variable_instance_exists(_pup, "coop_arms_item") && _pup.coop_arms_item != "" && !variable_struct_exists(_c, "g_arms"))
+            {
+                _c.g_arms = true;
+                coop_log("group: partner uses ", _pup.coop_arms_item, " weapon ", _pup.arma_now);
+                screen_save("group_panel_" + _c.tag + ".png");
+            }
+        }
+        if (_t == 470) coop_log("group: partner status ", coop_status_of(1));
+        if (_t == 800)
+        {
+            coop_log("group: partner status ", coop_status_of(1), " weapon ", instance_exists(_pup) ? _pup.arma_now : "?");
+            screen_save("group_away_" + _c.tag + ".png");
+            coop_log("group: done");
+        }
     }
 }

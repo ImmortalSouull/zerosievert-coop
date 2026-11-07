@@ -9,6 +9,7 @@ coop_try(coop_backup_step);
 coop_try(coop_files_step);
 coop_try(coop_files_pending_step);
 coop_try(coop_conn_step);
+coop_try(coop_status_step);
 coop_try(coop_autopilot_step);
 coop_try(coop_pending_raid_step);
 coop_try(coop_gather_step);

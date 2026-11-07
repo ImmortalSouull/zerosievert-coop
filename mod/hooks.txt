@@ -1229,3 +1229,20 @@ if (instance_exists(obj_radial_menu))
 <<<REPLACE
         if (!coop_panel_blocks_game() && (_oldMode == InputGetMode() || global.is_steamdeck))
 <<<END
+
+// [136] An empty or cut mods_enabled.json (a crash while the game wrote it, or two game instances writing it at
+// once) made obj_mods crash at start ("read from outside the buffer" in mods_build_files). Read it safely.
+### findreplace gml_GlobalScript_scr_mods
+<<<FIND
+        _buffer = buffer_load("mods_enabled.json");
+<<<REPLACE
+        _buffer = coop_mods_json_load();
+<<<END
+
+// [137] Same read when a mod is switched on/off in the Mods menu.
+### findreplace gml_GlobalScript_modding_utility_changeOn
+<<<FIND
+        _buffer = buffer_load("mods_enabled.json");
+<<<REPLACE
+        _buffer = coop_mods_json_load();
+<<<END

@@ -104,6 +104,10 @@ function coop_draw_gui()
     {
         coop_puppet_draw_tag_gui();
     }
+    if (coop_in_raid() || is_in_hub())
+    {
+        coop_group_draw();
+    }
     if (is_in_hub())
     {
         coop_gather_draw();

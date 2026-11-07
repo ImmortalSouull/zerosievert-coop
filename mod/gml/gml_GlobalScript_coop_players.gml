@@ -379,6 +379,7 @@ function coop_puppet_set_arms(_spr, _img)
     var _a = arms_holder;
     if (_spr < 0 || !sprite_exists(_spr))
     {
+        coop_arms_item = "";
         if (is_struct(_a))
         {
             _a.func_destroy();
@@ -467,6 +468,7 @@ function coop_puppet_on_arms(_b)
     {
         exit;
     }
+    _p.coop_arms_item = _item; // group panel: the item being used
     var _snd = item_consumable_get_sound(_item);
     if (audio_exists(_snd))
     {
@@ -727,6 +729,13 @@ function coop_puppet_draw_tag_gui_one(_p)
         draw_set_halign(fa_center);
         draw_set_valign(fa_bottom);
         coop_ui_text_ol(_gx, _gy - 60, _name, _down ? COOP_C_RED : COOP_C_TEXT);
+        // in the inventory / in a menu / away (coop_group.gml)
+        var _st = coop_status_of(_slot);
+        if (_st != 0)
+        {
+            draw_set_valign(fa_top);
+            coop_ui_text_ol(_gx, _gy - 44, "[" + coop_status_text(_st) + "]", COOP_C_KEY);
+        }
         draw_set_halign(fa_left);
         draw_set_valign(fa_top);
         coop_ui_rect(_gx - 46, _gy - 57, _gx - 37, _gy - 48, coop_slot_colour(_slot));

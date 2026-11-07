@@ -385,3 +385,34 @@ function coop_files_pending_step()
         }
     }
 }
+
+// Hooks [136]/[137]: mods_enabled.json as a buffer holding valid JSON ("{}" when the file is empty or broken).
+function coop_mods_json_load(_name = "mods_enabled.json")
+{
+    var _b = buffer_load(_name);
+    var _ok = false;
+    try
+    {
+        if (_b >= 0 && buffer_get_size(_b) > 0)
+        {
+            var _txt = buffer_read(_b, buffer_text);
+            json_parse(_txt);
+            buffer_seek(_b, buffer_seek_start, 0);
+            _ok = true;
+        }
+    }
+    catch (_e)
+    {
+        _ok = false;
+    }
+    if (_ok)
+    {
+        return _b;
+    }
+    if (_b >= 0) buffer_delete(_b);
+    coop_log(_name, " was empty or broken - read as {}");
+    var _nb = buffer_create(2, buffer_grow, 1);
+    buffer_write(_nb, buffer_text, "{}");
+    buffer_seek(_nb, buffer_seek_start, 0);
+    return _nb;
+}
