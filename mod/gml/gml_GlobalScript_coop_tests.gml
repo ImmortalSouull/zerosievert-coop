@@ -1730,6 +1730,16 @@ function coop_test_report_step()
     {
         _c.panel = true;
         coop_panel_click("browser");
+        // one-click update with the published 1.2.0 zip as "v9.9.9"
+        _c.upd_latest = "9.9.9";
+        _c.upd_zip_url = "https://github.com/ImmortalSouull/zerosievert-coop/releases/download/v1.2.0/ZS-Coop-v1.2.0.zip";
+        coop_panel_click("update");
+    }
+    if (_c.rt == 900) coop_log("report: done"); // after the update download
+    if (_c.rt > 200 && coop_update_state() == "ready" && !variable_struct_exists(_c, "upd_logged"))
+    {
+        _c.upd_logged = true;
+        coop_log("report: update cmd=", file_exists("coop_update/update.cmd"));
     }
     if (_c.rt == 200)
     {
@@ -1755,7 +1765,7 @@ function coop_test_report_step()
         buffer_delete(_bb);
         file_delete("coop_test_mods.json");
         coop_log("report: mods json safe=", _e1 == "{}" && _e2 == "{}");
-        coop_log("report: done");
+
     }
 }
 

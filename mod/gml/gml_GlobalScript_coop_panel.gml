@@ -98,6 +98,13 @@ function coop_panel_buttons()
     array_push(_b, { id: "settings", label: coop_t("Settings...", "Настройки...") });
     array_push(_b, { id: "partners", label: coop_t("Raids with friends...", "Рейды с друзьями...") });
     array_push(_b, { id: "help", label: coop_t("How co-op works...", "Как играть вместе...") });
+    if (coop_update_can_install())
+    {
+        var _us = coop_update_state();
+        array_push(_b, { id: "update", label: (_us == "downloading") ? coop_t("Downloading the update...", "Скачиваем обновление...")
+            : ((_us == "ready") ? coop_t("Update ready - close the game", "Обновление готово - закройте игру")
+            : coop_tf("Update to v{0} now", "Обновить до v{0} сейчас", coop().upd_latest)) });
+    }
     array_push(_b, { id: "report", label: coop_t("Collect logs for a bug report", "Собрать логи для отчёта о баге") });
     if (room == r_menu)
     {
@@ -558,6 +565,9 @@ function coop_panel_click(_id)
             break;
         case "conn":
             coop_conn_cycle();
+            break;
+        case "update":
+            coop_update_start();
             break;
         case "rejoin":
             coop_rejoin_go();
