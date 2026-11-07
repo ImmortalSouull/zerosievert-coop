@@ -5,6 +5,11 @@ function coop_panel_buttons()
 {
     var _c = coop();
     var _b = [];
+    if (!variable_struct_exists(_c, "panel_page")) _c.panel_page = "main";
+    if (_c.panel_page == "backups")
+    {
+        return coop_panel_backup_buttons();
+    }
     if (_c.role == "none")
     {
         array_push(_b, { id: "steam_host", label: coop_t("Host via Steam (invite a friend)", "Создать игру в Steam (пригласить друга)") });
@@ -41,7 +46,38 @@ function coop_panel_buttons()
         array_push(_b, { id: "leave", label: coop_t("Leave co-op", "Выйти из кооператива") });
     }
     array_push(_b, { id: "fps", label: coop_t("Frame rate: ", "Частота кадров: ") + zs_fps_mode_label(zs_fps().mode) });
+    if (room == r_menu)
+    {
+        array_push(_b, { id: "backups", label: coop_t("Save backups...", "Резервные копии сохранений...") });
+    }
     array_push(_b, { id: "close", label: coop_t("Close [F7]", "Закрыть [F7]") });
+    return _b;
+}
+
+// Page "backups": the slot, its backups (newest first), back.
+function coop_panel_backup_buttons()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "bk_slot")) _c.bk_slot = 1;
+    if (!variable_struct_exists(_c, "bk_confirm")) _c.bk_confirm = "";
+    var _b = [];
+    array_push(_b, { id: "bk_slot", label: coop_tf("Save slot {0} (click to change)", "Слот сохранения {0} (нажмите, чтобы сменить)", _c.bk_slot) });
+    var _l = coop_backup_list(_c.bk_slot);
+    if (array_length(_l) == 0)
+    {
+        array_push(_b, { id: "bk_none", label: coop_t("No backups yet (made when a co-op session starts)", "Копий пока нет (делаются при начале кооп-сессии)") });
+    }
+    for (var _i = 0; _i < array_length(_l); _i++)
+    {
+        var _id = "bk_f_" + _l[_i].file;
+        var _lab = coop_backup_label(_l[_i]);
+        if (_c.bk_confirm == _id)
+        {
+            _lab = coop_tf("Restore {0}? Click again", "Восстановить {0}? Нажмите ещё раз", _lab);
+        }
+        array_push(_b, { id: _id, label: _lab });
+    }
+    array_push(_b, { id: "bk_back", label: coop_t("Back", "Назад") });
     return _b;
 }
 
@@ -58,9 +94,11 @@ function coop_panel_step()
     {
         _c.panel = !_c.panel;
         _c.ip_edit = false;
+        _c.panel_page = "main";
     }
     if (!_c.panel)
     {
+        _c.panel_page = "main";
         exit;
     }
     if (_c.ip_edit)
@@ -88,7 +126,8 @@ function coop_panel_step()
     }
     if (keyboard_check_pressed(vk_escape) || coop_pad_pressed(gp_face2))
     {
-        _c.panel = false;
+        _c.panel = (_c.panel_page != "main");
+        _c.panel_page = "main";
         keyboard_clear(vk_escape);
         exit;
     }
@@ -121,6 +160,41 @@ function coop_panel_click(_id)
     {
         coop_visit_end("panel");
         _c.panel = false;
+        exit;
+    }
+    if (_id == "backups" || _id == "bk_back")
+    {
+        _c.panel_page = (_id == "backups") ? "backups" : "main";
+        _c.bk_confirm = "";
+        _c.panel_sel = 0;
+        exit;
+    }
+    if (_id == "bk_slot")
+    {
+        _c.bk_slot = (_c.bk_slot mod 3) + 1;
+        _c.bk_confirm = "";
+        exit;
+    }
+    if (_id == "bk_none")
+    {
+        exit;
+    }
+    if (string_copy(_id, 1, 5) == "bk_f_")
+    {
+        if (_c.bk_confirm != _id)
+        {
+            _c.bk_confirm = _id;
+            exit;
+        }
+        _c.bk_confirm = "";
+        if (coop_backup_restore(_c.bk_slot, string_delete(_id, 1, 5)))
+        {
+            coop_notify(coop_tf("Save slot {0} restored", "Слот сохранения {0} восстановлен", _c.bk_slot));
+        }
+        else
+        {
+            coop_notify(coop_t("Restore failed (main menu only)", "Не удалось восстановить (только в главном меню)"));
+        }
         exit;
     }
     if (string_copy(_id, 1, 6) == "visit_")
@@ -207,7 +281,7 @@ function coop_panel_draw()
     }
     coop_ui_begin(COOP_F_BODY);
     var _l = coop_panel_layout();
-    var _y = coop_ui_panel(_l.x1, _l.y1, _l.x2, _l.y2, coop_t("CO-OP", "КООПЕРАТИВ"));
+    var _y = coop_ui_panel(_l.x1, _l.y1, _l.x2, _l.y2, (_c.panel_page == "backups") ? coop_t("SAVE BACKUPS", "РЕЗЕРВНЫЕ КОПИИ") : coop_t("CO-OP", "КООПЕРАТИВ"));
     var _cx = (_l.x1 + _l.x2) / 2;
     var _status = (_c.role == "none") ? coop_t("Not connected", "Не подключено")
         : (_c.connected ? (coop_t("Players: ", "Игроков: ") + string(coop_player_count()) + "/" + string(COOP_MAX_PLAYERS) + "   " + ((_c.role == "host") ? coop_t("you are the host", "вы хост") : coop_t("you are a guest", "вы гость")))

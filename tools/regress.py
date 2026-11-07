@@ -111,6 +111,11 @@ SCENARIOS = [
     S("lang", "-coop_scenario lang", "",
       done=[("A", r"lang: done")], checks=[("A", r"lang: done ok=13/13", 1), ("A", r"lang: game languages 13 ", 1)],
       need_identical=False, timeout=180, minutes=3, players=1),
+    S("backup", "-coop_scenario backup", "",
+      done=[("A", r"backup: done")],
+      checks=[("A", r"backup: made=1", 1), ("A", r"backup: damaged, md5 now 1", 1), ("A", r"backup: restore ok=1", 1),
+              ("A", r"save restored slot 1", 1), ("A", r"save backup slot 1 \(restore\)", 1)],
+      need_identical=False, timeout=200, minutes=3, players=1),
     # one window, no co-op session: the mod installed for single player (the new AI must fight normally)
     S("solo", "-coop_autoraid 1 -coop_scenario solo", "",
       done=[("A", r"solo: done")],
@@ -213,6 +218,7 @@ SCENARIOS = [
     S("lobby", "-coop_scenario lobby", "-coop_scenario lobby",
       done=[("B", r"lobby: restored")],
       checks=[("B", r"lobby: puppets=1 together=1", 1), ("A", r"puppet of slot 1 created", 1),
+              ("A", r"save backup slot 1 \(coop\): slot1_", 1), ("B", r"save backup slot 1 \(coop\): slot1_", 1),
               ("B", r"weather synced from host", 1),  # the bunker weather follows the host's
               ("B", r"gave \S+ x\d+ to slot 0 \(bunker\)", 1), ("A", r"gift placed in the inventory|gift dropped in a bag", 1),
               ("B", r"save during visit wrote own modules=1", 1), ("B", r"lobby: restored=1", 1),

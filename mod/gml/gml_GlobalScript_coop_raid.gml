@@ -184,7 +184,7 @@ function coop_autopilot_step()
         _c.ap_timer = 0;
     }
     _c.ap_timer++;
-    if (_c.autoslot >= 0 && !_c.autoslot_done && room == r_menu && _c.ap_timer > 90)
+    if (_c.autoslot >= 0 && !_c.autoslot_done && room == r_menu && _c.ap_timer > 90 && _c.scenario != "backup")
     {
         _c.autoslot_done = true;
         coop_log("autopilot: loading slot ", _c.autoslot);

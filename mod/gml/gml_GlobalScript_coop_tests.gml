@@ -27,6 +27,7 @@ function coop_test_ext_step()
     coop_test_lang_step();
     coop_test_soak_step();
     coop_test_menus_step();
+    coop_test_backup_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -1605,5 +1606,61 @@ function coop_test_gather_step()
     {
         _c.gt_done = true;
         coop_log("gather test: done hub=", is_in_hub(), " raid=", coop_in_raid());
+    }
+}
+
+// -coop_scenario backup (1 window): back up slot 1, damage the slot file, restore it from the co-op panel's
+// backup page, compare the file, then load the slot and reach the bunker.
+function coop_test_backup_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "backup")
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "bt")) { _c.bt = 0; _c.bh = 0; }
+    var _root = coop_backup_root();
+    var _live = _root + coop_backup_slot_file(1);
+    if (room == r_menu)
+    {
+        _c.bt++;
+        if (_c.bt == 120)
+        {
+            _c.b_md5 = md5_file(_live);
+            var _ok = coop_backup_make(1, "coop");
+            coop_log("backup: made=", _ok, " count=", array_length(coop_backup_list(1)));
+            // damage the live file
+            var _f = file_text_open_write(_live);
+            file_text_write_string(_f, "broken");
+            file_text_close(_f);
+            coop_log("backup: damaged, md5 now ", md5_file(_live) != _c.b_md5);
+            _c.panel = true;
+            coop_panel_click("backups");
+        }
+        if (_c.bt == 180)
+        {
+            screen_save("backup_page.png");
+            var _btns = coop_panel_buttons();
+            // the newest backup is the second button; click it twice (confirm)
+            coop_panel_click(_btns[1].id);
+            var _b2 = coop_panel_buttons();
+            coop_log("backup: confirm label ", _btns[1].label, " -> ", _b2[1].label);
+            coop_panel_click(_btns[1].id);
+            coop_log("backup: restore ok=", md5_file(_live) == _c.b_md5);
+            _c.panel = false;
+        }
+        if (_c.bt == 240)
+        {
+            saveslot_load(1);
+        }
+    }
+    if (is_in_hub() && instance_exists(obj_player) && _c.bt >= 240)
+    {
+        _c.bh++;
+        if (_c.bh == 120)
+        {
+            coop_log("backup: hub after restore, player=", instance_exists(obj_player));
+            coop_log("backup: done");
+        }
     }
 }
