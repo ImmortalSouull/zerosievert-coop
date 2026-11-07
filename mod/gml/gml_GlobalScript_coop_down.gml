@@ -4,18 +4,29 @@
 // - The timer pauses while a teammate is reviving you. The counter resets at raid start.
 // - The reviver picks: nothing / a bandage / a medkit. Time depends only on the category,
 //   HP after revive depends on the exact item. Second down: HP x0.6.
+// - 2.0.0 (item 30): a downed player crawls (down #1 at 30% speed, down #2 at 15%). The reviver also picks how:
+//   revive here / drag and revive (the downed player follows, 1.5x longer) / drag only (the bleed-out runs 3x
+//   slower). Trying to crawl while being revived on the spot cancels that revive. A cancelled revive keeps no
+//   progress and never restarts the bleed-out timer (it only paused).
 // - Everyone down at once (1.5 s with nobody standing): everyone dies and the raid ends.
 // Hook: player_step_grim_reaper (the game's single death chokepoint).
 
 #macro COOP_DOWN_REVIVE_RANGE 30
+#macro COOP_DRAG_RANGE 90
+// REVIVE message args: 0 revive ping (value = mode), 1 revived (value = hp), 2 reviver stopped, 3 drag-only ping,
+// 4 the downed player moved (cancels a revive on the spot)
+#macro COOP_REVIVE_MODE_STILL 0
+#macro COOP_REVIVE_MODE_DRAG 1
+#macro COOP_REVIVE_MODE_DRAGONLY 2
 
 function coop_down()
 {
     var _c = coop();
     if (!variable_struct_exists(_c, "down"))
     {
-        _c.down = { active: false, count: 0, timer: 0, timer_max: 0, ping_time: -10000, force_death: false };
-        _c.revive = { menu: false, sel: 0, options: [], active: false, t: 0, tmax: 0, opt: undefined, opened_frame: -1, target: -4 };
+        _c.down = { active: false, count: 0, timer: 0, timer_max: 0, ping_time: -10000, force_death: false,
+            drag_time: -10000, drag_slot: -1, drag_mode: 0, moved_sent: 0, bleed_tick: 0, ping_slot: -1 };
+        _c.revive = { menu: false, sel: 0, options: [], active: false, t: 0, tmax: 0, opt: undefined, opened_frame: -1, target: -4, mode: 0 };
     }
     return _c.down;
 }
@@ -201,6 +212,31 @@ function coop_down_on_message(_type, _b)
             if (_arg == 0)
             {
                 _d.ping_time = current_time;
+                _d.ping_slot = _from;
+                if (_val == COOP_REVIVE_MODE_DRAG)
+                {
+                    _d.drag_time = current_time;
+                    _d.drag_slot = _from;
+                    _d.drag_mode = COOP_REVIVE_MODE_DRAG;
+                }
+            }
+            else if (_arg == 3)
+            {
+                _d.drag_time = current_time;
+                _d.drag_slot = _from;
+                _d.drag_mode = COOP_REVIVE_MODE_DRAGONLY;
+            }
+            else if (_arg == 4)
+            {
+                // reviver side: the downed player tried to crawl away - the revive on the spot stops, no progress kept
+                var _rr = coop_revive();
+                if (_rr.active && instance_exists(_rr.target) && _rr.target.coop_slot == _from && _rr.mode == COOP_REVIVE_MODE_STILL)
+                {
+                    _rr.active = false;
+                    _rr.t = 0;
+                    coop_log("revive cancelled: slot ", _from, " moved");
+                    coop_notify(coop_tf("{0} moved - revive cancelled", "{0} пошевелился - поднятие прервано", _who));
+                }
             }
             else if (_arg == 1 && _d.active && instance_exists(obj_player))
             {
@@ -249,13 +285,16 @@ function coop_down_step()
             _d.active = false;
             exit;
         }
+        var _dragged_only = current_time - _d.drag_time < 400 && _d.drag_mode == COOP_REVIVE_MODE_DRAGONLY;
+        _d.bleed_tick++;
+        var _bleed = (current_time - _d.ping_time > 400) && (!_dragged_only || _d.bleed_tick mod 3 == 0);
         if (!instance_exists(obj_player))
         {
             // paused (player deactivated): keep bleeding out, resolve after unpause
-            if (current_time - _d.ping_time > 400 && _d.timer > 0) _d.timer--;
+            if (_bleed && _d.timer > 0) _d.timer--;
             exit;
         }
-        if (current_time - _d.ping_time > 400)
+        if (_bleed)
         {
             _d.timer--;
         }
@@ -285,12 +324,50 @@ function coop_down_end_step()
     var _d = coop_down();
     if (instance_exists(obj_player))
     {
+        var _dragger = (current_time - _d.drag_time < 400) ? coop_puppet_of(_d.drag_slot) : -4;
+        var _still_revive = current_time - _d.ping_time < 400 && !instance_exists(_dragger);
         with (obj_player)
         {
             if (_d.active)
             {
-                x = xprevious + (x - xprevious) * 0.3;
-                y = yprevious + (y - yprevious) * 0.3;
+                var _moved = (x != xprevious || y != yprevious);
+                if (instance_exists(_dragger))
+                {
+                    // dragged: pulled after the teammate, our own crawling does nothing
+                    x = xprevious;
+                    y = yprevious;
+                    var _dd = point_distance(x, y, _dragger.x, _dragger.y);
+                    if (_dd > 14)
+                    {
+                        var _dir = point_direction(_dragger.x, _dragger.y, x, y);
+                        var _tx = _dragger.x + lengthdir_x(14, _dir);
+                        var _ty = _dragger.y + lengthdir_y(14, _dir);
+                        if (!place_meeting(_tx, _ty, obj_solid) || _dd > 60)
+                        {
+                            x = _tx;
+                            y = _ty;
+                        }
+                    }
+                }
+                else if (_still_revive)
+                {
+                    // being revived on the spot: no crawling; trying to cancels the revive
+                    if (_moved && current_time - _d.moved_sent > 500)
+                    {
+                        _d.moved_sent = current_time;
+                        coop_down_send(COOP_MSG_REVIVE, 4, max(0, _d.ping_slot));
+                        coop_log("down: moved while being revived - revive cancelled");
+                    }
+                    x = xprevious;
+                    y = yprevious;
+                }
+                else
+                {
+                    // crawl: down #1 30% of the walking speed, down #2 15%
+                    var _k = (_d.count >= 2) ? 0.15 : 0.3;
+                    x = xprevious + (x - xprevious) * _k;
+                    y = yprevious + (y - yprevious) * _k;
+                }
                 image_angle = 90;
             }
             else if (image_angle == 90)
@@ -361,6 +438,11 @@ function coop_revive_target()
 function coop_revive_in_range()
 {
     var _r = coop_revive();
+    // dragging: the downed player follows over the network, so the reach is longer
+    if (_r.active && _r.mode != COOP_REVIVE_MODE_STILL && instance_exists(_r.target) && instance_exists(obj_player))
+    {
+        return coop_puppet_is_down(_r.target) && point_distance(obj_player.x, obj_player.y, _r.target.x, _r.target.y) < COOP_DRAG_RANGE;
+    }
     var _t = coop_revive_target();
     if (!instance_exists(_t))
     {
@@ -422,6 +504,10 @@ function coop_revive_step()
         var _n = array_length(_r.options);
         if (mouse_wheel_up() || keyboard_check_pressed(vk_up) || coop_pad_pressed(gp_padu)) _r.sel = (_r.sel - 1 + _n) mod _n;
         if (mouse_wheel_down() || keyboard_check_pressed(vk_down) || coop_pad_pressed(gp_padd)) _r.sel = (_r.sel + 1) mod _n;
+        // how: revive here / drag and revive / drag only
+        if (keyboard_check_pressed(ord("Q")) || keyboard_check_pressed(vk_right) || coop_pad_pressed(gp_padr)) _r.mode = (_r.mode + 1) mod 3;
+        if (keyboard_check_pressed(vk_left) || coop_pad_pressed(gp_padl)) _r.mode = (_r.mode + 2) mod 3;
+        if (_c.test_mode && variable_struct_exists(_c, "sim_revive_mode")) { _r.mode = _c.sim_revive_mode; }
         if (keyboard_check_pressed(vk_backspace) || keyboard_check_pressed(vk_escape) || coop_pad_pressed(gp_face2))
         {
             _r.menu = false;
@@ -432,18 +518,31 @@ function coop_revive_step()
             _r.opt = _r.options[_r.sel];
             _r.menu = false;
             _r.active = true;
-            _r.t = 0;
-            _r.tmax = max(1, _r.opt.time * 60);
-            coop_down_send(COOP_MSG_REVIVE, 0, _r.target.coop_slot);
+            _r.t = 0; // a new revive always starts from zero (bug guard: nothing kept from a cancelled one)
+            _r.tmax = max(1, _r.opt.time * 60 * ((_r.mode == COOP_REVIVE_MODE_DRAG) ? 1.5 : 1));
+            coop_revive_ping(_r);
+            coop_log("revive started, mode ", _r.mode, " slot ", _r.target.coop_slot);
         }
         exit;
     }
     if (_r.active)
     {
+        if (_r.mode == COOP_REVIVE_MODE_DRAGONLY)
+        {
+            // dragging only: no progress; E again lets go
+            if (_c.frame mod 10 == 0) coop_revive_ping(_r);
+            if (_e)
+            {
+                _r.active = false;
+                coop_down_send(COOP_MSG_REVIVE, 2, _r.target.coop_slot);
+                coop_log("drag stopped");
+            }
+            exit;
+        }
         _r.t++;
         if (_r.t mod 10 == 0)
         {
-            coop_down_send(COOP_MSG_REVIVE, 0, _r.target.coop_slot);
+            coop_revive_ping(_r);
         }
         if (_r.t >= _r.tmax)
         {
@@ -488,7 +587,9 @@ function coop_down_draw_gui()
         coop_ui_rect(0, 0, _W, _H, c_maroon, 0.15);
         var _sec = ceil(_d.timer / 60);
         var _being = current_time - _d.ping_time < 400;
-        var _line = _being ? coop_t("You are being revived...", "Вас поднимают...") : coop_t("Wait for help", "Ждите помощи");
+        var _dragged = current_time - _d.drag_time < 400;
+        var _line = _dragged ? (_being ? coop_t("You are dragged and revived...", "Вас тащат и поднимают...") : coop_t("You are dragged to safety (bleeding slower)", "Вас оттаскивают (кровь идёт медленнее)"))
+            : (_being ? coop_t("You are being revived - don't move", "Вас поднимают - не двигайтесь") : coop_t("Wait for help - you can crawl", "Ждите помощи - можно ползти"));
         if (_d.count == 1 && !_being)
         {
             _line += coop_t(" · pistol only", " · можно стрелять из пистолета");
@@ -556,16 +657,25 @@ function coop_down_draw_gui()
             coop_ui_text(_x1 + _sw / 2, _y + _sh + 36, string(_o.time) + coop_t(" s", " с"), _sel ? COOP_C_TEXT : COOP_C_DIM);
         }
         draw_set_halign(fa_left);
-        coop_ui_prompt(_bx + _bw / 2, _by + _bh - 54, "E", coop_t("revive   [Wheel] choose", "поднять   [Колесо] выбор"));
+        coop_ui_prompt(_bx + _bw / 2, _by + _bh - 54, "E", coop_t("start   [Wheel] item   [Q / arrows] how", "начать   [Колесо] предмет   [Q / стрелки] как"));
+        // the mode, above the panel
+        draw_set_halign(fa_center);
+        coop_ui_text_ol(_bx + _bw / 2, _by - 34, "< " + coop_revive_mode_name(_r.mode) + " >", COOP_C_KEY);
+        draw_set_halign(fa_left);
     }
     if (_r.active)
     {
         draw_set_halign(fa_center);
         draw_set_valign(fa_bottom);
-        coop_ui_text_ol(_gx, _gy - 160, coop_t("Reviving...", "Поднимаем..."), COOP_C_GREEN);
+        var _lbl = (_r.mode == COOP_REVIVE_MODE_DRAGONLY) ? coop_t("Dragging... [E] let go", "Тащим... [E] отпустить")
+            : ((_r.mode == COOP_REVIVE_MODE_DRAG) ? coop_t("Dragging and reviving...", "Тащим и поднимаем...") : coop_t("Reviving...", "Поднимаем..."));
+        coop_ui_text_ol(_gx, _gy - 160, _lbl, COOP_C_GREEN);
         draw_set_halign(fa_left);
         draw_set_valign(fa_top);
-        coop_ui_bar(_gx - 90, _gy - 152, 180, 10, _r.t / _r.tmax, COOP_C_GREEN);
+        if (_r.mode != COOP_REVIVE_MODE_DRAGONLY)
+        {
+            coop_ui_bar(_gx - 90, _gy - 152, 180, 10, _r.t / _r.tmax, COOP_C_GREEN);
+        }
     }
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
@@ -664,4 +774,40 @@ function coop_nearest_standing_player(_x, _y)
         coop_report_error(_e);
     }
     return instance_nearest(_x, _y, obj_player_parent);
+}
+
+// Reviver: tell the downed player what we do (revive ping with the mode, or drag-only ping).
+function coop_revive_ping(_r)
+{
+    if (!instance_exists(_r.target)) exit;
+    var _c = coop();
+    coop_msg_begin(COOP_MSG_REVIVE);
+    buffer_write(_c.send_buf, buffer_u8, (_r.mode == COOP_REVIVE_MODE_DRAGONLY) ? 3 : 0);
+    buffer_write(_c.send_buf, buffer_f32, _r.mode);
+    coop_msg_send_to(_r.target.coop_slot, true);
+}
+
+// obj_coop End Step: dragging slows the reviver down.
+function coop_revive_end_step()
+{
+    var _r = coop_revive();
+    if (!_r.active || _r.mode == COOP_REVIVE_MODE_STILL || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    with (obj_player)
+    {
+        x = xprevious + (x - xprevious) * 0.55;
+        y = yprevious + (y - yprevious) * 0.55;
+    }
+}
+
+function coop_revive_mode_name(_m)
+{
+    switch (_m)
+    {
+        case COOP_REVIVE_MODE_DRAG: return coop_t("Drag and revive (1.5x longer)", "Тащить и поднимать (в 1,5 раза дольше)");
+        case COOP_REVIVE_MODE_DRAGONLY: return coop_t("Drag only (bleeds 3x slower)", "Только тащить (кровотечение в 3 раза медленнее)");
+    }
+    return coop_t("Revive here", "Поднять на месте");
 }

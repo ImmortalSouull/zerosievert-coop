@@ -223,6 +223,13 @@ SCENARIOS = [
       done=[("B", r"spectate: done")],
       checks=[("B", r"spectate: watching slot 0", 1), ("B", r"spectate: on=1 camera on host=1", 1), ("B", r"spectate: back, on=0", 1)],
       timeout=300, minutes=5),
+    # crawl / drag (item 30): drag and revive while walking, drag only (slower bleed), a crawl cancels a revive on the spot
+    S("drag", "-coop_autoraid 1 -coop_scenario drag", "-coop_scenario drag",
+      done=[("A", r"drag: done"), ("B", r"drag: done")],
+      checks=[("B", r"drag: first revive moved ([4-9]\d|[1-9]\d\d) px", 1), ("A", r"revive started, mode 1", 1), ("A", r"revive started, mode 2", 1),
+              ("B", r"dragged-only bleed per 60 ticks = (1[5-9]|2[0-5])", 1), ("A", r"revive cancelled: slot 1 moved", 1),
+              ("B", r"down: moved while being revived", 1), ("B", r"timer after cancel kept=1", 1), ("B", r"revived with", 2)],
+      timeout=420, minutes=7),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

@@ -36,6 +36,7 @@ function coop_test_ext_step()
     coop_test_extract_step();
     coop_test_tutorial_step();
     coop_test_spectate_step();
+    coop_test_drag_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2098,5 +2099,87 @@ function coop_test_spectate_step()
             coop_log("spectate: guest dies");
             obj_player.hp = 0;
         }
+    }
+}
+
+// -coop_scenario drag (item 30): down #1 - the host drags and revives the guest while walking; down #2 - the host
+// drags only (the guest bleeds 3x slower), lets go, starts a revive on the spot, the guest crawls (cancels it, the
+// bleed-out timer keeps running from where it was), the host revives again.
+function coop_test_drag_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "drag" || !coop_shared_ready() || !instance_exists(obj_player)) exit;
+    if (!variable_struct_exists(_c, "dg")) { _c.dg = 0; _c.dhs = 0; _c.dk = 0; }
+    _c.dg++;
+    var _t = _c.dg;
+    var _d = coop_down();
+    if (_c.role == "guest")
+    {
+        if (_t == 240) { coop_log("drag: guest down #1"); _c.dg_x = obj_player.x; _c.dg_y = obj_player.y; obj_player.hp = 0; }
+        if (_d.count == 1 && !_d.active && !variable_struct_exists(_c, "dg_rev1"))
+        {
+            _c.dg_rev1 = _t;
+            coop_log("drag: first revive moved ", floor(point_distance(_c.dg_x, _c.dg_y, obj_player.x, obj_player.y)), " px");
+        }
+        if (variable_struct_exists(_c, "dg_rev1") && _t == _c.dg_rev1 + 200) { coop_log("drag: guest down #2"); obj_player.hp = 0; }
+        if (_d.active && _d.count == 2)
+        {
+            var _dragged = current_time - _d.drag_time < 400 && _d.drag_mode == COOP_REVIVE_MODE_DRAGONLY;
+            if (_dragged)
+            {
+                if (!variable_struct_exists(_c, "dg_d0")) { _c.dg_d0 = _d.timer; _c.dg_dt = _t; }
+                if (_t == _c.dg_dt + 120) coop_log("drag: dragged-only bleed per 60 ticks = ", (_c.dg_d0 - _d.timer) / 2);
+            }
+            var _still = current_time - _d.ping_time < 400 && current_time - _d.drag_time > 400;
+            if (_still && !variable_struct_exists(_c, "dg_moved") && variable_struct_exists(_c, "dg_d0"))
+            {
+                if (!variable_struct_exists(_c, "dg_still")) _c.dg_still = _t;
+                if (_t == _c.dg_still + 40)
+                {
+                    _c.dg_moved = _t;
+                    _c.dg_tb = _d.timer;
+                    obj_player.x += 4; // tries to crawl away
+                    coop_log("drag: guest crawls while revived, timer ", _d.timer);
+                }
+            }
+            if (variable_struct_exists(_c, "dg_moved") && _t == _c.dg_moved + 60)
+            {
+                coop_log("drag: timer after cancel kept=", _d.timer < _c.dg_tb && _d.timer > _c.dg_tb - 90, " (", _c.dg_tb, " -> ", _d.timer, ")");
+            }
+        }
+        if (_d.count == 2 && !_d.active && !variable_struct_exists(_c, "dg_done")) { _c.dg_done = true; coop_log("drag: guest revived twice"); coop_log("drag: done"); }
+        exit;
+    }
+    // host
+    var _p = coop_partner();
+    var _r = coop_revive();
+    _c.dk++;
+    var _k = _c.dk;
+    switch (_c.dhs)
+    {
+        case 0:
+            if (coop_partner_is_down() && instance_exists(_p)) { obj_player.x = _p.x + 12; obj_player.y = _p.y; _c.dhs = 1; _c.dk = 0; }
+            break;
+        case 1: // drag and revive, walking right
+            if (_k == 30) _c.sim_revive_mode = COOP_REVIVE_MODE_DRAG;
+            if (_k == 60 || _k == 90) _c.sim_e = true;
+            if (_k > 100 && _r.active) obj_player.x += 1.5;
+            if (_k > 100 && !coop_partner_is_down()) { coop_log("drag: host revived while dragging"); _c.dhs = 2; _c.dk = 0; }
+            break;
+        case 2:
+            if (_k > 60 && coop_partner_is_down() && instance_exists(_p)) { obj_player.x = _p.x + 12; obj_player.y = _p.y; _c.dhs = 3; _c.dk = 0; }
+            break;
+        case 3: // drag only, let go, then revive on the spot
+            if (_k == 30) _c.sim_revive_mode = COOP_REVIVE_MODE_DRAGONLY;
+            if (_k == 60 || _k == 90) _c.sim_e = true;
+            if (_k == 90 + 300) _c.sim_e = true; // let go
+            if (_k == 420) _c.sim_revive_mode = COOP_REVIVE_MODE_STILL;
+            if (_k == 450 || _k == 480) { if (instance_exists(_p)) { obj_player.x = _p.x + 12; obj_player.y = _p.y; } _c.sim_e = true; }
+            if (_k > 500 && !_r.active && !_r.menu) { coop_log("drag: host sees the revive stopped"); _c.dhs = 4; _c.dk = 0; }
+            break;
+        case 4: // again, the guest keeps still now
+            if (_k == 60 || _k == 90) { if (instance_exists(_p)) { obj_player.x = _p.x + 12; obj_player.y = _p.y; } _c.sim_e = true; }
+            if (_k > 100 && !coop_partner_is_down()) { coop_log("drag: done"); _c.dhs = 5; }
+            break;
     }
 }
