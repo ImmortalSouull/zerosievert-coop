@@ -56,7 +56,7 @@ def ownerjoin_ok(logs):
         return "no single player stayed in the hub"
     j = j[0]
     o = "C" if j == "B" else "B"
-    need = [(j, r"join request sent to slot 1"), (o, r"join request of slot 2 accepted"),
+    need = [(j, r"train joins the raid of slot 1"),
             (j, r"maps identical with partner"), (j, r"ownerjoin: done owner=1 puppets=1"),
             (o, r"ownerjoin: owner paused, local_paused=1"), (o, r"ownerjoin: owner unpaused, owner=1 player=1")]
     miss = [f"{k}: /{rx}/" for k, rx in need if not re.search(rx, logs[k])]
@@ -144,7 +144,7 @@ SCENARIOS = [
     # the host starts its raid alone, the guest connects later and joins it (group scaling must not change)
     S("latejoin", "-coop_scenario join", "-coop_scenario join -coop_delay_join 25",
       done=[("B", r"maps identical")],
-      checks=[("A", r"raid started without partner", 1), ("A", r"join request of slot 1 accepted", 1)]),
+      checks=[("A", r"raid started without partner", 1), ("B", r"train joins the raid of slot 0", 1)]),
     S("leave", "-coop_autoraid 1 -coop_scenario leave", "-coop_scenario leave",
       done=[("B", r"peer_in_raid=0(.|\n)*peer_in_raid=0")],
       checks=[("A", r"host leaves the extraction screen", 1)], timeout=320, minutes=6),
@@ -160,7 +160,8 @@ SCENARIOS = [
       done=[(k, r"quad: done") for k in "ABCD"],
       checks=[(k, r"players=4 puppets=3", 1) for k in "ABCD"] + [("A", r"maps identical with partner", 3),
               ("A", r"revived partner .* slot 2", 1), ("BCD", r"kill credited", 1)]  # the shooter is slot 1, whichever guest connected first
-              + [(k, r"ping mark from slot", 3) for k in "ABCD"],
+              + [(k, r"ping mark from slot", 3) for k in "ABCD"]
+              + [("B", r"ping mark removed at", 1)] + [(k, r"ping mark removed by slot 1", 1) for k in "ACD"],
       custom=lambda logs: None if (re.search(r"received .* from slot 3", logs["A"]) and any(re.search(r"gave .* to slot 0", logs[k]) for k in "BCD")) else "item give slot 3 -> host failed",
       timeout=420, minutes=7, players=4),
     S("handoff", "-coop_autoraid 1 -coop_scenario handoff -coop_fps 60", "-coop_scenario handoff -coop_fps 60",
@@ -172,7 +173,8 @@ SCENARIOS = [
       done=[(k, r"quad: done") for k in "ABC"],
       checks=[(k, r"players=3 puppets=2", 1) for k in "ABC"] + [("A", r"maps identical with partner", 2),
               ("A", r"revived partner .* slot 2", 1), ("A", r"received .* from slot 2", 1)]
-              + [(k, r"ping mark from slot", 2) for k in "ABC"],
+              + [(k, r"ping mark from slot", 2) for k in "ABC"]
+              + [("B", r"ping mark removed at", 1)] + [(k, r"ping mark removed by slot 1", 1) for k in "AC"],
       timeout=420, minutes=7, players=3),
     S("handoff3", "-coop_autoraid 1 -coop_scenario handoff -coop_fps 60", "-coop_scenario handoff -coop_fps 60",
       done=[(k, r"handoff: done") for k in "BC"],

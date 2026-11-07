@@ -23,8 +23,8 @@ English version: see the ENGLISH section below.  Wersja polska: sekcja POLSKI na
   Друзья принимают приглашение в Steam или жмут "Присоединиться к игре" у хоста в списке друзей.
 - Запасной вариант: "Создать игру по IP" у хоста (UDP-порт 47777) и
   "Подключиться по IP" у друзей (через Radmin VPN / ZeroTier / проброс порта).
-- Каждый загружает СВОЁ сохранение. Когда хост садится на поезд, у поезда появляется круг
-  с отсчётом: кто стоит в круге, когда время выйдет, едет вместе с хостом на ту же карту.
+- Каждый загружает СВОЁ сохранение. Когда хост садится на поезд, вдоль поезда появляется зона
+  с отсчётом: кто стоит в зоне, когда время выйдет, едет вместе с хостом на ту же карту.
   Остальные остаются в бункере и могут присоединиться позже.
 - Если кто-то из группы уже в рейде, поезд везёт в ЕГО рейд (раздельных рейдов не бывает).
 - [X] рядом с напарником — передать предмет (в рейде и в бункере).
@@ -123,8 +123,8 @@ HOW TO PLAY
   Friends accept the invite in Steam or use "Join game" on the host in the Steam friends list.
 - Fallback: "Host by IP" for the host (UDP port 47777) and "Join by IP" for the friends
   (via Radmin VPN / ZeroTier / port forwarding).
-- Everyone loads THEIR OWN save. When the host takes the train, a circle with a countdown
-  appears there: whoever stands in it when time runs out goes with the host to the same map.
+- Everyone loads THEIR OWN save. When the host takes the train, a zone with a countdown
+  appears along it: whoever stands in it when time runs out goes with the host to the same map.
   The others stay in the bunker and can join later.
 - If someone in the group is already in a raid, the train takes you into THAT raid (never two raids).
 - [X] next to a teammate - give them an item (in a raid and in the bunker).
@@ -225,8 +225,8 @@ JAK GRAĆ
   Znajomi przyjmują zaproszenie w Steam albo klikają "Dołącz do gry" przy hoście na liście znajomych.
 - Zapasowo: "Utwórz grę przez IP" u hosta (port UDP 47777) i "Dołącz przez IP" u znajomych
   (przez Radmin VPN / ZeroTier / przekierowanie portu).
-- Każdy wczytuje SWÓJ zapis. Gdy host wsiada do pociągu, przy pociągu pojawia się krąg z odliczaniem:
-  kto stoi w kręgu, gdy czas minie, jedzie z hostem. Pozostali zostają w bunkrze i mogą dołączyć później.
+- Każdy wczytuje SWÓJ zapis. Gdy host wsiada do pociągu, wzdłuż pociągu pojawia się strefa z odliczaniem:
+  kto stoi w strefie, gdy czas minie, jedzie z hostem. Pozostali zostają w bunkrze i mogą dołączyć później.
 - Jeśli ktoś z grupy jest już na rajdzie, pociąg zawozi do JEGO rajdu (nigdy dwa osobne rajdy).
 - Ranny gracz czeka na pomoc: podejdź i naciśnij [E], kółkiem myszy wybierz bandaż lub apteczkę.
 - [X] obok towarzysza: przekaż mu przedmiot (na rajdzie i w bunkrze). Środkowy przycisk myszy: znacznik dla wszystkich.

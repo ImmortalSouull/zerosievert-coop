@@ -36,6 +36,7 @@ function coop_test_ext_step()
     _c.lt++;
     var _t = _c.lt;
     var _tag = _c.tag;
+    obj_player.hp = obj_player.hp_max; // 1.4 enemies near the chest killed both players once (death closes the chest UI)
     if (_t >= 110 && _t <= 138 && !variable_struct_exists(_c, "lc_chest"))
     {
         instance_activate_object(obj_chest_general); // effective from the next step; culling may undo it
@@ -589,6 +590,12 @@ function coop_test_quad_step()
     {
         _c.sim_ping = true;
     }
+    // slot 1: a mark, then a second click on the same spot takes it away (for everybody)
+    if (_c.slot == 1 && (_t == 600 || _t == 640))
+    {
+        if (_t == 600) _c.sim_ping_at = [obj_player.x + 40, obj_player.y]; // the same spot both times (the player walks)
+        _c.sim_ping = true;
+    }
     if (_t == 490)
     {
         screen_save("quad_ui_" + _c.tag + ".png"); // name tags, ping marks, arrows to teammates off screen
@@ -894,7 +901,7 @@ function coop_test_lobby_step(_t)
         screen_save("hub_lobby_" + _tag + ".png");
     }
     // the guest hands the host an item in the bunker (straight into the host's inventory grid)
-    if (_c.role == "guest" && (_t == 240 || _t == 241 || _t == 242))
+    if (_c.scenario == "lobby" && _c.role == "guest" && (_t == 240 || _t == 241 || _t == 242))
     {
         var _h = coop_puppet_of(0);
         if (instance_exists(_h))
@@ -1532,20 +1539,55 @@ function coop_test_hostjoin_step()
     }
 }
 
-// -coop_scenario gather (3 players, host autoraid): the host's train ride opens the circle; slot 2 walks out of it
-// and must stay in the bunker, slot 1 stays inside and goes along.
+// -coop_scenario gather (3 players, host autoraid): the host's train ride opens the zone at the train; slot 2 walks
+// out of it and must stay in the bunker, slot 1 steps into it and goes along.
 function coop_test_gather_step()
 {
     var _c = coop();
-    if (_c.scenario != "gather" || _c.role != "guest")
+    if (_c.role != "guest")
     {
         exit;
     }
-    if (_c.slot == 2 && variable_struct_exists(_c, "gather") && _c.gather != undefined && !variable_struct_exists(_c, "gt_moved") && instance_exists(obj_player))
+    if (_c.scenario != "gather")
+    {
+        // every other scenario: guests answer the host's train zone like a player would, by walking into it
+        if (variable_struct_exists(_c, "gather") && _c.gather != undefined && instance_exists(obj_player) && is_in_hub())
+        {
+            var _z = _c.gather;
+            if (!coop_gather_in(_z, obj_player.x, obj_player.y))
+            {
+                obj_player.x = (_z.x1 + _z.x2) / 2 + max(0, _c.slot) * 12;
+                obj_player.y = (_z.y1 + _z.y2) / 2;
+            }
+        }
+        exit;
+    }
+    if (variable_struct_exists(_c, "gather") && _c.gather != undefined && !variable_struct_exists(_c, "gt_moved") && instance_exists(obj_player))
     {
         _c.gt_moved = true;
-        obj_player.x = _c.gather.x + 400;
-        coop_log("gather test: slot 2 walks away from the train");
+        var _g = _c.gather;
+        if (_c.slot == 2)
+        {
+            obj_player.x = _g.x2 + 200; // out of the zone
+            obj_player.y = (_g.y1 + _g.y2) / 2;
+            coop_log("gather test: slot 2 walks away from the train");
+        }
+        else
+        {
+            obj_player.x = (_g.x1 + _g.x2) / 2; // into the zone
+            obj_player.y = (_g.y1 + _g.y2) / 2;
+            coop_log("gather test: slot ", _c.slot, " steps into the zone ", floor(_g.x1), ",", floor(_g.y1), " - ", floor(_g.x2), ",", floor(_g.y2));
+        }
+    }
+    if (_c.slot == 1 && variable_struct_exists(_c, "gt_moved") && !variable_struct_exists(_c, "gt_shot") && is_in_hub())
+    {
+        if (!variable_struct_exists(_c, "gt_shot_t")) _c.gt_shot_t = 0;
+        _c.gt_shot_t++;
+        if (_c.gt_shot_t == 60)
+        {
+            _c.gt_shot = true;
+            screen_save("gather_zone_" + _c.tag + ".png"); // what the zone looks like at the train
+        }
     }
     if (!variable_struct_exists(_c, "gt_t")) _c.gt_t = 0;
     _c.gt_t++;

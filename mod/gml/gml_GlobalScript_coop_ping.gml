@@ -1,9 +1,10 @@
 // ZERO Sievert co-op: ping markers. Middle mouse button (or the gamepad's right stick click) marks the spot under
 // the aim cursor for every player: a marker with the name and distance for 10 seconds, at the screen edge when
-// off screen, plus a short sound.
+// off screen, plus a short sound. Clicking again on your own marker removes it for everybody.
 
 #macro COOP_MSG_MARK 15
 #macro COOP_MARK_LIFE 10000
+#macro COOP_MARK_TOGGLE_PX 16
 
 function coop_marks()
 {
@@ -13,6 +14,37 @@ function coop_marks()
         _c.marks = [];
     }
     return _c.marks;
+}
+
+// Remove a player's marker; true if there was one.
+function coop_mark_remove(_slot)
+{
+    var _m = coop_marks();
+    var _had = false;
+    for (var _i = array_length(_m) - 1; _i >= 0; _i--)
+    {
+        if (_m[_i].slot == _slot)
+        {
+            array_delete(_m, _i, 1);
+            _had = true;
+        }
+    }
+    return _had;
+}
+
+// Our live marker near (_x, _y), or undefined.
+function coop_mark_mine_near(_x, _y)
+{
+    var _m = coop_marks();
+    var _me = max(0, coop().slot);
+    for (var _i = 0; _i < array_length(_m); _i++)
+    {
+        if (_m[_i].slot == _me && current_time <= _m[_i].t_end && point_distance(_m[_i].x, _m[_i].y, _x, _y) <= COOP_MARK_TOGGLE_PX)
+        {
+            return _m[_i];
+        }
+    }
+    return undefined;
 }
 
 function coop_mark_add(_slot, _x, _y)
@@ -67,27 +99,50 @@ function coop_ping_step()
     }
     var _x = obj_cursor.aa_x;
     var _y = obj_cursor.aa_y;
-    coop_mark_add(max(0, _c.slot), _x, _y);
+    if (variable_struct_exists(_c, "sim_ping_at") && is_array(_c.sim_ping_at))
+    {
+        _x = _c.sim_ping_at[0]; // test input: a fixed spot
+        _y = _c.sim_ping_at[1];
+    }
+    // the same spot again: the second click takes our marker away
+    var _remove = coop_mark_mine_near(_x, _y) != undefined;
+    if (_remove)
+    {
+        coop_mark_remove(max(0, _c.slot));
+    }
+    else
+    {
+        coop_mark_add(max(0, _c.slot), _x, _y);
+    }
     coop_msg_begin(COOP_MSG_MARK);
     buffer_write(_c.send_buf, buffer_f32, _x);
     buffer_write(_c.send_buf, buffer_f32, _y);
+    buffer_write(_c.send_buf, buffer_u8, _remove);
     coop_msg_send(true);
-    coop_log("ping mark at ", floor(_x), ",", floor(_y));
+    coop_log(_remove ? "ping mark removed at " : "ping mark at ", floor(_x), ",", floor(_y));
 }
 
 function coop_mark_on_message(_b)
 {
     var _x = buffer_read(_b, buffer_f32);
     var _y = buffer_read(_b, buffer_f32);
+    var _remove = buffer_read(_b, buffer_u8);
     if (!coop_in_raid())
     {
         exit;
     }
     var _c = coop();
-    coop_mark_add(_c.msg_from, _x, _y);
+    if (_remove)
+    {
+        coop_mark_remove(_c.msg_from);
+    }
+    else
+    {
+        coop_mark_add(_c.msg_from, _x, _y);
+    }
     if (_c.test_mode)
     {
-        coop_log("ping mark from slot ", _c.msg_from, " at ", floor(_x), ",", floor(_y));
+        coop_log(_remove ? "ping mark removed by slot " : "ping mark from slot ", _c.msg_from, " at ", floor(_x), ",", floor(_y));
     }
 }
 

@@ -82,9 +82,11 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 - License: MIT (LICENSE, since 2026-11-05; README "Лицензия / License" says it covers the mod's code only).
   All the user's other mod repos are MIT too.
   Ask the user before publishing. Git identity is set per repo (ImmortalSouull); core.autocrlf=false (CRLF breaks .sh).
-- Every release: write `docs/releases/v<ver>.md` in Russian AND English (title "RU / EN", a
-  "**Русский** · [English](#english)" line, Russian part, then `<a name="english"></a>` + full English
-  translation incl. install steps; README.md and dist_src/README.txt are bilingual too): what's new, "Исправлено (относительно v<prev>)",
+- Every release: write `docs/releases/v<ver>.md` in English, Russian AND Polish (user's rule 2026-11-07): title
+  "RU / EN / PL", a line "Выберите язык · Choose a language · Wybierz język:", then three collapsed blocks
+  `<details><summary><b>English</b></summary>` ... `</details>`, the same for Русский and Polski (blank line after
+  </summary>), each a full text incl. install steps. README: `README.md` (English) + `README.ru.md` + `README.pl.md`
+  with a language bar at the top of each; dist_src/README.txt has RU/EN/PL sections. Content: what's new, "Исправлено (относительно v<prev>)",
   "Известные баги" — carry over the previous list, move fixed bugs into "Исправлено", add newly found ones.
   Also update the bug list of the previous release notes if a bug is found later. Then tag the release commit,
   `git push origin main --tags`, and `gh release create v<ver> <zip> README_v<ver>.md --title "<first line>"
