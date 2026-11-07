@@ -117,6 +117,25 @@ function coop_panel_browser_buttons()
     {
         array_push(_b, { id: "none", label: coop_t("Steam is not running", "Steam не запущен") });
     }
+    else if (variable_struct_exists(_c, "browser") && is_struct(_c.browser) && variable_struct_exists(_c.browser, "friends") && array_length(_c.browser.friends) > 0)
+    {
+        // friends first (item 29), then the public games
+        var _fr = _c.browser.friends;
+        for (var _i = 0; _i < array_length(_fr); _i++)
+        {
+            if (_fr[_i].lobby != 0)
+            {
+                array_push(_b, { id: "fjoin_" + string(_i), label: coop_tf("Join friend {0}", "Присоединиться к другу {0}", coop_ui_fit(_fr[_i].name, 300)) });
+            }
+            else
+            {
+                array_push(_b, { id: "none", label: coop_tf("{0} plays solo (no co-op lobby)", "{0} играет один (нет кооп-лобби)", coop_ui_fit(_fr[_i].name, 300)) });
+            }
+        }
+    }
+    if (!steam_initialised())
+    {
+    }
     else if (!variable_struct_exists(_c, "browser") || !is_struct(_c.browser) || _c.browser.loading)
     {
         array_push(_b, { id: "none", label: coop_t("Searching...", "Поиск...") });
@@ -278,6 +297,16 @@ function coop_panel_click(_id)
         }
         _c.kick_confirm = -1;
         coop_kick(_ks);
+        exit;
+    }
+    if (string_copy(_id, 1, 6) == "fjoin_")
+    {
+        var _fi = real(string_delete(_id, 1, 6));
+        if (variable_struct_exists(_c, "browser") && is_struct(_c.browser) && _fi < array_length(_c.browser.friends))
+        {
+            coop_steam_join_lobby(_c.browser.friends[_fi].lobby);
+            _c.panel = false;
+        }
         exit;
     }
     if (string_copy(_id, 1, 6) == "bjoin_")

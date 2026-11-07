@@ -146,6 +146,7 @@ function coop_lobby_browser_open()
         _c.browser.loading = false;
         exit;
     }
+    _c.browser.friends = coop_friends_in_game();
     steam_lobby_list_add_string_filter("zs_coop", string(COOP_VERSION), 0); // 0 = equal
     steam_lobby_list_request();
     coop_log("lobby list requested");
@@ -179,6 +180,37 @@ function coop_lobby_browser_step()
     }
     _c.browser.list = _l;
     coop_log("lobby list: ", _n, " open games");
+}
+
+// Steam friends playing ZERO Sievert now (item 29): [{ name, lobby }] (lobby 0 = not in a lobby).
+function coop_friends_in_game()
+{
+    var _out = [];
+    try
+    {
+        var _app = steam_get_app_id();
+        var _l = steam_get_friends_game_info();
+        if (!is_array(_l))
+        {
+            return _out;
+        }
+        for (var _i = 0; _i < array_length(_l); _i++)
+        {
+            var _f = _l[_i];
+            if (!is_struct(_f)) continue;
+            var _game = variable_struct_exists(_f, "gameId") ? _f.gameId : (variable_struct_exists(_f, "game_id") ? _f.game_id : 0);
+            if (real(_game) != real(_app)) continue;
+            var _lob = variable_struct_exists(_f, "lobbyId") ? _f.lobbyId : (variable_struct_exists(_f, "lobby_id") ? _f.lobby_id : 0);
+            var _nm = variable_struct_exists(_f, "name") ? _f.name : "?";
+            array_push(_out, { name: string(_nm), lobby: _lob });
+        }
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    coop_log("friends in game: ", array_length(_out));
+    return _out;
 }
 
 function coop_lobby_browser_label(_e)
