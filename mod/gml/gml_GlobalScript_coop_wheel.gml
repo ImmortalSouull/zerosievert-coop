@@ -201,11 +201,16 @@ function coop_wheel_draw()
         }
         else
         {
+            // icon commands (page 1) and "I need this" (page 2: any item)
             coop_ui_rect(_gx - 30, _gy - 26, _gx + 30, _gy + 26, COOP_C_SLOT_HI, 0.85 * _a);
             coop_ui_rect(_gx - 30, _gy + 24, _gx + 30, _gy + 26, coop_slot_colour(_e.slot), _a);
             draw_set_alpha(_a);
-            coop_ui_item_icon_wh(_ic[_e.index][0], _gx, _gy, 52, 44);
+            coop_ui_item_icon_wh((_e.page == 2) ? _e.item : _ic[_e.index][0], _gx, _gy, 52, 44);
             draw_set_alpha(1);
+            if (_e.page == 2)
+            {
+                coop_ui_text_ol(_gx, _gy - 40, coop_t("Need", "Нужно"), COOP_C_KEY);
+            }
         }
         draw_set_halign(fa_left);
         draw_set_valign(fa_top);
@@ -254,4 +259,72 @@ function coop_wheel_draw()
     }
     draw_set_halign(fa_left);
     draw_set_valign(fa_top);
+}
+
+// ---- "I need this" (2.0.0 item 28) ----
+// In the inventory (or any loot window): hover an item and press the middle mouse button (gamepad: the right stick
+// button): everybody sees that item's icon over your head and "[Need: item]" in the chat log.
+#macro COOP_MSG_NEED 78
+
+function coop_need_step()
+{
+    var _c = coop();
+    var _w = coop_wheel();
+    if (!_c.connected || !(coop_in_raid() || is_in_hub()))
+    {
+        exit;
+    }
+    // the hovered item (the game sets its tooltip loot while the pointer rests on an item)
+    try
+    {
+        if (uiGetData().tooltip_open && is_struct(uiGetData().tooltip_loot) && item_exists(uiGetData().tooltip_loot.item))
+        {
+            _w.need_item = uiGetData().tooltip_loot.item;
+            _w.need_frame = _c.frame;
+        }
+    }
+    catch (_e) { }
+    var _press = mouse_check_button_pressed(mb_middle);
+    try
+    {
+        for (var _d = 0; _d < 4; _d++) if (gamepad_is_connected(_d) && gamepad_button_check_pressed(_d, gp_stickr)) _press = true;
+    }
+    catch (_e2) { }
+    if (_c.test_mode && variable_struct_exists(_c, "sim_need"))
+    {
+        _w.need_item = _c.sim_need;
+        _w.need_frame = _c.frame;
+        variable_struct_remove(_c, "sim_need");
+        _press = true;
+    }
+    if (!_press || !variable_struct_exists(_w, "need_frame") || _c.frame - _w.need_frame > 3)
+    {
+        exit;
+    }
+    var _b = coop_msg_begin(COOP_MSG_NEED);
+    buffer_write(_b, buffer_string, _w.need_item);
+    coop_msg_send(true);
+    coop_need_show(max(0, _c.slot), _w.need_item);
+    _w.need_frame = -100;
+}
+
+function coop_need_on_msg(_b)
+{
+    var _item = buffer_read(_b, buffer_string);
+    if (item_exists(_item))
+    {
+        coop_need_show(coop().msg_from, _item);
+    }
+}
+
+function coop_need_show(_slot, _item)
+{
+    var _w = coop_wheel();
+    for (var _i = array_length(_w.cmds) - 1; _i >= 0; _i--)
+    {
+        if (_w.cmds[_i].slot == _slot) array_delete(_w.cmds, _i, 1);
+    }
+    array_push(_w.cmds, { slot: _slot, page: 2, index: 0, item: _item, t: current_time });
+    var _name = (_slot == max(0, coop().slot)) ? coop_my_name() : coop_peer_name(_slot);
+    coop_chat_add(_slot, _name, coop_tf("[Need: {0}]", "[Нужно: {0}]", item_get_name(_item)));
 }
