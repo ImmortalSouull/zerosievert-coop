@@ -46,6 +46,7 @@ function coop_test_ext_step()
     coop_test_radio_step();
     coop_test_event_step();
     coop_test_quest_step();
+    coop_test_barq_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2679,5 +2680,58 @@ function coop_test_quest_step()
         global.quest_state[_c.q_slot] = new class_quest_state();
         coop_quest_turned_in("coop_test_quest");
         coop_log("quest test: done");
+    }
+}
+
+// -coop_scenario barq (bunker): with two players the barman offers the group tasks; the host takes one (the game's
+// accept), the quest window is shot; the guest leaves co-op and the free tasks are withdrawn on the host.
+function coop_test_barq_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "barq" || !is_in_hub() || !instance_exists(obj_player)) exit;
+    if (!variable_struct_exists(_c, "bq")) _c.bq = 0;
+    _c.bq++;
+    var _t = _c.bq;
+    var _bar = coop_barq_barman();
+    if (_c.role == "guest") _c.bq_guest = true;
+    if (variable_struct_exists(_c, "bq_guest"))
+    {
+        if (_t == 900) { coop_log("barq: guest leaves"); coop_panel_click("leave"); }
+        if (_t == 1000) coop_log("barq: done");
+        exit;
+    }
+    // host: from the moment the guest is here
+    if (!variable_struct_exists(_c, "bq0"))
+    {
+        if (_c.connected && coop_player_count() > 1) _c.bq0 = _t; else exit;
+    }
+    if (!variable_struct_exists(_c, "bq_left") && _t > _c.bq0 + 500 && coop_player_count() <= 1) _c.bq_left = _t;
+    if (variable_struct_exists(_c, "bq_left")) { _t = (_t == _c.bq_left + 120) ? 1300 : -1; } else { _t = _t - _c.bq0 + 100; }
+    if (_t == 400)
+    {
+        coop_log("barq: barman=", instance_exists(_bar), " list has bandits=", instance_exists(_bar) && array_contains(_bar.quest_array, "coop_q_bandits"),
+            " mutants=", instance_exists(_bar) && array_contains(_bar.quest_array, "coop_q_mutants"));
+        if (instance_exists(_bar))
+        {
+            obj_player.x = _bar.x;
+            obj_player.y = _bar.y + 20;
+            global.speaker_nearest = _bar;
+            player_action_talk_to_npc();
+            uiFind(uiLayerGetRoot("npc"), "left frame").ReplaceFromFile("ZS_vanilla/ui/npc_left_quest_selection.ui");
+            uiGetData().npc_instance = _bar;
+            uiGetData().npc_quest_index = array_get_index(_bar.quest_array, "coop_q_bandits");
+            try { npc_dialogue_quest_accept(); } catch (_ex) { coop_log("barq: accept ui: ", _ex.message); }
+            coop_log("barq: accepted=", coop_barq_active("coop_q_bandits"));
+        }
+    }
+    if (_t == 460) screen_save("barq_" + _c.tag + ".png");
+    if (_t == 480) { __uiGlobal().__defaultOnion.Clear(); player_set_local_state(scr_player_state_move); }
+    if (_t == 1300)
+    {
+        coop_log("barq: after the guest left, mutants offered=", instance_exists(_bar) && array_contains(_bar.quest_array, "coop_q_mutants"),
+            " accepted kept=", coop_barq_active("coop_q_bandits"));
+        // leave the test save as it was
+        for (var _i = 0; _i < 30; _i++) if (global.quest_state[_i].id == "coop_q_bandits") global.quest_state[_i] = new class_quest_state();
+        coop_log("barq: done");
     }
 }

@@ -296,6 +296,12 @@ SCENARIOS = [
       done=[("A", r"quest test: done"), ("B", r"quest test: done")],
       checks=[("A", r"quest test: progress=5 me=2 others=3 money=400", 1), ("B", r"quest test: progress=5 me=3 others=2 money=600", 1),
               ("A", r"kill of .* counted for", 1)], timeout=360, minutes=6),
+    # the barman's group tasks: offered with two players, the game's accept works, withdrawn when alone
+    S("barq", "-coop_scenario barq", "-coop_scenario barq",
+      done=[("A", r"barq: done"), ("B", r"barq: done")],
+      checks=[("A", r"barq: barman=1 list has bandits=1 mutants=1", 1), ("A", r"barq: accepted=1", 1),
+              ("A", r"after the guest left, mutants offered=0 accepted kept=1", 1), ("B", r"barman co-op tasks offered", 1)],
+      need_identical=False, timeout=240, minutes=4),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),
