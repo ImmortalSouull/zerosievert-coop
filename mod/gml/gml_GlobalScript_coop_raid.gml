@@ -184,7 +184,7 @@ function coop_autopilot_step()
         _c.ap_timer = 0;
     }
     _c.ap_timer++;
-    if (_c.autoslot >= 0 && !_c.autoslot_done && room == r_menu && _c.ap_timer > 90 && _c.scenario != "backup")
+    if (_c.autoslot >= 0 && !_c.autoslot_done && room == r_menu && _c.ap_timer > 90 && _c.scenario != "backup" && _c.scenario != "report")
     {
         _c.autoslot_done = true;
         coop_log("autopilot: loading slot ", _c.autoslot);
@@ -201,7 +201,7 @@ function coop_autopilot_step()
         }
     }
     // solo play with the mod (no co-op session): the same raid start, then coop_test_solo_step
-    if (_c.autoraid >= 0 && !_c.autoraid_done && _c.role == "none" && _c.scenario == "solo" && is_in_hub() && instance_exists(obj_player) && _c.ap_timer > 120)
+    if (_c.autoraid >= 0 && !_c.autoraid_done && _c.role == "none" && (_c.scenario == "solo" || _c.scenario == "panelraid") && is_in_hub() && instance_exists(obj_player) && _c.ap_timer > 120)
     {
         _c.autoraid_done = true;
         coop_log("autopilot: solo raid ", _c.autoraid);

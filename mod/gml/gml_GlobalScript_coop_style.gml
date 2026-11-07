@@ -62,10 +62,10 @@ function coop_ui_rect(_x1, _y1, _x2, _y2, _col, _alpha = 1)
 
 // A window: black outline, dark fill, thin inner border; optional header bar with a centred title.
 // Returns the y where the content starts.
-function coop_ui_panel(_x1, _y1, _x2, _y2, _title = "")
+function coop_ui_panel(_x1, _y1, _x2, _y2, _title = "", _alpha = 0.97)
 {
-    coop_ui_rect(_x1 - 4, _y1 - 4, _x2 + 4, _y2 + 4, COOP_C_EDGE, 0.95);
-    coop_ui_rect(_x1, _y1, _x2, _y2, COOP_C_PANEL, 0.97);
+    coop_ui_rect(_x1 - 4, _y1 - 4, _x2 + 4, _y2 + 4, COOP_C_EDGE, min(0.95, _alpha));
+    coop_ui_rect(_x1, _y1, _x2, _y2, COOP_C_PANEL, _alpha);
     draw_set_colour(COOP_C_INNER);
     draw_rectangle(_x1 + 6, _y1 + 6, _x2 - 6, _y2 - 6, true);
     if (_title == "")
@@ -82,10 +82,10 @@ function coop_ui_panel(_x1, _y1, _x2, _y2, _title = "")
 }
 
 // An inventory-like slot (selected: lighter, with a yellow frame).
-function coop_ui_slot(_x1, _y1, _x2, _y2, _selected)
+function coop_ui_slot(_x1, _y1, _x2, _y2, _selected, _alpha = 1)
 {
-    coop_ui_rect(_x1 - 2, _y1 - 2, _x2 + 2, _y2 + 2, COOP_C_EDGE);
-    coop_ui_rect(_x1, _y1, _x2, _y2, _selected ? COOP_C_SLOT_HI : COOP_C_SLOT);
+    coop_ui_rect(_x1 - 2, _y1 - 2, _x2 + 2, _y2 + 2, COOP_C_EDGE, _alpha);
+    coop_ui_rect(_x1, _y1, _x2, _y2, _selected ? COOP_C_SLOT_HI : COOP_C_SLOT, _alpha);
     if (_selected)
     {
         draw_set_colour(COOP_C_KEY);

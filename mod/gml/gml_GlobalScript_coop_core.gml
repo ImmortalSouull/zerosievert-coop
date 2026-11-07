@@ -345,9 +345,11 @@ function coop_boot()
     exception_unhandled_handler(function(_e)
     {
         coop_log("CRASH: ", _e.longMessage, " | ", _e.stacktrace);
+        var _rep = coop_report_on_crash(_e);
         if (!coop().test_mode)
         {
-            show_message("ZERO Sievert crashed." + chr(10) + "Co-op log: %LOCALAPPDATA%/ZERO_Sievert/coop_" + coop().tag + ".log" + chr(10) + chr(10) + string(_e.longMessage));
+            show_message("ZERO Sievert crashed." + chr(10) + "A report folder was saved (its path is in the clipboard):" + chr(10) + _rep
+                + chr(10) + "Please send this folder with your bug report." + chr(10) + chr(10) + string(_e.longMessage));
         }
         return 0;
     });

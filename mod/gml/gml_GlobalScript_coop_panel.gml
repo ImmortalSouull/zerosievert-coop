@@ -1,6 +1,9 @@
 // ZERO Sievert co-op: the co-op panel (host / join / leave / frame rate), opened from the main or pause menu
 // or with F7, drawn in the game's UI style (coop_style.gml).
 
+// see-through, so the world stays visible when the panel is opened in a raid
+#macro COOP_PANEL_ALPHA 0.72
+
 function coop_panel_buttons()
 {
     var _c = coop();
@@ -46,6 +49,7 @@ function coop_panel_buttons()
         array_push(_b, { id: "leave", label: coop_t("Leave co-op", "Выйти из кооператива") });
     }
     array_push(_b, { id: "fps", label: coop_t("Frame rate: ", "Частота кадров: ") + zs_fps_mode_label(zs_fps().mode) });
+    array_push(_b, { id: "report", label: coop_t("Collect logs for a bug report", "Собрать логи для отчёта о баге") });
     if (room == r_menu)
     {
         array_push(_b, { id: "backups", label: coop_t("Save backups...", "Резервные копии сохранений...") });
@@ -237,6 +241,10 @@ function coop_panel_click(_id)
         case "fps":
             zs_fps_cycle();
             break;
+        case "report":
+            coop_report_collect();
+            _c.panel = false;
+            break;
         case "close":
             _c.panel = false;
             break;
@@ -281,7 +289,7 @@ function coop_panel_draw()
     }
     coop_ui_begin(COOP_F_BODY);
     var _l = coop_panel_layout();
-    var _y = coop_ui_panel(_l.x1, _l.y1, _l.x2, _l.y2, (_c.panel_page == "backups") ? coop_t("SAVE BACKUPS", "РЕЗЕРВНЫЕ КОПИИ") : coop_t("CO-OP", "КООПЕРАТИВ"));
+    var _y = coop_ui_panel(_l.x1, _l.y1, _l.x2, _l.y2, (_c.panel_page == "backups") ? coop_t("SAVE BACKUPS", "РЕЗЕРВНЫЕ КОПИИ") : coop_t("CO-OP", "КООПЕРАТИВ"), COOP_PANEL_ALPHA);
     var _cx = (_l.x1 + _l.x2) / 2;
     var _status = (_c.role == "none") ? coop_t("Not connected", "Не подключено")
         : (_c.connected ? (coop_t("Players: ", "Игроков: ") + string(coop_player_count()) + "/" + string(COOP_MAX_PLAYERS) + "   " + ((_c.role == "host") ? coop_t("you are the host", "вы хост") : coop_t("you are a guest", "вы гость")))
@@ -356,7 +364,7 @@ function coop_panel_draw()
     {
         var _by = _l.btn_y0 + _i * (_l.btn_h + 8);
         var _sel = variable_struct_exists(_c, "panel_sel") && _c.panel_sel == _i;
-        coop_ui_slot(_l.x1 + 24, _by, _l.x2 - 24, _by + _l.btn_h, _sel);
+        coop_ui_slot(_l.x1 + 24, _by, _l.x2 - 24, _by + _l.btn_h, _sel, 0.85);
         coop_ui_text(_cx, _by + _l.btn_h / 2, coop_ui_fit(_btn[_i].label, _l.x2 - _l.x1 - 80), _sel ? COOP_C_KEY : COOP_C_TEXT);
     }
     draw_set_valign(fa_top);

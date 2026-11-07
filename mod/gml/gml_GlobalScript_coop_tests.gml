@@ -28,6 +28,8 @@ function coop_test_ext_step()
     coop_test_soak_step();
     coop_test_menus_step();
     coop_test_backup_step();
+    coop_test_report_step();
+    coop_test_panelraid_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -1662,5 +1664,72 @@ function coop_test_backup_step()
             coop_log("backup: hub after restore, player=", instance_exists(obj_player));
             coop_log("backup: done");
         }
+    }
+}
+
+// -coop_scenario report (1 window, main menu): "Collect logs" from the panel, a simulated crash report, pruning.
+function coop_test_report_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "report" || room != r_menu)
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "rt")) _c.rt = 0;
+    _c.rt++;
+    if (_c.rt == 120)
+    {
+        _c.panel = true;
+        coop_panel_click("report");
+        var _dir = string_replace(clipboard_get_text(), string_replace_all(game_save_id, "/", "\\"), "");
+        _dir = string_replace_all(_dir, "\\", "/");
+        coop_log("report: manual dir=", _dir, " log=", file_exists(_dir + "coop_" + _c.tag + ".log"), " info=", file_exists(_dir + "info.txt"),
+            " panel closed=", !_c.panel);
+    }
+    if (_c.rt == 150)
+    {
+        var _full = coop_report_on_crash({ longMessage: "test crash", stacktrace: ["coop_test_report_step"] });
+        var _dir = string_replace_all(string_replace(_full, string_replace_all(game_save_id, "/", "\\"), ""), "\\", "/");
+        var _t = file_text_open_read(_dir + "info.txt");
+        var _txt = "";
+        while (!file_text_eof(_t)) { _txt += file_text_readln(_t); }
+        file_text_close(_t);
+        coop_log("report: crash info has message=", string_pos("test crash", _txt) > 0);
+    }
+    if (_c.rt >= 160 && _c.rt < 166)
+    {
+        coop_report_make("prune", "");
+    }
+    if (_c.rt == 200)
+    {
+        var _n = 0;
+        var _f = file_find_first(COOP_REPORT_DIR + "report_*", 16);
+        while (_f != "") { _n++; _f = file_find_next(); }
+        file_find_close();
+        coop_log("report: kept=", _n);
+        coop_log("report: done");
+    }
+}
+
+// -coop_scenario panelraid (1 window): the co-op panel opened in a raid (see-through background), screenshot.
+function coop_test_panelraid_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "panelraid" || !coop_raid_ready() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "prt")) _c.prt = 0;
+    _c.prt++;
+    if (_c.prt == 200) _c.panel = true;
+    if (_c.prt == 240)
+    {
+        screen_save("panel_raid.png");
+        coop_log("panelraid: shot, panel=", _c.panel);
+    }
+    if (_c.prt == 260)
+    {
+        _c.panel = false;
+        coop_log("panelraid: done");
     }
 }
