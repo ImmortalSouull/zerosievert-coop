@@ -218,6 +218,7 @@ function coop_summary_reset()
     _c.summary = array_create(COOP_MAX_PLAYERS, undefined);
     _c.summary_sent = false;
     _c.summary_raid = []; // slots that were in this raid with us
+    coop_fallen_reset();
     var _x = coop_extract();
     _x.mine = { in_zone: false, timer: 0, px: 0, py: 0 };
     _x.others = array_create(COOP_MAX_PLAYERS, undefined);
@@ -264,6 +265,7 @@ function coop_summary_step()
         coop_msg_send(true);
         coop_log("summary sent: ", json_stringify(_me));
         coop_partners_on_raid_end(_value);
+        coop_fallen_on_raid_end(_surv);
     }
 }
 

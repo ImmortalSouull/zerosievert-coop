@@ -250,6 +250,12 @@ SCENARIOS = [
     S("personal", "-coop_autoraid 1 -coop_scenario chest -coop_diff coop_personal_loot=1", "-coop_scenario chest",
       done=[("A", r"scenario chest t=420"), ("B", r"scenario chest t=420")],
       checks=[], custom=lambda logs: "same content with personal loot" if chest_md5_equal(logs) is None else None),
+    # a fallen teammate's things: a bag where they died, what the host takes goes back to them after extraction
+    S("fallen", "-coop_autoraid 1 -coop_scenario fallen -coop_diff coop_revive_enabled=0", "-coop_scenario fallen",
+      done=[("B", r"fallen: done")],
+      checks=[("B", r"fallen: our things in a bag", 1), ("A", r"fallen: bag .* holds the things of slot 1", 1),
+              ("A", r"fallen: host took ", 1), ("A", r"fallen: returned .* to slot 1", 1), ("B", r"fallen: got back ", 1),
+              ("B", r"gift placed in the inventory|gift dropped in a bag", 1)], timeout=420, minutes=7),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

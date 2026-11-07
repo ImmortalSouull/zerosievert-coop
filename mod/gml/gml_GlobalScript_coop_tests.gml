@@ -40,6 +40,7 @@ function coop_test_ext_step()
     coop_test_rejoin_step();
     coop_test_pda_step();
     coop_test_questloot_step();
+    coop_test_fallen_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2354,4 +2355,70 @@ function coop_test_questloot_step()
         coop_log("questloot: guest took the document");
     }
     if (_t == _c.ql_t + 700) coop_log("questloot: done");
+}
+
+// -coop_scenario fallen (host: revive off): the guest dies - its things land in a bag; the host takes a stack out of
+// it and extracts; the stack goes back to the guest, who gets it into its inventory in the bunker.
+function coop_test_fallen_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "fallen") exit;
+    if (!variable_struct_exists(_c, "fa")) _c.fa = 0;
+    _c.fa++;
+    var _t = _c.fa;
+    var _f = coop_fallen();
+    if (_c.role == "guest")
+    {
+        if (coop_shared_ready() && instance_exists(obj_player) && !variable_struct_exists(_c, "fa_dead") && _t > 400)
+        {
+            _c.fa_dead = true;
+            coop_log("fallen: guest dies");
+            obj_player.hp = 0;
+        }
+        // the death screen's Next, minus the save bookkeeping: back to the bunker
+        if (instance_exists(obj_exit_screen) && obj_exit_screen.can_go_hub && !variable_struct_exists(_c, "fa_hub") && _t > 1500)
+        {
+            _c.fa_hub = true;
+            instance_activate_all();
+            obj_controller.disattiva = false;
+            __uiGlobal().__defaultOnion.Clear();
+            room_goto(r_hub);
+        }
+        if (is_in_hub() && variable_struct_exists(_c, "fa_hub") && !variable_struct_exists(_c, "fa_end"))
+        {
+            _c.fa_end = _t;
+        }
+        if (variable_struct_exists(_c, "fa_end") && _t == _c.fa_end + 300) coop_log("fallen: done");
+        exit;
+    }
+    // host
+    if (!coop_shared_ready() || !instance_exists(obj_player)) exit;
+    with (obj_player) hp = hp_max;
+    var _names = variable_struct_get_names(_f.bags);
+    if (array_length(_names) > 0 && !variable_struct_exists(_c, "fa_took"))
+    {
+        var _bag = coop_chest_find(_names[0]);
+        if (instance_exists(_bag) && _bag.alarm[0] <= 0)
+        {
+            var _before = coop_chest_read(_bag);
+            if (is_array(_before) && array_length(_before) > 0)
+            {
+                _c.fa_took = _before[0].item;
+                var _after = [];
+                for (var _i = 1; _i < array_length(_before); _i++) array_push(_after, _before[_i]);
+                coop_fallen_track(_bag, _before, _after);
+                db_open("all loot");
+                db_write("chest_" + string(_bag.id), "items", _after);
+                db_close();
+                coop_log("fallen: host took ", _c.fa_took, " from the bag");
+                _c.fa_t = _t;
+            }
+        }
+    }
+    if (variable_struct_exists(_c, "fa_t") && _t > _c.fa_t + 120)
+    {
+        instance_activate_object(obj_extraction_point);
+        with (obj_extraction_point) { if (!variable_struct_exists(_c, "fa_x")) { _c.fa_x = x; _c.fa_y = y; } }
+        if (variable_struct_exists(_c, "fa_x")) { obj_player.x = _c.fa_x + 8; obj_player.y = _c.fa_y + 8; }
+    }
 }

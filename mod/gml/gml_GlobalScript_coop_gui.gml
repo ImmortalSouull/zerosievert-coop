@@ -133,6 +133,7 @@ function coop_draw_gui()
         }
         coop_summary_draw();
         coop_spectate_draw();
+        coop_fallen_draw();
         coop_hud_hp_draw();
         coop_give_draw_gui();
         coop_down_draw_gui();

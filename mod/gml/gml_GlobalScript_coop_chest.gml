@@ -249,6 +249,7 @@ function coop_chest_step()
                 }
                 else if (coop_ui_sig != _norm)
                 {
+                    coop_fallen_track(id, coop_chest_read(id), _items);
                     coop_chest_quest_track(id, _items);
                     coop_ui_sig = _norm;
                     coop_sig = _norm;
