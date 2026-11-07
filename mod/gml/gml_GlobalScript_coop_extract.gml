@@ -286,7 +286,7 @@ function coop_summary_on_msg(_b)
 function coop_summary_draw()
 {
     var _c = coop();
-    if (!_c.connected || !instance_exists(obj_exit_screen) || !variable_struct_exists(_c, "summary"))
+    if (!_c.connected || !instance_exists(obj_exit_screen) || !variable_struct_exists(_c, "summary") || coop_spectating())
     {
         exit;
     }

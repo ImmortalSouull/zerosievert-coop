@@ -218,6 +218,11 @@ SCENARIOS = [
       checks=[("A", r"extract: host waiting=1 max=600", 1), ("B", r"extract: slot 0 is extracting", 1),
               ("A", r"extract: done, summaries=2", 1), ("B", r"extract: done, summaries=2 kills=[1-9]", 1),
               ("A", r"summary from slot 1: kills [1-9]", 1), ("A", r"partners page SaWka S4mple: raids [1-9]\d*, revived \d+, kills [1-9]", 1)], timeout=360, minutes=6),
+    # watching teammates after the final death (revive off): the camera follows the host, back to the death screen
+    S("spectate", "-coop_autoraid 1 -coop_scenario spectate -coop_diff coop_revive_enabled=0", "-coop_scenario spectate",
+      done=[("B", r"spectate: done")],
+      checks=[("B", r"spectate: watching slot 0", 1), ("B", r"spectate: on=1 camera on host=1", 1), ("B", r"spectate: back, on=0", 1)],
+      timeout=300, minutes=5),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),

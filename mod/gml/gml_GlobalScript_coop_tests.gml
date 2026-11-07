@@ -35,6 +35,7 @@ function coop_test_ext_step()
     coop_test_kick_step();
     coop_test_extract_step();
     coop_test_tutorial_step();
+    coop_test_spectate_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2052,4 +2053,50 @@ function coop_test_tutorial_step()
     if (_c.tt == 110) coop_panel_click("help2");
     if (_c.tt == 140) { screen_save("tutorial_2.png"); coop_panel_click("page_main"); }
     if (_c.tt == 150) { coop_log("tutorial: closed page=", _c.panel_page); coop_log("tutorial: done"); }
+}
+
+// -coop_scenario spectate (host: revive off): the guest dies for real, watches the host from the death screen,
+// then goes back to it.
+function coop_test_spectate_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "spectate") exit;
+    if (!variable_struct_exists(_c, "st")) _c.st = 0;
+    if (_c.role == "host")
+    {
+        if (coop_shared_ready() && instance_exists(obj_player))
+        {
+            _c.st++;
+            with (obj_player) hp = hp_max;
+            if (_c.st == 1500) coop_log("spectate: done");
+        }
+        exit;
+    }
+    if (instance_exists(obj_exit_screen))
+    {
+        _c.st_d = (variable_struct_exists(_c, "st_d") ? _c.st_d : 0) + 1;
+        var _d = _c.st_d;
+        if (_d == 120) _c.sim_spec = true;
+        if (_d == 200)
+        {
+            var _h = coop_puppet_of(0);
+            var _cx = camera_get_view_x(view_camera[0]) + 240;
+            var _cy = camera_get_view_y(view_camera[0]) + 135;
+            coop_log("spectate: on=", coop_spectating(), " camera on host=", instance_exists(_h) && point_distance(_cx, _cy, _h.x, _h.y) < 40);
+            screen_save("spectate_" + _c.tag + ".png");
+        }
+        if (_d == 260) _c.sim_spec_next = true;
+        if (_d == 300) _c.sim_spec = true;
+        if (_d == 340) { coop_log("spectate: back, on=", coop_spectating()); coop_log("spectate: done"); }
+        exit;
+    }
+    if (coop_shared_ready() && instance_exists(obj_player))
+    {
+        _c.st++;
+        if (_c.st == 300)
+        {
+            coop_log("spectate: guest dies");
+            obj_player.hp = 0;
+        }
+    }
 }

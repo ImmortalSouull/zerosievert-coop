@@ -1279,3 +1279,13 @@ if (instance_exists(obj_radial_menu))
         coop_extract_tick(id, false);
     }
 <<<END
+
+// [141] Watching teammates after the final death (coop_spectate.gml): the death screen pauses meanwhile.
+### prepend gml_Object_obj_exit_screen_Step_0
+if (coop_spectate_step(id)) exit;
+<<<END
+
+// [142] ... and is hidden.
+### prepend gml_Object_obj_exit_screen_Draw_64
+if (coop_spectating()) exit;
+<<<END
