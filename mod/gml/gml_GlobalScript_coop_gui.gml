@@ -108,6 +108,7 @@ function coop_draw_gui()
     {
         coop_group_draw();
         coop_chat_draw();
+        coop_wheel_draw();
     }
     if (is_in_hub())
     {

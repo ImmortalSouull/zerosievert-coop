@@ -1788,6 +1788,13 @@ function coop_test_group_step()
             }
         }
         if (_t == 300) coop_chat_send("Привет, it's the guest: " + chr(1046) + "!");
+        // quick-command wheel: open, point down-right (sector 3), release; then the icon page, sector 1
+        if (_t == 320) { _c.sim_wheel = true; _c.sim_wheel_dir = -45; }
+        if (_t == 340) _c.sim_wheel = false;
+        if (_t == 350) { _c.sim_wheel = true; _c.sim_wheel_dir = 45; }
+        if (_t == 360) coop_wheel().page = 1;
+        if (_t == 362) screen_save("wheel_" + _c.tag + ".png");
+        if (_t == 370) _c.sim_wheel = false;
         if (_t == 400) _c.panel = true;
         if (_t == 520) _c.panel = false;
         if (_t == 530) _c.afk_test_ms = 2000;
@@ -1805,6 +1812,7 @@ function coop_test_group_step()
                 screen_save("group_panel_" + _c.tag + ".png");
             }
         }
+        if (_t == 420) screen_save("wheel_seen_" + _c.tag + ".png");
         if (_t == 470) coop_log("group: partner status ", coop_status_of(1));
         if (_t == 330)
         {
