@@ -146,6 +146,7 @@ function coop_down_grim_reaper_inner()
     aiming = false;
     coop_down_send(COOP_MSG_DOWN, _d.count);
     coop_log("down #", _d.count, " timer ", _d.timer_max / 60, "s");
+    coop_stat_add("downs", 1);
     return true;
 }
 
@@ -465,6 +466,7 @@ function coop_revive_step()
             buffer_write(_c.send_buf, buffer_f32, _r.opt.hp);
             coop_msg_send_to(_pp.coop_slot, true);
             coop_log("revived partner with ", _r.opt.name, " (", _r.opt.hp, " hp) slot ", _pp.coop_slot);
+            coop_stat_add("revives", 1);
             coop_notify(coop_tf("{0} revived", "{0} поднят", coop_peer_name(_pp.coop_slot)));
         }
     }

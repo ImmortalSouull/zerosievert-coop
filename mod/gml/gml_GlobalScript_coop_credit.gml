@@ -15,6 +15,21 @@ function coop_partner_hit_credit_inner(_bull, _npc)
         exit;
     }
     var _p = _bull.shooter_id;
+    var _dmg = variable_instance_exists(_bull, "damage") ? _bull.damage : 0;
+    if (instance_exists(_p) && _p.object_index == obj_player)
+    {
+        // our own hit on the owner's real NPC: the raid summary counts it here (item 24)
+        coop_stat_add("damage", _dmg);
+        with (_npc)
+        {
+            if (hp <= 0 && !variable_instance_exists(id, "coop_kill_counted"))
+            {
+                coop_kill_counted = true;
+                coop_stat_add("kills", 1);
+            }
+        }
+        exit;
+    }
     if (!instance_exists(_p) || _p.object_index != obj_player_puppet || !variable_instance_exists(_p, "coop_slot"))
     {
         exit; // not a remote player's bullet
@@ -46,6 +61,7 @@ function coop_partner_hit_credit_inner(_bull, _npc)
     buffer_write(_c.send_buf, buffer_string, object_get_name(_npc.object_index));
     buffer_write(_c.send_buf, buffer_u8, _first);
     buffer_write(_c.send_buf, buffer_u8, _killed);
+    buffer_write(_c.send_buf, buffer_f32, _dmg);
     coop_msg_send_to(_slot, true);
 }
 
@@ -55,10 +71,13 @@ function coop_credit_on_message(_b)
     var _obj_name = buffer_read(_b, buffer_string);
     var _first = buffer_read(_b, buffer_u8);
     var _killed = buffer_read(_b, buffer_u8);
+    var _dmg = buffer_read(_b, buffer_f32);
     if (!coop_in_raid())
     {
         exit;
     }
+    coop_stat_add("damage", _dmg);
+    if (_killed) coop_stat_add("kills", 1);
     var _faction = npc_get_faction(_npc_id);
     if (_faction != "All Friend" && variable_struct_exists(global.struct_faction, _faction))
     {

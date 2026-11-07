@@ -1254,3 +1254,28 @@ if (instance_exists(obj_radial_menu))
 <<<REPLACE
                     player_damage(danno * coop_friendly_fire_mult(id), arg1.mp_index);
 <<<END
+
+// [139] Group extraction (coop_extract.gml): in the zone the timer waits for living teammates (10 s instead of 5)
+// and follows the group's timer when everybody is there; teammates see who is extracting.
+### findreplace gml_Object_obj_extraction_point_Step_0
+<<<FIND
+        timer_exit++;
+<<<REPLACE
+        timer_exit++;
+        coop_extract_tick(id, true);
+<<<END
+
+// [140] Out of the zone: tell the others (group extraction).
+### findreplace gml_Object_obj_extraction_point_Step_0
+<<<FIND
+    else
+    {
+        timer_exit = 0;
+    }
+<<<REPLACE
+    else
+    {
+        timer_exit = 0;
+        coop_extract_tick(id, false);
+    }
+<<<END

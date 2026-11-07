@@ -141,6 +141,7 @@ function coop_on_room_start()
         // what this raid is generated with, for players joining it from us later (coop_on_join_request)
         _c.raid_settings_json = json_stringify(variable_struct_exists(_c, "host_settings") ? _c.host_settings : {});
         coop_down_reset();
+        coop_summary_reset();
         coop_chest_reset_room();
         _c.my_fp = undefined;
         var _ps = coop_peers();

@@ -33,6 +33,7 @@ function coop_test_ext_step()
     coop_test_group_step();
     coop_test_ff_step();
     coop_test_kick_step();
+    coop_test_extract_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -1929,5 +1930,94 @@ function coop_test_kick_step()
     {
         _c.was_guest = true;
         _c.kt = 0;
+    }
+}
+
+// -coop_scenario extract: the guest shoots NPCs (kills for the summary), the host stands on an extraction point and
+// waits for the guest (10 s timer); the guest arrives, both leave together; the exit screen shows the summary.
+function coop_test_extract_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "extract")
+    {
+        exit;
+    }
+    if (!variable_struct_exists(_c, "xt")) { _c.xt = 0; }
+    if (instance_exists(obj_exit_screen))
+    {
+        _c.xt_exit = (variable_struct_exists(_c, "xt_exit") ? _c.xt_exit : 0) + 1;
+        if (_c.xt_exit == 1) coop_log("extract: exit screen, my t=", _c.xt, " survived=", obj_exit_screen.survived);
+        if (_c.xt_exit == 240)
+        {
+            screen_save("summary_" + _c.tag + ".png");
+            var _n = 0;
+            for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++) if (is_struct(_c.summary[_k])) _n++;
+            coop_log("extract: done, summaries=", _n, " kills=", _c.my_stats.kills);
+        }
+        exit;
+    }
+    if (!coop_shared_ready() || !instance_exists(obj_player))
+    {
+        exit;
+    }
+    _c.xt++;
+    var _t = _c.xt;
+    instance_activate_object(obj_extraction_point);
+    var _ex = undefined;
+    var _ey = undefined;
+    with (obj_extraction_point) { if (_ex == undefined) { _ex = x; _ey = y; } }
+    if (_c.role == "guest" && _t >= 150 && _t <= 500 && _t mod 12 == 0)
+    {
+        if (!variable_struct_exists(_c, "x_tg") || !instance_exists(_c.x_tg) || _c.x_tg.hp <= 1)
+        {
+            instance_activate_object(obj_npc_parent);
+            var _best = -4;
+            var _bd = infinity;
+            with (obj_npc_parent)
+            {
+                if (coop_npc_is_replica() && hp > 1 && object_is_ancestor(object_index, obj_npc_human_parent))
+                {
+                    var _d = point_distance(x, y, obj_player.x, obj_player.y);
+                    if (_d < _bd) { _bd = _d; _best = id; }
+                }
+            }
+            _c.x_tg = _best;
+        }
+        var _tg = _c.x_tg;
+        if (instance_exists(_tg))
+        {
+            obj_player.x = _tg.x - 50;
+            obj_player.y = _tg.y;
+            with (obj_player)
+            {
+                hp = hp_max;
+                if (item_exists(arma_now) && item_get_category(arma_now) == "weapon")
+                {
+                    scr_shoot(point_direction(x, y, _tg.x, _tg.y), 1, item_weapon_get_damage(arma_now) * 4, 0);
+                }
+            }
+        }
+    }
+    with (obj_player) hp = hp_max; // the 1.4 AI must not end this test early
+    if (_ex == undefined) exit;
+    if (_c.role == "host" && _t >= 300)
+    {
+        obj_player.x = _ex + 8;
+        obj_player.y = _ey + 8;
+        var _x = coop_extract();
+        // past the solo 5 s and still here: the group timer waits for the guest
+        if (_x.mine.timer > 320 && !variable_struct_exists(_c, "xt_logged"))
+        {
+            _c.xt_logged = true;
+            coop_log("extract: host waiting=", array_length(_x.waiting), " max=", _x.group_max, " timer=", _x.mine.timer);
+        }
+    }
+    // the guest comes once the host has waited 6 s on the point
+    var _ho = coop_extract().others[0];
+    if (_c.role == "guest" && is_struct(_ho) && _ho.in_zone && !variable_struct_exists(_c, "xt_seen")) _c.xt_seen = _t;
+    if (_c.role == "guest" && variable_struct_exists(_c, "xt_seen") && _t >= _c.xt_seen + 360)
+    {
+        obj_player.x = _ex + 4;
+        obj_player.y = _ey + 10;
     }
 }
