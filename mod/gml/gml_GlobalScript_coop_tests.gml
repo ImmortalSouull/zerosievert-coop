@@ -39,6 +39,7 @@ function coop_test_ext_step()
     coop_test_drag_step();
     coop_test_rejoin_step();
     coop_test_pda_step();
+    coop_test_questloot_step();
     coop_test_treefade_step();
     if (_c.scenario != "livechest" || !coop_shared_ready() || !instance_exists(obj_player))
     {
@@ -2265,4 +2266,92 @@ function coop_test_pda_step()
     }
     if (_t == 460) screen_save("pda_" + _c.tag + ".png");
     if (_t == 480) { __uiGlobal().__defaultOnion.Clear(); coop_log("pda: done"); }
+}
+
+// -coop_scenario questloot (item 27): one container holds a bandage and a quest document on both machines; the host
+// takes the document - the guest still has its own; the guest takes it too - the host's never comes back.
+function coop_questloot_set(_inst, _items)
+{
+    db_open("all loot");
+    db_write("chest_" + string(_inst.id), "items", _items);
+    db_close();
+    _inst.coop_sig = coop_chest_norm(coop_chest_read(_inst));
+}
+
+function coop_questloot_has(_inst)
+{
+    return array_length(coop_chest_quest_list(coop_chest_read(_inst)));
+}
+
+function coop_test_questloot_step()
+{
+    var _c = coop();
+    if (!_c.test_mode || _c.scenario != "questloot" || !coop_shared_ready() || !instance_exists(obj_player)) exit;
+    if (!variable_struct_exists(_c, "ql")) _c.ql = 0;
+    _c.ql++;
+    var _t = _c.ql;
+    var _mk = function(_item) { var _l = new class_loot(); _l.item = _item; _l.quantity = 1; _l.x = 0; _l.y = 0; return _l; };
+    if (_c.role == "host")
+    {
+        if (_t == 200)
+        {
+            var _best = -4;
+            var _bd = infinity;
+            var _px = obj_player.x;
+            var _py = obj_player.y;
+            instance_activate_object(obj_chest_general);
+            with (obj_chest_general)
+            {
+                if (!variable_instance_exists(id, "coop_dynamic") && point_distance(x, y, _px, _py) < _bd) { _bd = point_distance(x, y, _px, _py); _best = id; }
+            }
+            _c.ql_inst = _best;
+            coop_questloot_set(_best, [_mk("bandage"), _mk("document_quest_lab")]);
+            coop_chat_send("QTEST " + coop_chest_key(_best));
+            coop_log("questloot: host container ", coop_chest_key(_best), " quest=", coop_questloot_has(_best));
+        }
+        if (_t == 500)
+        {
+            var _now = [_mk("bandage")];
+            coop_chest_quest_track(_c.ql_inst, _now);
+            coop_questloot_set(_c.ql_inst, _now);
+            coop_chest_send_content(coop_chest_key(_c.ql_inst), json_stringify(_now), _c.ql_inst);
+            coop_log("questloot: host took the document");
+        }
+        if (_t == 1000)
+        {
+            coop_log("questloot: host quest back=", coop_questloot_has(_c.ql_inst));
+            coop_log("questloot: done");
+        }
+        exit;
+    }
+    // guest
+    if (!variable_struct_exists(_c, "ql_inst"))
+    {
+        var _ls = coop_chat().lines;
+        for (var _i = 0; _i < array_length(_ls); _i++)
+        {
+            if (string_pos("QTEST ", _ls[_i].text) == 1)
+            {
+                var _f = coop_chest_find(string_delete(_ls[_i].text, 1, 6));
+                if (instance_exists(_f))
+                {
+                    _c.ql_inst = _f;
+                    _c.ql_t = _t;
+                    coop_questloot_set(_f, [_mk("bandage"), _mk("document_quest_lab")]);
+                    coop_log("questloot: guest ready");
+                }
+            }
+        }
+        exit;
+    }
+    if (_t == _c.ql_t + 400)
+    {
+        coop_log("questloot: guest still has quest=", coop_questloot_has(_c.ql_inst));
+        var _now = [_mk("bandage")];
+        coop_chest_quest_track(_c.ql_inst, _now);
+        coop_questloot_set(_c.ql_inst, _now);
+        coop_chest_send_content(coop_chest_key(_c.ql_inst), json_stringify(_now), _c.ql_inst);
+        coop_log("questloot: guest took the document");
+    }
+    if (_t == _c.ql_t + 700) coop_log("questloot: done");
 }

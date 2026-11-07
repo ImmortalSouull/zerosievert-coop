@@ -11,6 +11,7 @@ function coop_difficulty_define()
     __difficulty_define_range("coop_revive_time_none", 10, 1, 30, "coop.difficulty.revive_time_none", "coop.desc.revive_time_none");
     __difficulty_define_range("coop_revive_time_bandage", 7, 1, 30, "coop.difficulty.revive_time_bandage", "coop.desc.revive_time_bandage");
     __difficulty_define_range("coop_revive_time_medkit", 5, 1, 30, "coop.difficulty.revive_time_medkit", "coop.desc.revive_time_medkit");
+    __difficulty_define_toggle("coop_personal_loot", false, "coop.difficulty.personal_loot", "coop.desc.personal_loot");
     __difficulty_define_toggle("coop_friendly_fire", false, "coop.difficulty.friendly_fire", "coop.desc.friendly_fire");
     __difficulty_define_range("coop_friendly_fire_damage", 0.5, 0.1, 1, "coop.difficulty.friendly_fire_damage", "coop.desc.friendly_fire_damage");
     __difficulty_define_range("coop_group_enemies", 0.25, 0, 1, "coop.difficulty.group_enemies", "coop.desc.group_enemies");
@@ -41,6 +42,7 @@ function coop_difficulty_description(_d)
         case "coop.desc.revive_time_bandage": return "Seconds to revive a teammate with a bandage.";
         case "coop.desc.revive_time_medkit": return "Seconds to revive a teammate with a medkit.";
         case "coop.desc.friendly_fire": return "Your bullets can hurt your teammates.";
+        case "coop.desc.personal_loot": return "Every player finds their own loot in containers and bodies (only bags dropped by players are shared). Off: containers are shared.";
         case "coop.desc.friendly_fire_damage": return "Share of the damage a teammate's bullet does to you (1 = full damage), when friendly fire is on.";
         case "coop.desc.group_enemies": return "Extra enemies for every player beyond the first (0.25 = +25% per player).";
         case "coop.desc.group_hp": return "Extra enemy health for every player beyond the first (0.1 = +10% per player).";
@@ -51,7 +53,7 @@ function coop_difficulty_description(_d)
 }
 
 // Raid-wide rules come from the host while connected.
-#macro COOP_SHARED_SETTINGS ["coop_revive_enabled", "coop_down_seconds", "coop_second_down_hp", "coop_revive_time_none", "coop_revive_time_bandage", "coop_revive_time_medkit", "coop_friendly_fire", "coop_friendly_fire_damage", "coop_group_enemies", "coop_group_hp"]
+#macro COOP_SHARED_SETTINGS ["coop_personal_loot", "coop_revive_enabled", "coop_down_seconds", "coop_second_down_hp", "coop_revive_time_none", "coop_revive_time_bandage", "coop_revive_time_medkit", "coop_friendly_fire", "coop_friendly_fire_damage", "coop_group_enemies", "coop_group_hp"]
 
 // Group size scaling (enemies, enemy health), fixed by the host when it sends the settings at raid start, so
 // every machine generates the raid with the same numbers.
@@ -91,6 +93,7 @@ function coop_setting(_name)
         case "revive_time_bandage": _key = "coop_revive_time_bandage"; break;
         case "revive_time_medkit": _key = "coop_revive_time_medkit"; break;
         case "friendly_fire": _key = "coop_friendly_fire"; break;
+        case "personal_loot": _key = "coop_personal_loot"; break;
         case "friendly_fire_damage": _key = "coop_friendly_fire_damage"; break;
     }
     var _c = coop();

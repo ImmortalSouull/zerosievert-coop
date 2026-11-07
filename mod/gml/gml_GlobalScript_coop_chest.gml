@@ -11,6 +11,9 @@
 // only a newer one (equal: the lower slot wins), so a late echo of an older state can never bring back an
 // item somebody already took. Changes are detected on the normalized content (item, amount, durability),
 // not on the grid layout, which differs between machines.
+// 2.0.0: quest items are always each player's own (item 27): applying a teammate's content keeps our quest items
+// they took, and never brings back one we took ourselves. Personal loot (item 22, a difficulty setting chosen with
+// the save): every player rolls its own content and only the bags players drop are shared.
 
 #macro COOP_MSG_CHEST_SPAWN 52
 #macro COOP_MSG_CHEST_GONE 53
@@ -23,6 +26,10 @@ function coop_chest_seed()
         exit;
     }
     var _h = (_c.gen_seed + floor(x) * 73856093 + floor(y) * 19349663 + real(object_index) * 83492791) mod 2147483647;
+    if (coop_loot_personal())
+    {
+        _h = (_h + (max(0, _c.slot) + 1) * 2654435761) mod 2147483647; // everybody's own roll
+    }
     random_set_seed(abs(_h));
 }
 
@@ -131,6 +138,10 @@ function coop_chest_registry()
 function coop_chest_send_content(_key, _json, _inst = -4)
 {
     var _c = coop();
+    if (coop_loot_personal() && !(instance_exists(_inst) && _inst.tipo == "discard"))
+    {
+        exit; // personal loot: our containers are ours alone
+    }
     var _rev = 1;
     if (instance_exists(_inst))
     {
@@ -238,13 +249,14 @@ function coop_chest_step()
                 }
                 else if (coop_ui_sig != _norm)
                 {
+                    coop_chest_quest_track(id, _items);
                     coop_ui_sig = _norm;
                     coop_sig = _norm;
                     db_open("all loot");
                     db_write("chest_" + string(id), "items", coop_chest_items_from_json(_json));
                     db_close();
                     coop_chest_send_content(coop_chest_key(id), _json, id);
-                    coop_log("chest live change sent ", coop_chest_key(id), " rev ", coop_rev);
+                    coop_log("chest live change sent ", coop_chest_key(id), " rev ", coop_chest_rev(id));
                 }
             }
         }
@@ -286,9 +298,10 @@ function coop_chest_step()
         }
         if (coop_sig != _norm)
         {
+            coop_chest_quest_track(id, _items);
             coop_sig = _norm;
             coop_chest_send_content(coop_chest_key(id), json_stringify(_items), id);
-            coop_log("chest changed, sent ", coop_chest_key(id), " rev ", coop_rev);
+            coop_log("chest changed, sent ", coop_chest_key(id), " rev ", coop_chest_rev(id));
         }
     }
 }
@@ -315,6 +328,10 @@ function coop_chest_on_message(_b)
         }
         exit;
     }
+    if (coop_loot_personal() && !(instance_exists(_found) && _found.tipo == "discard"))
+    {
+        exit; // personal loot
+    }
     ds_map_set(_reg, _key, _json);
     ds_map_set(_reg, _key + "#rev", _rev);
     if (!instance_exists(_found))
@@ -323,10 +340,11 @@ function coop_chest_on_message(_b)
         exit;
     }
     _found.coop_rev = _rev;
+    var _new = coop_chest_quest_merge(_found, coop_chest_items_from_json(_json));
     db_open("all loot");
     db_write("chest_" + string(_found.id), "chest_x", _found.x);
     db_write("chest_" + string(_found.id), "chest_y", _found.y);
-    db_write("chest_" + string(_found.id), "items", coop_chest_items_from_json(_json));
+    db_write("chest_" + string(_found.id), "items", _new);
     db_close();
     _found.coop_sig = coop_chest_norm(coop_chest_read(_found));
     if (coop_chest_open_target() == _found)
@@ -594,4 +612,98 @@ function coop_chest_on_destroy()
     {
         coop_report_error(_e);
     }
+}
+
+// ---- quest items: always each player's own (item 27) ----
+
+function coop_item_is_quest(_item)
+{
+    try
+    {
+        return item_exists(_item) && item_get_quest_item(_item);
+    }
+    catch (_e) { }
+    return false;
+}
+
+function coop_chest_quest_list(_items)
+{
+    var _out = [];
+    if (!is_array(_items)) return _out;
+    for (var _i = 0; _i < array_length(_items); _i++)
+    {
+        if (is_struct(_items[_i]) && coop_item_is_quest(_items[_i].item)) array_push(_out, _items[_i].item);
+    }
+    return _out;
+}
+
+// A local change of a container: quest items that left it were taken by us (never to come back from a teammate).
+function coop_chest_quest_track(_inst, _items_now)
+{
+    var _now = coop_chest_quest_list(_items_now);
+    var _before = variable_instance_exists(_inst, "coop_q_last") ? _inst.coop_q_last : coop_chest_quest_list(coop_chest_read(_inst));
+    if (!variable_instance_exists(_inst, "coop_q_taken")) _inst.coop_q_taken = [];
+    for (var _i = 0; _i < array_length(_before); _i++)
+    {
+        var _k = array_get_index(_now, _before[_i]);
+        if (_k < 0)
+        {
+            array_push(_inst.coop_q_taken, _before[_i]);
+            coop_log("quest item taken by us: ", _before[_i]);
+        }
+        else
+        {
+            array_delete(_now, _k, 1);
+        }
+    }
+    _inst.coop_q_last = coop_chest_quest_list(_items_now);
+}
+
+// A teammate's content for one of our containers: their quest items don't decide ours.
+function coop_chest_quest_merge(_inst, _incoming)
+{
+    var _taken = variable_instance_exists(_inst, "coop_q_taken") ? _inst.coop_q_taken : [];
+    var _out = [];
+    var _have = [];
+    for (var _i = 0; _i < array_length(_incoming); _i++)
+    {
+        var _l = _incoming[_i];
+        if (is_struct(_l) && coop_item_is_quest(_l.item))
+        {
+            if (array_contains(_taken, _l.item)) continue; // we took ours already
+            array_push(_have, _l.item);
+        }
+        array_push(_out, _l);
+    }
+    // our own quest items the teammate took: they stay here for us
+    var _local = coop_chest_read(_inst);
+    if (is_array(_local))
+    {
+        for (var _i = 0; _i < array_length(_local); _i++)
+        {
+            var _l = _local[_i];
+            if (is_struct(_l) && coop_item_is_quest(_l.item) && !array_contains(_taken, _l.item))
+            {
+                var _k = array_get_index(_have, _l.item);
+                if (_k >= 0)
+                {
+                    array_delete(_have, _k, 1);
+                }
+                else
+                {
+                    array_push(_out, _l);
+                    coop_log("quest item kept for us: ", _l.item);
+                }
+            }
+        }
+    }
+    _inst.coop_q_last = coop_chest_quest_list(_out);
+    return _out;
+}
+
+// Personal loot (item 22): the host's difficulty setting, chosen when the save was created.
+function coop_loot_personal()
+{
+    var _c = coop();
+    return _c.connected && coop_setting("personal_loot");
 }

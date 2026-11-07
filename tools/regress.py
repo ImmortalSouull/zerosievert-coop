@@ -241,6 +241,15 @@ SCENARIOS = [
       done=[("A", r"pda: done"), ("B", r"pda: done")],
       checks=[("B", r"air drop markers added: 1", 1), ("B", r"pda: air drop markers=[1-9] marks=1 mate on map=1 colour ok=1", 1),
               ("A", r"pda: air drop markers=[1-9] marks=1 mate on map=1 colour ok=1", 1)], timeout=300),
+    # quest items are each player's own, even in a shared container
+    S("questloot", "-coop_autoraid 1 -coop_scenario questloot", "-coop_scenario questloot",
+      done=[("A", r"questloot: done"), ("B", r"questloot: done")],
+      checks=[("B", r"questloot: guest ready", 1), ("B", r"guest still has quest=1", 1), ("B", r"quest item kept for us: document_quest_lab", 1),
+              ("A", r"questloot: host quest back=0", 1), ("A", r"quest item taken by us", 1)], timeout=300),
+    # personal loot: the same container rolls different content for host and guest
+    S("personal", "-coop_autoraid 1 -coop_scenario chest -coop_diff coop_personal_loot=1", "-coop_scenario chest",
+      done=[("A", r"scenario chest t=420"), ("B", r"scenario chest t=420")],
+      checks=[], custom=lambda logs: "same content with personal loot" if chest_md5_equal(logs) is None else None),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),
