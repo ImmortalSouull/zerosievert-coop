@@ -5,10 +5,10 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 
 ## Read first
 - `MODLOG.md` — full journal: every engine fact, gotcha, decision and test result. Read it before changing code.
-- Current release: **v1.2.0** (game 1.4.13 / new enemy AI; up to 4 players, hub lobby + bunker visits,
-  game-style UI), network protocol `COOP_VERSION 8` (all players must match). v1.2.0 was published on GitHub on
-  2026-11-07 (user's order). The next big version is **2.0.0** (plan in Claude's memory): build it locally, NEVER
-  publish it yourself - the user releases it.
+- Published release: **v1.2.0** (protocol `COOP_VERSION 8`, published 2026-11-07). Branch `dev-2.0.0` holds
+  **v2.0.0** (up to 8 players, host migration, voice + radio, trade, chat/wheel, events, arena...; protocol
+  `COOP_VERSION 9`, all players must match; MODLOG "v2.0.0"). 2.0.0 is built locally: NEVER publish it yourself -
+  the user releases it.
   `COOP_MOD_VERSION` in coop_update.gml must equal the release version (update check compares GitHub tags).
 
 ## Layout
@@ -53,7 +53,9 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   Multi-player scenarios: quad/trio (see each other, credit, revive, ping, give), handoff/handoff3 (host
   extracts, next slot owns the world), latejoin (-coop_delay_join), reconnect (blackout), menus (UI buttons),
   lobby/lobby2 (hub lobby + visits, bunker weather + bunker give), hostjoin (host's train joins a guest's raid),
-  gather (3 players, train circle: inside goes, outside stays), ownerjoin/chest3/both3 (3 players), grouphp, aiguest (1.4 AI vs a guest far
+  gather (3 players, train circle: inside goes, outside stays), ownerjoin/chest3/both3 (3 players), octo (8 players),
+  2.0.0 features (one scenario each, e.g. trade voice radio migrate migrate_crash barq arena event quest;
+  `python tools/regress.py --list`), grouphp, aiguest (1.4 AI vs a guest far
   from the host), solo (1 window, players=1 in regress.py); per map: map*/solo*/aiguest* (tag maps).
   Everything in order: `bash tools/regress_full.sh [soak minutes]` (solo > duo > trio > squad > soak > bad net).
   Solo with the mod by hand:
@@ -126,9 +128,9 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
 ## Open items / ideas
-- If the host leaves the raid, the guest continues alone on local AI; far-away NPCs don't patrol (replicas
-  were removed from the off-screen patrol list).
+- 2.0.0 item 15 (delta network snapshots) not done - only if it can't hurt anything else.
+- Untested live: 3+ players over Steam, host migration over Steam, voice with real microphones.
 - Untested: launching the game straight from a Steam invite (+connect_lobby) — needs two accounts.
 - A lower slot cannot join a raid a higher slot owns (by design, see MODLOG v1.1.0).
 - Visits show the friend's modules only (furniture/benches); traders, stash and quests stay local.
-- Ideas: PDA airdrop markers for the guest, shared stash/trading between players, publishing on mod sites.
+- Ideas: shared stash, publishing on mod sites (the user does it).

@@ -428,3 +428,41 @@ Tests: hostjoin (guest raids alone, host's train to map 3 lands in map 1, owner 
 slot 2 walks out of the circle and stays), lobby checks bunker weather + bunker give. regress.py does NOT install the
 build: run tools/install_test.sh first (a test once ran on the installer's old build). Test windows: a 2x2 grid right
 of the Claude window (tools/env.sh WIN_A..D).
+
+## 2026-11-07 - v2.0.0 (protocol COOP_VERSION 9, up to 8 players, hooks up to [149])
+Branch dev-2.0.0; built and tested locally, the user publishes it. Every feature of the approved roadmap
+(memory coop-roadmap-2026-11, items 1-48 except 15 = delta snapshots, left out) has its own regress scenario.
+- COOP_MAX_PLAYERS 8 (slots 0..7); tools/test4.sh runs 3-8 instances, regress.py windows A..H (octo = 8 windows,
+  ~2.4 GB each). New modules: backup, report, files, conn, group, lobby, chat, wheel, extract, spectate, fallen,
+  trade, gear, voice (+ radio item), rejoin, events, quests, barquests, arena, migrate, look. New events:
+  obj_coop Other_73 (audio recording), Other_74 (audio playback).
+- New messages 68 FILES .. 85 ARENA (82 VOICE is unreliable). The roster carries every player's address (IP or
+  Steam id) so the session can move: on host BYE/timeout every guest picks the same successor (Steam lobby owner,
+  else the lowest remaining slot). After a TIMEOUT the hand-over waits 30 s for the old host first - a timeout may
+  be our own link (the reconnect blackout test used to split the session). Tests migrate, migrate_crash.
+- "Ghost" enemies on a bad net (item 1): the owner deactivates off-screen NPCs and stopped streaming them while
+  1.4 roaming kept moving them -> deactivated owner NPCs' positions are streamed too; test check "NPC DRIFT".
+- Hooks [136]/[137]: safe read of mods_enabled.json (a cut file crashed obj_mods "read from outside the buffer" -
+  vanilla bug, user saw it). [138] friendly-fire damage share, [139]/[140] group extraction, [141]/[142] spectate,
+  [143] coop_radio_inject after the game data loads, [144] quick-slot use toggles the radio in hand, [145]-[147]
+  shared quest kills and reward split, [148] db_force_save -> coop_arena_before_save (the own weapon is back
+  before any save), [149] player_damage: lethal hit in the arena (the bunker clamps hp at 10, so nobody died).
+- Radio (user design: never found, no "easy mode"): own category coop_radio, in no loot table; the barman sells it
+  from trader item level 400 (= Loners reputation, not character level) for 12 000; workshop recipe (module 12,
+  level 1) via global.__Mods_Crafting_Recipes + lista_craft. Quick slots accept it because the installer adds
+  "coop_radio" to the categories in inventory_exec_player_gear.ui. Talk on the radio only while it is in hand,
+  hearing needs one in the inventory; otherwise proximity voice. The microphone is opened only while needed.
+- Quests: global.quest_database + quest_create_kill; the barman's quest_array (speaker "bar"); Alarm_10 reads back
+  only quest_max saved slots, so the group tasks pushed after them are never saved. Trader item "level" is faction
+  reputation. NPCs set hp in Create (no hp_max): apply hp buffs at creation.
+- Raid events: the survivor quest giver must carry coop_replica on guests (its AI walked on the host only); the
+  event area is activated (instance_activate_region) and enemies beyond 1440 px don't block the wave end.
+- Shooting range = hub x >= 1278 (box 1278-1930 x 690-835): no ammo is used there - the arena lives in it.
+- UTMT compiler: no trailing commas in array/struct literals, no accessor on a call result (f()[i]), fa_none /
+  fa_directory unknown (use 0 / 16), a #macro line must not end with a comment. Bash heredocs mangle backslashes in
+  Python helpers - write them with the Write tool.
+- Test windows share coop_local.ini with real play: tests restore what they change; the rejoin and tutorial
+  writes are off in test mode.
+- UI: compact group panel top right, aiming hides the HUD (HP returns for a few seconds after a hit), welcome
+  window (tutorial / later / never), F7 panel 0.72 alpha. 201 new texts translated (tools/lang_extract.py: 0).
+- tools/regress_full.sh got a "2.0.0 FEATURES" phase (and trade/extract/migrate on the bad network).

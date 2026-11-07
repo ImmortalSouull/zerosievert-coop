@@ -4,7 +4,7 @@ English version: see the ENGLISH section below.  Wersja polska: sekcja POLSKI na
 ОБНОВЛЕНИЕ: просто запустите install.bat новой версии поверх старой (у всех игроков одна версия!).
 =====================================================================
 
-Совместные рейды до 4 игроков + ранения/поднятие + расширенная настройка сложности.
+Совместные рейды до 8 игроков + ранения/поднятие + расширенная настройка сложности.
 Мод сделан с помощью ИИ (Claude) по заказу и дизайну игрока. Не связан с разработчиками игры.
 Мод говорит на языке игры (все 13 языков игры): смените язык в настройках игры - мод переключится сам.
 
@@ -19,7 +19,7 @@ English version: see the ENGLISH section below.  Wersja polska: sekcja POLSKI na
 
 КАК ИГРАТЬ
 - Главное меню или меню паузы > "Кооператив" (или клавиша F7) — панель кооператива.
-- Хост: "Создать игру в Steam" -> откроется оверлей Steam -> пригласите до 3 друзей.
+- Хост: "Создать игру в Steam" -> откроется оверлей Steam -> пригласите до 7 друзей.
   Друзья принимают приглашение в Steam или жмут "Присоединиться к игре" у хоста в списке друзей.
 - Запасной вариант: "Создать игру по IP" у хоста (UDP-порт 47777) и
   "Подключиться по IP" у друзей (через Radmin VPN / ZeroTier / проброс порта).
@@ -92,10 +92,23 @@ English version: see the ENGLISH section below.  Wersja polska: sekcja POLSKI na
 - В совместном рейде пауза не останавливает мир для остальных: ваш персонаж "отходит"
   (его не видят враги и не могут ранить), а мир продолжает жить.
 
+НОВОЕ В 2.0.0 (клавиши)
+- До 8 игроков. Если хост вышел, сессию берёт другой игрок, остальные переподключаются сами.
+- C (удерживать) - голос по близости. Рация (продаёт бармен при репутации 400 у Одиночек, или крафт
+  в мастерской): положите в быстрый слот и возьмите в руки - говорите на её канале на любом расстоянии,
+  колесо мыши меняет канал.
+- Enter - текстовый чат; Z (удерживать) - колесо команд, Q - другая страница.
+- U рядом с напарником - обмен; I - посмотреть его снаряжение.
+- Раненого можно тащить (E рядом с ним - выбор: тащить и поднимать / только тащить / поднять).
+- После окончательной смерти - наблюдение за напарниками (A / D), F - назад.
+- У выхода общий отсчёт 10 с для группы; после рейда - итоги.
+- F7: игроки и лобби (удалить игрока, тип лобби), открытые игры, резервные копии сохранений,
+  настройки (индикатор связи, режим стримера, голос, внешность), "Собрать логи", обучение.
+- У бармена групповые задания, пока в сессии 2+ игрока. Арену в тире запускает хост из F7.
+
 ИЗВЕСТНЫЕ ОГРАНИЧЕНИЯ
-- Если хост полностью вышел из игры, сессия заканчивается: остальные доигрывают рейд каждый сам.
 - Версии мода у всех должны совпадать (мод предупредит).
-- При ошибке игры лог: %LOCALAPPDATA%\ZERO_Sievert\coop_solo.log - пришлите его автору.
+- При ошибке игры лог: %LOCALAPPDATA%\ZERO_Sievert\coop_solo.log - пришлите его автору (или кнопка "Собрать логи" в F7).
 
 ---------------------------------------------------------------------
 ENGLISH
@@ -103,7 +116,7 @@ ZERO Sievert CO-OP (unofficial mod) - version: see mod_info.json
 
 UPDATE: just run install.bat of the new version over the old one (all players need the same version!).
 
-Joint raids for up to 4 players + down/revive system + extended difficulty settings.
+Joint raids for up to 8 players + down/revive system + extended difficulty settings.
 Made with AI (Claude) to the player's design. Not affiliated with the game's developers.
 The mod's UI follows the game language (all 13 languages of the game): change it in the game's settings and
 the mod switches with it.
@@ -119,7 +132,7 @@ work until a new mod version is out (the mod tells you about it in the menu).
 
 HOW TO PLAY
 - Main menu or pause menu > "Co-op" (or the F7 key) - the co-op panel.
-- Host: "Host via Steam" -> the Steam overlay opens -> invite up to 3 friends.
+- Host: "Host via Steam" -> the Steam overlay opens -> invite up to 7 friends.
   Friends accept the invite in Steam or use "Join game" on the host in the Steam friends list.
 - Fallback: "Host by IP" for the host (UDP port 47777) and "Join by IP" for the friends
   (via Radmin VPN / ZeroTier / port forwarding).
@@ -192,10 +205,23 @@ PAUSE
 - In a shared raid the pause doesn't stop the world for the others: your character "steps out"
   (enemies don't see it and can't hurt it), and the world goes on.
 
+NEW IN 2.0.0 (keys)
+- Up to 8 players. If the host leaves, another player takes the session over, the others reconnect by themselves.
+- C (hold) - proximity voice. Radio (the barman sells it at Loners reputation 400, or craft it in the workshop):
+  put it in a quick slot and take it in hand - you talk on its channel at any distance, the mouse wheel changes
+  the channel.
+- Enter - text chat; Z (hold) - command wheel, Q - next page.
+- U next to a teammate - trade; I - look at their gear.
+- A downed teammate can be dragged (E next to them - choose: drag and revive / drag only / revive).
+- After the final death - watch your teammates (A / D), F - back.
+- A 10 s group countdown at the exit; a raid summary afterwards.
+- F7: players and lobby (remove a player, lobby type), open games, save backups, settings (connection indicator,
+  streamer mode, voice, appearance), "Collect logs", tutorial.
+- Group tasks at the barman while 2+ players are in the session. The host starts the arena (shooting range) in F7.
+
 KNOWN LIMITATIONS
-- If the host quits the game completely, the session ends: everyone finishes the raid on their own.
 - Everybody must use the same mod version (the mod will tell you).
-- On a game error the log is in %LOCALAPPDATA%\ZERO_Sievert\coop_solo.log - send it to the author.
+- On a game error the log is in %LOCALAPPDATA%\ZERO_Sievert\coop_solo.log - send it to the author (or the "Collect logs" button in F7).
 
 Credits: game by CABO Studio / Modern Wolf; UndertaleModTool (Underminers) used to build the patch;
 xdelta3 (GPL) to apply it.
@@ -207,7 +233,7 @@ ZERO Sievert CO-OP (nieoficjalny mod) - wersja: zobacz mod_info.json
 
 AKTUALIZACJA: uruchom install.bat nowej wersji na starej (wszyscy gracze muszą mieć tę samą wersję!).
 
-Wspólne rajdy do 4 graczy + ranienie/podnoszenie + rozszerzone ustawienia trudności.
+Wspólne rajdy do 8 graczy + ranienie/podnoszenie + rozszerzone ustawienia trudności.
 Mod mówi w języku gry (wszystkie 13 języków gry): zmień język w ustawieniach gry, a mod przełączy się sam.
 
 INSTALACJA (każdy gracz)
@@ -221,7 +247,7 @@ odmówi działania, dopóki nie wyjdzie nowa wersja moda (mod sam poinformuje o 
 
 JAK GRAĆ
 - Menu główne lub menu pauzy > "Kooperacja" (albo klawisz F7) - panel kooperacji.
-- Host: "Utwórz grę przez Steam" -> otworzy się nakładka Steam -> zaproś do 3 znajomych.
+- Host: "Utwórz grę przez Steam" -> otworzy się nakładka Steam -> zaproś do 7 znajomych.
   Znajomi przyjmują zaproszenie w Steam albo klikają "Dołącz do gry" przy hoście na liście znajomych.
 - Zapasowo: "Utwórz grę przez IP" u hosta (port UDP 47777) i "Dołącz przez IP" u znajomych
   (przez Radmin VPN / ZeroTier / przekierowanie portu).
@@ -231,4 +257,18 @@ JAK GRAĆ
 - Ranny gracz czeka na pomoc: podejdź i naciśnij [E], kółkiem myszy wybierz bandaż lub apteczkę.
 - [X] obok towarzysza: przekaż mu przedmiot (na rajdzie i w bunkrze). Środkowy przycisk myszy: znacznik dla wszystkich.
 - W bunkrze widzicie się nawzajem; przez panel można odwiedzić bunkier znajomego.
-- Przy błędzie gry log jest w %LOCALAPPDATA%\ZERO_Sievert\coop_solo.log - wyślij go autorowi.
+NOWOŚCI W 2.0.0 (klawisze)
+- Do 8 graczy. Gdy host wyjdzie, sesję przejmuje inny gracz, pozostali łączą się sami.
+- C (przytrzymaj) - głos z bliska. Krótkofalówka (sprzedaje ją barman przy reputacji 400 u Samotników albo zrób
+  ją w warsztacie): włóż do szybkiego slotu i weź do ręki - mówisz na jej kanale na każdą odległość, kółko myszy
+  zmienia kanał.
+- Enter - czat tekstowy; Z (przytrzymaj) - koło komend, Q - następna strona.
+- U przy towarzyszu - wymiana; I - podgląd jego wyposażenia.
+- Rannego można ciągnąć (E przy nim - wybór: ciągnij i podnoś / tylko ciągnij / podnieś).
+- Po ostatecznej śmierci - obserwowanie towarzyszy (A / D), F - powrót.
+- Przy wyjściu wspólne odliczanie 10 s; po rajdzie podsumowanie.
+- F7: gracze i lobby (usuń gracza, typ lobby), otwarte gry, kopie zapisów, ustawienia (wskaźnik połączenia,
+  tryb streamera, głos, wygląd), "Zbierz logi", samouczek.
+- Zadania grupowe u barmana, gdy w sesji są 2+ gracze. Arenę (strzelnicę) uruchamia host w F7.
+
+- Przy błędzie gry log jest w %LOCALAPPDATA%\ZERO_Sievert\coop_solo.log - wyślij go autorowi (albo przycisk "Zbierz logi" w F7).

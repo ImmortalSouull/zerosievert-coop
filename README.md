@@ -2,18 +2,18 @@
 
 **English** · [Русский](README.ru.md) · [Polski](README.pl.md)
 
-An unofficial mod that adds co-op for **up to 4 players** to **ZERO Sievert**: joint raids via Steam or by
+An unofficial mod that adds co-op for **up to 8 players** to **ZERO Sievert**: joint raids via Steam or by
 IP, a shared world, getting downed and reviving teammates, extended difficulty settings.
 
 > The mod was made with AI (Claude) to the player's design. It is not affiliated with the game's developers
 > (CABO Studio / Modern Wolf). No game files are stored or distributed here: a release contains a patch and
 > an installer that are applied to your own copy of the game.
 
-**Current version: v1.2.0** — download it from [Releases](../../releases). Notes for every version (what's
+**Current version: v2.0.0** — download it from [Releases](../../releases). Notes for every version (what's
 new, fixes, known bugs) are in [docs/releases](docs/releases).
 
 ## Features
-- A "Co-op" button in the main menu and pause menu (or F7): play via Steam (invite up to 3 friends) or by IP.
+- A "Co-op" button in the main menu and pause menu (or F7): play via Steam (invite up to 7 friends) or by IP.
 - Joint raids: a gathering zone with a countdown along the host's train — whoever stands in it goes along;
   the others join the running raid later (by train or from the panel). Never two separate raids.
 - Identical map for everybody; enemies, shots, grenades, corpses, live loot, dropped items, doors,
@@ -23,7 +23,15 @@ new, fixes, known bugs) are in [docs/releases](docs/releases).
   modules and benches) while your stash, items and save stay yours. The bunker's weather is the host's.
 - Down instead of death and reviving teammates: pick the item by its icon (no items / bandage / medkit)
   with the HP and seconds shown under it.
-- [X] gives an item to a teammate, in a raid and in the bunker.
+- [X] gives an item to a teammate, in a raid and in the bunker; trading between players (U), a teammate's gear (I).
+- The session survives the host leaving: another player takes it over. Back into the session after a crash.
+- Proximity voice chat and a radio item with channels; text chat (Enter) and a command wheel (Z).
+- Group panel, group extraction with a raid summary, spectating after the final death, crawling and dragging
+  a downed teammate.
+- Shared quest progress with the reward split by work, group tasks at the barman, raid events, an arena in the
+  bunker, personal loot and friendly fire settings, appearance synced to teammates.
+- Lobby management (kick, friends / invite / public), a list of open games and friends hosting, mod/file check.
+- Save backups, separate co-op characters, one-click update, "Collect logs", streamer mode, a co-op tutorial.
 - Ping markers with the middle mouse button (a second click on the same spot removes yours), teammates on the
   PDA map.
 - XP, quests and reputation go to whoever made the kill.
@@ -49,7 +57,7 @@ Full instructions: `README.txt` in the release archive.
 - `mod/gml` — mod code (GML), `mod/hooks.txt` — patch points in the game's code.
 - Build: UndertaleModTool CLI (`tools/build.sh`, `tools/utmt/build.csx`) from your own copy of
   `data.win`; a release is an xdelta patch (`tools/make_dist.sh`).
-- Tests: `python tools/regress.py all` (scenarios on 1–4 game windows, every map), `python tools/soak.py`.
+- Tests: `python tools/regress.py all` (scenarios on 1–8 game windows, every map), `python tools/soak.py`.
 - Development log and every engine quirk found — `MODLOG.md`.
 
 Third-party tools: UndertaleModTool (Underminers), xdelta3 (GPL v2, see THIRD_PARTY.txt in the release).

@@ -2,7 +2,7 @@
 
 [English](README.md) · [Русский](README.ru.md) · **Polski**
 
-Nieoficjalny mod, który dodaje do **ZERO Sievert** tryb kooperacji dla **maksymalnie 4 graczy**: wspólne rajdy
+Nieoficjalny mod, który dodaje do **ZERO Sievert** tryb kooperacji dla **maksymalnie 8 graczy**: wspólne rajdy
 przez Steam lub przez IP, wspólny świat, powalenie i podnoszenie towarzyszy, rozszerzone ustawienia trudności.
 
 > Mod został zrobiony przy pomocy AI (Claude) według projektu gracza. Nie jest powiązany z twórcami gry
@@ -11,11 +11,11 @@ przez Steam lub przez IP, wspólny świat, powalenie i podnoszenie towarzyszy, r
 >
 > Tłumaczenie przygotowane przy pomocy AI — jeśli coś brzmi dziwnie, daj znać.
 
-**Aktualna wersja: v1.2.0** — do pobrania w sekcji [Releases](../../releases). Opisy wszystkich wersji
+**Aktualna wersja: v2.0.0** — do pobrania w sekcji [Releases](../../releases). Opisy wszystkich wersji
 (nowości, poprawki, znane błędy) są w [docs/releases](docs/releases).
 
 ## Możliwości
-- Przycisk „Kooperacja” w menu głównym i menu pauzy (lub F7): gra przez Steam (zaproszenie do 3 znajomych)
+- Przycisk „Kooperacja” w menu głównym i menu pauzy (lub F7): gra przez Steam (zaproszenie do 7 znajomych)
   lub przez IP.
 - Wspólne rajdy: wzdłuż pociągu hosta pojawia się strefa z odliczaniem — kto stoi w strefie, jedzie razem;
   pozostali dołączają do trwającego rajdu później (pociągiem lub z panelu). Nigdy dwa osobne rajdy.
@@ -27,7 +27,17 @@ przez Steam lub przez IP, wspólny świat, powalenie i podnoszenie towarzyszy, r
   jest taka jak u hosta.
 - Powalenie zamiast śmierci i podnoszenie towarzysza: wybór przedmiotu ikoną (bez przedmiotów / bandaż /
   apteczka) z podpisem, ile HP i sekund.
-- [X] — przekaż przedmiot towarzyszowi, na rajdzie i w bunkrze.
+- [X] — przekaż przedmiot towarzyszowi, na rajdzie i w bunkrze; wymiana między graczami (U), wyposażenie
+  towarzysza (I).
+- Sesja przetrwa wyjście hosta: przejmuje ją inny gracz. Powrót do sesji po awarii.
+- Czat głosowy z bliska i krótkofalówka z kanałami; czat tekstowy (Enter) i koło komend (Z).
+- Panel grupy, wspólna ewakuacja z podsumowaniem rajdu, obserwowanie po ostatecznej śmierci, czołganie
+  i ciągnięcie rannego.
+- Wspólny postęp zadań z podziałem nagrody według pracy, zadania grupowe u barmana, wydarzenia w rajdzie, arena
+  w bunkrze, ustawienia osobnego łupu i ognia sojuszniczego, wygląd widoczny dla towarzyszy.
+- Zarządzanie lobby (usuń gracza, znajomi / zaproszenie / publiczne), lista otwartych gier i znajomych, sprawdzanie modów.
+- Kopie zapasowe zapisów, osobne postacie co-op, aktualizacja jednym kliknięciem, „Zbierz logi”, tryb streamera,
+  samouczek co-op.
 - Znaczniki środkowym przyciskiem myszy (drugie kliknięcie w to samo miejsce usuwa Twój znacznik), towarzysze
   na mapie PDA.
 - Doświadczenie, zadania i reputacja trafiają do tego, kto zabił.
@@ -54,7 +64,7 @@ Pełna instrukcja: `README.txt` w archiwum wydania (sekcja POLSKI).
 - `mod/gml` — kod moda (GML), `mod/hooks.txt` — miejsca wpięcia w kod gry.
 - Budowanie: UndertaleModTool CLI (`tools/build.sh`, `tools/utmt/build.csx`) z Twojej własnej kopii
   `data.win`; wydanie to łatka xdelta (`tools/make_dist.sh`).
-- Testy: `python tools/regress.py all` (scenariusze na 1–4 oknach gry, wszystkie mapy), `python tools/soak.py`.
+- Testy: `python tools/regress.py all` (scenariusze na 1–8 oknach gry, wszystkie mapy), `python tools/soak.py`.
 - Dziennik prac i wszystkie znalezione osobliwości silnika — `MODLOG.md` (po angielsku).
 
 Narzędzia zewnętrzne: UndertaleModTool (Underminers), xdelta3 (GPL v2, zob. THIRD_PARTY.txt w wydaniu).
