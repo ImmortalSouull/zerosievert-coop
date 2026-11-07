@@ -12,11 +12,14 @@ SOLO="lang solo $(pick 'solo[0-9]*_*')"
 DUO="fps anim v3 revive both chest livechest join latejoin leave reconnect aiguest grouphp lobby lobby2 tele $(pick 'map[0-9]*_*') $(pick 'aiguest[0-9]*_*')"
 TRIO="trio handoff3 chest3 both3 ownerjoin"
 SQUAD="quad handoff"
+# 2.0.0 features (each scenario sets its own player count, octo = 8 windows)
+NEW="panelraid tutorial report backup files conn group ff ff_full kick extract spectate drag rejoin pda questloot personal fallen trade voice radio event event_clear event_boss quest barq arena migrate migrate_crash gather hostjoin octo"
 echo "######## SOLO";  "${P[@]}" $SOLO
 echo "######## DUO";   "${P[@]}" $DUO
 echo "######## TRIO";  "${P[@]}" $TRIO
 echo "######## SQUAD"; "${P[@]}" $SQUAD
+echo "######## 2.0.0 FEATURES"; "${P[@]}" $NEW
 echo "######## SQUAD SOAK ($SOAK min)"; python tools/soak.py "$SOAK"
 echo "######## BAD NETWORK (120 ms, 3% loss, 40 ms jitter)"
-COOP_REGRESS_ARGS="-coop_netsim 120,3,40" "${P[@]}" fps v3 revive both chest livechest join latejoin leave reconnect aiguest lobby $TRIO $SQUAD
+COOP_REGRESS_ARGS="-coop_netsim 120,3,40" "${P[@]}" fps v3 revive both chest livechest join latejoin leave reconnect aiguest lobby trade extract migrate $TRIO $SQUAD
 echo "######## FULL RUN FINISHED"

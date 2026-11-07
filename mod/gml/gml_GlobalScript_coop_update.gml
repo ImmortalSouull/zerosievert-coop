@@ -4,7 +4,7 @@
 // starts a small update.cmd (through the shell, url_open) that waits until the game is closed and then runs the
 // release's installer. The game itself cannot start programs any other way.
 
-#macro COOP_MOD_VERSION "1.2.0"
+#macro COOP_MOD_VERSION "2.0.0"
 #macro COOP_RELEASES_API "https://api.github.com/repos/ImmortalSouull/zerosievert-coop/releases/latest"
 #macro COOP_RELEASES_PAGE "github.com/ImmortalSouull/zerosievert-coop/releases"
 
