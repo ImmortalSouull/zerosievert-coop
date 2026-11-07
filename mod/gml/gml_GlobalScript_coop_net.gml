@@ -1002,6 +1002,12 @@ function coop_handle_message_inner(_b, _size)
         case COOP_MSG_SUMMARY:
             coop_summary_on_msg(_b);
             break;
+        case COOP_MSG_GEAR_REQ:
+            coop_gear_on_request();
+            break;
+        case COOP_MSG_GEAR:
+            coop_gear_on_msg(_b);
+            break;
         case COOP_MSG_MARK:
             coop_mark_on_message(_b);
             break;

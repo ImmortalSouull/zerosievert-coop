@@ -15,6 +15,7 @@ coop_try(coop_kick_step);
 coop_try(coop_chat_step);
 coop_try(coop_wheel_step);
 coop_try(coop_summary_step);
+coop_try(coop_gear_step);
 coop_try(coop_autopilot_step);
 coop_try(coop_pending_raid_step);
 coop_try(coop_gather_step);
