@@ -4,6 +4,10 @@
 // offers on both sides (a signature of both lists), so changing anything un-readies both. When both are ready each
 // side takes its offered stacks out of its inventory and sends them; received stacks go into the inventory
 // (coop_give_receive_pending: when the inventory screen is closed, a bag at your feet if it is full).
+// Two-phase hand-over: a side that is ready on matching offers "locks" (op 6: the signature + how many offer/ready
+// messages it has seen from us) and can't change anything any more; each side hands its stacks over only when it is
+// locked AND holds a lock of the other side that saw all of our messages. Without it a side could hand over on a
+// stale view: the other changed its offer at the moment it pressed Ready and then never gave anything back.
 
 #macro COOP_MSG_TRADE 81
 #macro COOP_TRADE_KEY 85
@@ -14,13 +18,15 @@ function coop_trade()
     var _c = coop();
     if (!variable_struct_exists(_c, "trade"))
     {
-        _c.trade = { state: "none", slot: -1, t: 0, offer: [], theirs: [], ready: false, their_sig: "", done: false, opts: [] };
+        _c.trade = { state: "none", slot: -1, t: 0, offer: [], theirs: [], ready: false, their_sig: "", done: false, opts: [],
+            sent_n: 0, recv_n: 0, lock_key: "", lock_t: 0, their_lock: "", their_lock_seen: -1 };
     }
     return _c.trade;
 }
 
 function coop_trade_send(_slot, _op, _text)
 {
+    if (_op == 2 || _op == 3) coop_trade().sent_n++; // offer / ready messages: a lock names how many it has seen
     var _b = coop_msg_begin(COOP_MSG_TRADE);
     buffer_write(_b, buffer_u8, _op);
     buffer_write(_b, buffer_string, _text);
@@ -80,6 +86,38 @@ function coop_trade_close(_why)
     _tr.ready = false;
     _tr.their_sig = "";
     _tr.done = false;
+    _tr.got = false;
+    _tr.sent_n = 0;
+    _tr.recv_n = 0;
+    _tr.lock_key = "";
+    _tr.their_lock = "";
+    _tr.their_lock_seen = -1;
+}
+
+// Ready on the exact offers the other side is ready on: nothing can change any more (coop_trade_input).
+function coop_trade_locked(_tr)
+{
+    return _tr.state == "open" && _tr.ready && !_tr.done && _tr.their_sig != "" && _tr.their_sig == coop_trade_both_sig_theirs_view(_tr);
+}
+
+// Offered stacks that left the inventory (used, dropped, moved) leave the offer: what is shown is what is handed over.
+function coop_trade_prune(_tr)
+{
+    var _gone = false;
+    for (var _i = array_length(_tr.offer) - 1; _i >= 0; _i--)
+    {
+        var _found = false;
+        for (var _j = 0; _j < array_length(_tr.opts); _j++)
+        {
+            if (coop_trade_same(_tr.opts[_j].loot, _tr.offer[_i])) { _found = true; break; }
+        }
+        if (!_found) { array_delete(_tr.offer, _i, 1); _gone = true; }
+    }
+    if (_gone)
+    {
+        coop_log("trade: an offered stack left the inventory");
+        coop_trade_offer_changed();
+    }
 }
 
 function coop_trade_nearest()
@@ -144,7 +182,10 @@ function coop_trade_step()
             }
             break;
         case "open":
-            if (keyboard_check_pressed(vk_escape) || !instance_exists(coop_puppet_of(_tr.slot)))
+            var _locked = coop_trade_locked(_tr);
+            // locked: the other side may be handing over right now - no cancel (unless nothing came for 10 s)
+            var _esc = keyboard_check_pressed(vk_escape) && (!_locked || current_time - _tr.lock_t > 10000);
+            if (_esc || !instance_exists(coop_puppet_of(_tr.slot)))
             {
                 keyboard_clear(vk_escape);
                 coop_trade_send(_tr.slot, 4, "");
@@ -152,8 +193,19 @@ function coop_trade_step()
                 exit;
             }
             coop_trade_input();
-            // both ready on the same offers: hand over ours
-            if (_tr.ready && !_tr.done && _tr.their_sig == coop_trade_both_sig_theirs_view(_tr))
+            if (_tr.state != "open") break;
+            if (!coop_trade_locked(_tr)) break;
+            // tell them we are locked on this state (again after any change on either side)
+            var _lk = coop_trade_both_sig(_tr) + "#" + string(_tr.sent_n) + "#" + string(_tr.recv_n);
+            if (_tr.lock_key != _lk)
+            {
+                _tr.lock_key = _lk;
+                _tr.lock_t = current_time;
+                coop_trade_send(_tr.slot, 6, coop_trade_both_sig(_tr) + "#" + string(_tr.recv_n));
+                coop_log("trade: locked");
+            }
+            // both locked on the same offers, their lock saw everything we sent: hand over ours
+            if (_tr.their_lock == coop_trade_both_sig_theirs_view(_tr) && _tr.their_lock_seen == _tr.sent_n)
             {
                 coop_trade_commit();
             }
@@ -218,7 +270,14 @@ function coop_trade_on_msg(_b)
     switch (_op)
     {
         case 0: // asked
-            if (_tr.state == "none")
+            if (_tr.state == "asked" && _tr.slot == _from)
+            {
+                // we both asked each other at once: that is a yes from both
+                _tr.state = "open";
+                coop_trade_send(_from, 1, "");
+                coop_log("trade: open with slot ", _from, " (both asked)");
+            }
+            else if (_tr.state == "none")
             {
                 _tr.state = "incoming";
                 _tr.slot = _from;
@@ -236,10 +295,15 @@ function coop_trade_on_msg(_b)
                 _tr.state = "open";
                 coop_log("trade: open with slot ", _from);
             }
+            else if (!(_tr.state == "open" && _tr.slot == _from))
+            {
+                coop_trade_send(_from, 4, ""); // accepted after we gave up waiting: close theirs too
+            }
             break;
         case 2: // their offer changed
             if (_tr.slot == _from)
             {
+                _tr.recv_n++;
                 _tr.theirs = json_parse(_text);
                 _tr.ready = false;
                 _tr.their_sig = "";
@@ -249,7 +313,16 @@ function coop_trade_on_msg(_b)
         case 3: // their ready (signature of both offers, theirs first) or not ready ("")
             if (_tr.slot == _from)
             {
+                _tr.recv_n++;
                 _tr.their_sig = _text;
+            }
+            break;
+        case 6: // their lock: the signature (their view) and how many of our offer/ready messages they had seen
+            if (_tr.slot == _from)
+            {
+                var _p6 = string_split(_text, "#");
+                _tr.their_lock = _p6[0];
+                _tr.their_lock_seen = (array_length(_p6) > 1) ? real(_p6[1]) : -1;
             }
             break;
         case 4: // cancelled
@@ -259,7 +332,7 @@ function coop_trade_on_msg(_b)
                 coop_trade_close("cancelled by them");
             }
             break;
-        case 5: // their stacks
+        case 5: // their stacks (a gift if we closed in between: the stacks are never thrown away)
             var _l = json_parse(_text);
             if (!variable_struct_exists(_c, "give_in")) _c.give_in = [];
             for (var _i = 0; _i < array_length(_l); _i++)
@@ -268,7 +341,7 @@ function coop_trade_on_msg(_b)
             }
             coop_log("trade: got ", array_length(_l), " stacks from slot ", _from);
             _tr.got = true;
-            if (_tr.done) coop_trade_close("done");
+            if (_tr.done && _tr.slot == _from) coop_trade_close("done");
             break;
     }
 }
@@ -285,6 +358,8 @@ function coop_trade_input()
     var _c = coop();
     var _tr = coop_trade();
     _tr.opts = coop_give_options();
+    if (coop_trade_locked(_tr)) exit; // waiting for the hand-over
+    coop_trade_prune(_tr);
     // more than 14 stacks: the wheel scrolls the list
     if (!variable_struct_exists(_tr, "scroll")) _tr.scroll = 0;
     if (!variable_struct_exists(_tr, "sel")) _tr.sel = -1;

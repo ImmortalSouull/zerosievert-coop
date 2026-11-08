@@ -333,6 +333,13 @@ SCENARIOS = [
       checks=[("A", r"trade: sent 1 stacks to slot 1", 1), ("B", r"trade: sent 1 stacks to slot 0", 1),
               ("A", r"trade: got 1 stacks from slot 1", 1), ("B", r"trade: got 1 stacks from slot 0", 1),
               ("A", r"gift placed in the inventory|gift dropped in a bag", 1), ("B", r"gift placed in the inventory|gift dropped in a bag", 1)], timeout=300),
+    # trade race: the host changes its offer 3 frames after Ready, the guest readies on its stale view: the hand-over
+    # waits for both locks on the final offers (2 stacks from the host, 1 from the guest)
+    S("trade_race", "-coop_autoraid 1 -coop_scenario trade_race", "-coop_scenario trade_race",
+      done=[("A", r"trade test: done"), ("B", r"trade test: done")],
+      checks=[("A", r"trade: sent 2 stacks to slot 1", 1), ("B", r"trade: sent 1 stacks to slot 0", 1),
+              ("B", r"trade race: handed over against an offer of 2 stacks", 1),
+              ("A", r"trade: got 1 stacks from slot 1", 1), ("B", r"trade: got 2 stacks from slot 0", 1)], timeout=300),
     # voice: a test tone next to the host (full), far away (silent), on the same radio channel (heard)
     S("voice", "-coop_autoraid 1 -coop_scenario voice", "-coop_scenario voice",
       done=[("A", r"voice test: done"), ("B", r"voice test: done")],

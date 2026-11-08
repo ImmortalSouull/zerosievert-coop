@@ -2464,10 +2464,13 @@ function coop_test_fallen_step()
 
 // -coop_scenario trade: the guest stands next to the host; the host asks (U), the guest accepts; each offers one stack
 // (a click on its first / second inventory row), both press Ready; each gets the other's stack.
+// -coop_scenario trade_race: the host presses Ready and changes its offer 3 frames later; the guest presses Ready the
+// moment it sees the host ready (a stale view): nothing may be handed over until both are ready on the final offers.
 function coop_test_trade_step()
 {
     var _c = coop();
-    if (!_c.test_mode || _c.scenario != "trade" || !coop_shared_ready() || !instance_exists(obj_player)) exit;
+    if (!_c.test_mode || (_c.scenario != "trade" && _c.scenario != "trade_race") || !coop_shared_ready() || !instance_exists(obj_player)) exit;
+    var _race = _c.scenario == "trade_race";
     if (!variable_struct_exists(_c, "tdt")) _c.tdt = 0;
     _c.tdt++;
     var _t = _c.tdt;
@@ -2480,8 +2483,19 @@ function coop_test_trade_step()
         if (_tr.state == "incoming" && !variable_struct_exists(_c, "td_acc")) { _c.td_acc = _t; }
         if (variable_struct_exists(_c, "td_acc") && _t == _c.td_acc + 30) _c.sim_trade_key = true;
         if (variable_struct_exists(_c, "td_acc") && _t == _c.td_acc + 90) _c.sim_trade_click = [400, 340]; // second row
-        if (variable_struct_exists(_c, "td_acc") && _t == _c.td_acc + 200) _c.sim_trade_click = [500, 850]; // Ready
-        if (variable_struct_exists(_c, "td_acc") && _t == _c.td_acc + 500) coop_log("trade test: done");
+        if (!_race && variable_struct_exists(_c, "td_acc") && _t == _c.td_acc + 200) _c.sim_trade_click = [500, 850]; // Ready
+        if (_race && variable_struct_exists(_c, "td_acc") && _t > _c.td_acc + 100 && _tr.state == "open" && !_tr.ready && _tr.their_sig != ""
+            && (!variable_struct_exists(_c, "td_rdy") || _t - _c.td_rdy > 20))
+        {
+            _c.td_rdy = _t;
+            _c.sim_trade_click = [500, 850]; // Ready as soon as the host is
+        }
+        if (_race && _tr.done && !variable_struct_exists(_c, "td_dn"))
+        {
+            _c.td_dn = true;
+            coop_log("trade race: handed over against an offer of ", array_length(_tr.theirs), " stacks");
+        }
+        if (variable_struct_exists(_c, "td_acc") && _t == _c.td_acc + (_race ? 700 : 500)) coop_log("trade test: done");
     }
     else
     {
@@ -2489,7 +2503,14 @@ function coop_test_trade_step()
         if (_tr.state == "open" && !variable_struct_exists(_c, "td_open")) _c.td_open = _t;
         if (variable_struct_exists(_c, "td_open") && _t == _c.td_open + 40) _c.sim_trade_click = [400, 300]; // first row
         if (variable_struct_exists(_c, "td_open") && _t == _c.td_open + 160) { screen_save("trade_" + _c.tag + ".png"); _c.sim_trade_click = [500, 850]; }
-        if (variable_struct_exists(_c, "td_open") && _t == _c.td_open + 460) coop_log("trade test: done");
+        if (_race && variable_struct_exists(_c, "td_open") && _t == _c.td_open + 163) _c.sim_trade_click = [400, 340]; // and a second stack
+        if (_race && variable_struct_exists(_c, "td_open") && _t == _c.td_open + 400) _c.sim_trade_click = [500, 850]; // Ready again
+        if (_race && _tr.done && !variable_struct_exists(_c, "td_dn"))
+        {
+            _c.td_dn = true;
+            coop_log("trade race: handed over against an offer of ", array_length(_tr.theirs), " stacks");
+        }
+        if (variable_struct_exists(_c, "td_open") && _t == _c.td_open + (_race ? 660 : 460)) coop_log("trade test: done");
     }
 }
 
