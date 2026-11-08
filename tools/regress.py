@@ -336,16 +336,16 @@ SCENARIOS = [
     # voice: a test tone next to the host (full), far away (silent), on the same radio channel (heard)
     S("voice", "-coop_autoraid 1 -coop_scenario voice", "-coop_scenario voice",
       done=[("A", r"voice test: done"), ("B", r"voice test: done")],
-      checks=[("A", r"voice test: t=400 got=[1-9]\d* gain=1 speaking=1", 1), ("A", r"voice test: t=700 got=[1-9]\d* gain=0 ", 1),
+      checks=[("A", r"voice test: t=550 got=[1-9]\d* gain=1 speaking=1", 1), ("A", r"voice test: t=1250 got=[1-9]\d* gain=0 ", 1),
               # a radio only in the pocket does not transmit (talking needs it in hand - the radio test covers that)
-              ("A", r"voice test: t=1000 got=[1-9]\d* gain=0 speaking=0", 1),
+              ("A", r"voice test: t=2000 got=[1-9]\d* gain=0 speaking=0", 1),
               ("A", r"host without radio gain=0[^.]", 1), ("A", r"bar sells radio=1 name=", 1), ("B", r"guest radio=1", 1)], timeout=300),
     # the co-op radio: quick slot raises it, talking over the radio only in hand, heard at any distance on the channel
     S("radio", "-coop_autoraid 1 -coop_scenario radio", "-coop_scenario radio",
       done=[("A", r"radio test: done"), ("B", r"radio test: done")],
       checks=[("A", r"radio test: have=1 recipe=1 module=12 bar level=400 category=coop_radio", 1),
               ("B", r"guest raised=1 talk channel=1", 1), ("B", r"shooting blocked=1", 1),
-              ("A", r"radio test: t=450 got=[1-9]\d* gain=0.80 radio drawn=1", 1), ("A", r"radio test: t=750 got=[1-9]\d* gain=0 radio drawn=0", 1),
+              ("A", r"radio test: t=600 got=[1-9]\d* gain=0.80 radio drawn=1", 1), ("A", r"radio test: t=1300 got=[1-9]\d* gain=0 radio drawn=0", 1),
               ("B", r"guest lowered, in hand=0", 1)], timeout=300),
     # raid event: SOS survivor, the guest takes the job, enemies die, reward bag
     S("event", "-coop_autoraid 1 -coop_scenario event -coop_event_type 0", "-coop_scenario event",
@@ -429,7 +429,8 @@ SCENARIOS = [
       checks=[(k, r"players=3 puppets=2", 1) for k in "ABC"] + [("A", r"maps identical with partner", 2),
               ("A", r"revived partner .* slot 2", 1), ("A", r"received .* from slot 2", 1)]
               + [(k, r"ping mark from slot", 2) for k in "ABC"]
-              + [("B", r"ping mark removed at", 1)] + [(k, r"ping mark removed by slot 1", 1) for k in "AC"],
+              # slot 1 (B or C, whichever connected first) removes its mark, the two others see it go
+              + [("BC", r"ping mark removed at", 1), ("ABC", r"ping mark removed by slot 1", 2)],
       timeout=420, minutes=7, players=3,
       solo_checks=(r"received .* from slot 2",)),  # the last slot gives: a bystander with more players
     S("handoff3", "-coop_autoraid 1 -coop_scenario handoff -coop_fps 60", "-coop_scenario handoff -coop_fps 60",

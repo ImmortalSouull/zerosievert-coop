@@ -937,7 +937,7 @@ function coop_test_lobby_step(_t)
             obj_player.x = _h.x + 16;
             obj_player.y = _h.y;
         }
-        if (_t == 241) _c.sim_give = true;
+        if (_t == 241) { _c.sim_give_to = 0; _c.sim_give = true; }
         if (_t == 242) _c.sim_give_ok = true;
     }
     if (_c.role != "guest")
@@ -1969,8 +1969,9 @@ function coop_test_kick_step()
     if (_c.role == "host" && _c.kt >= 330)
     {
         _c.kt++;
-        if (_c.kt == 1000)
+        if (_c.kt >= 1000 && !variable_struct_exists(_c, "k_done")) // (kt also counts in the block above while others stay)
         {
+            _c.k_done = true;
             coop_log("kick: host players now ", coop_player_count());
             coop_log("kick: done");
         }
@@ -2503,20 +2504,21 @@ function coop_test_voice_step()
     {
         var _h = coop_puppet_of(0);
         if (_t == 150 && instance_exists(_h)) { obj_player.x = _h.x + 40; obj_player.y = _h.y; _c.voice_test_tone = 0; }
-        if (_t == 450 && instance_exists(_h)) { obj_player.x = _h.x + 1000; }
-        if (_t == 750) { _v.channel = 3; inventory_add_item(COOP_RADIO_ITEM, 1); coop_log("voice test: guest radio=", coop_radio_have()); }
-        if (_t == 1100) { variable_struct_remove(_c, "voice_test_tone"); coop_log("voice test: done"); }
+        // the steps are 700+ ticks apart: host and guest test clocks start when each one's map is ready (seconds apart)
+        if (_t == 900 && instance_exists(_h)) { obj_player.x = _h.x + 1000; }
+        if (_t == 1650) { _v.channel = 3; inventory_add_item(COOP_RADIO_ITEM, 1); coop_log("voice test: guest radio=", coop_radio_have()); }
+        if (_t == 2100) { variable_struct_remove(_c, "voice_test_tone"); coop_log("voice test: done"); }
     }
     else
     {
-        if (_t == 750) _v.channel = 3; // no radio in the host's inventory yet: channel 3 does nothing
-        if (_t == 850) { coop_log("voice test: host without radio gain=", coop_voice_gain(1)); inventory_add_item(COOP_RADIO_ITEM, 1); coop_log("voice test: bar sells radio=", coop_radio_sold(), " name=", item_get_name(COOP_RADIO_ITEM)); }
-        if (_t == 400 || _t == 700 || _t == 1000)
+        if (_t == 1650) _v.channel = 3; // no radio in the host's inventory yet: channel 3 does nothing
+        if (_t == 1750) { coop_log("voice test: host without radio gain=", coop_voice_gain(1)); inventory_add_item(COOP_RADIO_ITEM, 1); coop_log("voice test: bar sells radio=", coop_radio_sold(), " name=", item_get_name(COOP_RADIO_ITEM)); }
+        if (_t == 550 || _t == 1250 || _t == 2000)
         {
             var _s = _v.spk[1];
             coop_log("voice test: t=", _t, " got=", is_struct(_s) ? _s.got : 0, " gain=", coop_voice_gain(1), " speaking=", coop_voice_speaking(1));
         }
-        if (_t == 1100) coop_log("voice test: done");
+        if (_t == 2100) coop_log("voice test: done");
     }
 }
 
@@ -2574,21 +2576,21 @@ function coop_test_radio_step()
         }
         if (_t == 260) coop_log("radio test: shooting blocked=", obj_player.shooting);
         if (_t == 280) screen_save("radio_" + _c.tag + ".png");
-        if (_t == 500)
+        if (_t == 1000) // far from the host's checks at 600 / 1300 (the two test clocks differ by seconds)
         {
             inventory_use_quick_slot("quick slot 1");
             coop_log("radio test: guest lowered, in hand=", coop_radio_in_hand());
         }
-        if (_t == 800) { variable_struct_remove(_c, "voice_test_tone"); coop_log("radio test: done"); }
+        if (_t == 1400) { variable_struct_remove(_c, "voice_test_tone"); coop_log("radio test: done"); }
     }
     else
     {
-        if (_t == 450 || _t == 750)
+        if (_t == 600 || _t == 1300)
         {
             var _s = _v.spk[1];
             coop_log("radio test: t=", _t, " got=", is_struct(_s) ? _s.got : 0, " gain=", coop_voice_gain(1), " radio drawn=", instance_exists(coop_puppet_of(1)) && (coop_puppet_of(1).coop_flags & 32) != 0);
         }
-        if (_t == 800) coop_log("radio test: done");
+        if (_t == 1400) coop_log("radio test: done");
     }
 }
 

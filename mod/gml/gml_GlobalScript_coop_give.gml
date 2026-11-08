@@ -26,6 +26,13 @@ function coop_give_target()
     }
     var _best = -4;
     var _bd = COOP_GIVE_RANGE;
+    var _c = coop();
+    if (_c.test_mode && variable_struct_exists(_c, "sim_give_to"))
+    {
+        // test: the pair's partner, not a bystander standing as close ("name@N" runs)
+        var _w = coop_puppet_of(_c.sim_give_to);
+        if (instance_exists(_w) && point_distance(obj_player.x, obj_player.y, _w.x, _w.y) < _bd) return _w;
+    }
     var _px = obj_player.x;
     var _py = obj_player.y;
     with (obj_player_puppet)

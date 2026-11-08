@@ -372,6 +372,7 @@ function coop_scenario_step()
             var _k2 = _t - _c.sc_rev_t;
             if (_k2 == 520)
             {
+                _c.sim_give_to = 1;
                 _c.sim_give = true;
             }
             if (_k2 == 540)

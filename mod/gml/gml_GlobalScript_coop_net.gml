@@ -9,6 +9,8 @@
 // Handlers read the payload exactly as before; coop().msg_from is the sender's slot.
 // -coop_netsim <latency ms>,<loss %>,<jitter ms> (test) delays/drops outgoing UDP packets.
 
+// a peer silent this long gets one packet a second (coop_raw_send)
+#macro COOP_QUIET_MS 3000
 #macro COOP_MSG_HELLO 1
 #macro COOP_MSG_WELCOME 2
 #macro COOP_MSG_PING 3
@@ -51,6 +53,7 @@ function coop_peer_new(_slot)
         connected: false,
         hello: false,
         last_recv: current_time,
+        quiet_sent: 0, // last packet to it while it was silent (coop_raw_send)
         ping: 0,
         in_raid: false,
         raid_late: false, // joined its raid while it was running (coop_raid_owner)
@@ -436,6 +439,18 @@ function coop_raw_send(_p, _b, _size, _reliable)
         {
             exit;
         }
+        // A peer that went silent (crashed, frozen, loading a map) gets at most one packet a second: on Windows each
+        // packet to a closed port comes back as an error that stalls our socket's receiving for everybody (one
+        // crashed player of five: 20 s pings for the rest until long after its timeout). Reliable messages stay
+        // queued (coop_net_resend) and go out when it answers again (coop_net_on_packet).
+        if (current_time - _p.last_recv > COOP_QUIET_MS)
+        {
+            if (current_time - _p.quiet_sent < 1000)
+            {
+                exit;
+            }
+            _p.quiet_sent = current_time;
+        }
         if (_c.netsim != undefined)
         {
             coop_netsim_send(_p, _b, _size);
@@ -670,6 +685,12 @@ function coop_net_on_packet(_p, _b, _size)
     buffer_seek(_b, buffer_seek_start, 0);
     var _kind = buffer_read(_b, buffer_u8);
     var _seq = buffer_read(_b, buffer_u16);
+    if (current_time - _p.last_recv > COOP_QUIET_MS)
+    {
+        // back after a silence (coop_raw_send held our packets back): resend the queued reliable ones right away
+        var _q = _p.tx_queue;
+        for (var _i = 0; _i < array_length(_q); _i++) { _q[_i].t = 0; _q[_i].tries = 1; }
+    }
     _p.last_recv = current_time;
     _c.last_recv_time = current_time;
     if (_kind == 2)
