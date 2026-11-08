@@ -261,7 +261,7 @@ SCENARIOS = [
     # connection indicator: the host's link is slow and lossy, both sides show the problem
     S("conn", "-coop_scenario conn -coop_netsim 260,12,0", "-coop_scenario conn",
       done=[("A", r"conn: test done"), ("B", r"conn: test done")],
-      checks=[("A", r"conn: problem shown", 1), ("B", r"conn: problem shown", 1), ("A", r"conn: slot 1 ping 2[5-9]\d", 1)],
+      checks=[("A", r"conn: problem shown", 1), ("B", r"conn: problem shown", 1), ("A", r"conn: slot 1 ping (2[5-9]\d|[3-9]\d\d)", 1)],  # >= 250 (a bad-net run adds its own delay)
       need_identical=False, timeout=150, minutes=3),
     # teammates: status (menu, away) under the name tag, group panel with the item being used
     S("group", "-coop_autoraid 1 -coop_scenario group", "-coop_scenario group",
