@@ -2013,11 +2013,13 @@ function coop_test_extract_step()
     {
         _c.xt_exit = (variable_struct_exists(_c, "xt_exit") ? _c.xt_exit : 0) + 1;
         if (_c.xt_exit == 1) coop_log("extract: exit screen, my t=", _c.xt, " survived=", obj_exit_screen.survived);
-        if (_c.xt_exit == 240)
+        var _n = 0;
+        for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++) if (is_struct(_c.summary[_k])) _n++;
+        // after 4 s, as soon as every player's summary is in (a teammate may reach its exit screen seconds later)
+        if (_c.xt_exit >= 240 && !variable_struct_exists(_c, "xt_done") && (_n >= coop_player_count() || _c.xt_exit >= 900))
         {
+            _c.xt_done = true;
             screen_save("summary_" + _c.tag + ".png");
-            var _n = 0;
-            for (var _k = 0; _k < COOP_MAX_PLAYERS; _k++) if (is_struct(_c.summary[_k])) _n++;
             coop_log("extract: done, summaries=", _n, " kills=", _c.my_stats.kills);
             var _pb = coop_panel_partner_buttons();
             coop_log("extract: partners page ", _pb[0].label);

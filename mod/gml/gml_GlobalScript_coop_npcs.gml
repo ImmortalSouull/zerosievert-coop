@@ -794,6 +794,10 @@ function coop_npc_on_check(_b)
     var _drift_prev = variable_struct_exists(_c, "drift_prev") ? _c.drift_prev : {};
     var _drift_brief = 0;
     var _drift_info = "";
+    // where the players are: an NPC far from all of them is streamed twice a second only (allowed further off)
+    var _pp = [];
+    if (instance_exists(obj_player)) array_push(_pp, obj_player.x, obj_player.y);
+    with (obj_player_puppet) array_push(_pp, x, y);
     for (var _i = 0; _i < _n; _i++)
     {
         var _nid = buffer_read(_b, buffer_u32);
@@ -807,7 +811,12 @@ function coop_npc_on_check(_b)
             {
                 var _d = point_distance(_rep.x, _rep.y, _ox, _oy);
                 _drift_max = max(_drift_max, _d);
-                if (_d > 160)
+                var _lim = 400;
+                for (var _q = 0; _q < array_length(_pp); _q += 2)
+                {
+                    if (point_distance(_ox, _oy, _pp[_q], _pp[_q + 1]) < 720) { _lim = 160; break; }
+                }
+                if (_d > _lim)
                 {
                     variable_struct_set(_drift_now, string(_nid), true);
                     if (variable_struct_exists(_drift_prev, string(_nid)))
@@ -825,7 +834,7 @@ function coop_npc_on_check(_b)
     // a replica far from the owner's NPC is a ghost (shots at it hit nothing on the owner)
     if (_drift_n > 0)
     {
-        coop_log("NPC DRIFT: ", _drift_n, " replicas > 160 px from the owner's NPC, max ", floor(_drift_max), " -", _drift_info);
+        coop_log("NPC DRIFT: ", _drift_n, " replicas > 160 px (400 far from players) from the owner's NPC, max ", floor(_drift_max), " -", _drift_info);
     }
     else if (_c.test_mode)
     {
