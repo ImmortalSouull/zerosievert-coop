@@ -358,7 +358,9 @@ function coop_trade_input()
     var _c = coop();
     var _tr = coop_trade();
     _tr.opts = coop_give_options();
-    if (coop_trade_locked(_tr)) exit; // waiting for the hand-over
+    // waiting for the hand-over, or ours went already: nothing may change any more (a late offer message would
+    // un-ready the other side before it hands its part over)
+    if (_tr.done || coop_trade_locked(_tr)) exit;
     coop_trade_prune(_tr);
     // more than 14 stacks: the wheel scrolls the list
     if (!variable_struct_exists(_tr, "scroll")) _tr.scroll = 0;
