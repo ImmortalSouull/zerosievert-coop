@@ -204,8 +204,10 @@ function coop_trade_step()
                 coop_trade_send(_tr.slot, 6, coop_trade_both_sig(_tr) + "#" + string(_tr.recv_n));
                 coop_log("trade: locked");
             }
-            // both locked on the same offers, their lock saw everything we sent: hand over ours
-            if (_tr.their_lock == coop_trade_both_sig_theirs_view(_tr) && _tr.their_lock_seen == _tr.sent_n)
+            // both locked on the same offers, their lock saw everything we sent: hand over ours (not while the
+            // inventory screen is open: it writes its own copy of the items back when it closes)
+            if (_tr.their_lock == coop_trade_both_sig_theirs_view(_tr) && _tr.their_lock_seen == _tr.sent_n
+                && !__uiGlobal().__defaultOnion.LayerExists("inventory layer"))
             {
                 coop_trade_commit();
             }
@@ -246,6 +248,16 @@ function coop_trade_commit()
     for (var _i = 0; _i < array_length(_tr.offer); _i++)
     {
         var _k = coop_trade_find(_arr, _tr.offer[_i]);
+        if (_k < 0)
+        {
+            // moved in the inventory meanwhile: the same item and amount anywhere
+            for (var _j = 0; _j < array_length(_arr); _j++)
+            {
+                var _a = _arr[_j];
+                if (is_struct(_a) && _a.item == _tr.offer[_i].item && _a.quantity == _tr.offer[_i].quantity
+                    && variable_struct_exists(_a, "placement") && _a.placement == "player inventory") { _k = _j; break; }
+            }
+        }
         if (_k >= 0)
         {
             array_push(_send, coop_loot_to_struct(loot_duplicate(_arr[_k])));
