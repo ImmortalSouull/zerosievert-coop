@@ -638,7 +638,7 @@ function coop_test_quad_step()
             obj_player.x = _h.x + 16;
             obj_player.y = _h.y;
         }
-        if (_t == 941) _c.sim_give = true;
+        if (_t == 941) { _c.sim_give_to = 0; _c.sim_give = true; }
         if (_t == 942) _c.sim_give_ok = true;
     }
     if (_t == 1000)
@@ -1918,7 +1918,8 @@ function coop_test_ff_step()
         var _host = coop_test_partner();
         with (obj_player)
         {
-            if (_t == 150 && instance_exists(_host)) { x = _host.x + 40; y = _host.y; }
+            // (again right before the shot: the host's spawn may move once its map is in)
+            if ((_t == 150 || _t == 235) && instance_exists(_host)) { x = _host.x + 40; y = _host.y; }
             if (_t == 240 && instance_exists(_host))
             {
                 scr_shoot(point_direction(x, y, _host.x, _host.y - 6), 1, 40, 0);
@@ -2472,7 +2473,8 @@ function coop_test_trade_step()
     if (_c.role == "guest")
     {
         var _h = coop_puppet_of(0);
-        if (_t == 150 && instance_exists(_h)) { obj_player.x = _h.x + 30; obj_player.y = _h.y; }
+        // next to the host, again every 2 s until the request comes (the host's spawn may move once its map is in)
+        if (_t >= 150 && _t mod 120 == 30 && !variable_struct_exists(_c, "td_acc") && instance_exists(_h)) { obj_player.x = _h.x + 30; obj_player.y = _h.y; }
         if (_tr.state == "incoming" && !variable_struct_exists(_c, "td_acc")) { _c.td_acc = _t; }
         if (variable_struct_exists(_c, "td_acc") && _t == _c.td_acc + 30) _c.sim_trade_key = true;
         if (variable_struct_exists(_c, "td_acc") && _t == _c.td_acc + 90) _c.sim_trade_click = [400, 340]; // second row
@@ -2505,6 +2507,7 @@ function coop_test_voice_step()
     {
         var _h = coop_puppet_of(0);
         if (_t == 150 && instance_exists(_h)) { obj_player.x = _h.x + 40; obj_player.y = _h.y; _c.voice_test_tone = 0; }
+        if (_t > 150 && _t < 900 && _t mod 120 == 30 && instance_exists(_h)) { obj_player.x = _h.x + 40; obj_player.y = _h.y; } // stay next to it
         // the steps are 700+ ticks apart: host and guest test clocks start when each one's map is ready (seconds apart)
         if (_t == 900 && instance_exists(_h)) { obj_player.x = _h.x + 1000; }
         if (_t == 1650) { _v.channel = 3; inventory_add_item(COOP_RADIO_ITEM, 1); coop_log("voice test: guest radio=", coop_radio_have()); }

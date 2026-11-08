@@ -772,6 +772,7 @@ function coop_npc_on_check(_b)
     var _drift_now = {}; // nids far off in this check; a ghost stays off in the next one too (a running NPC does not)
     var _drift_prev = variable_struct_exists(_c, "drift_prev") ? _c.drift_prev : {};
     var _drift_brief = 0;
+    var _drift_info = "";
     for (var _i = 0; _i < _n; _i++)
     {
         var _nid = buffer_read(_b, buffer_u32);
@@ -788,7 +789,13 @@ function coop_npc_on_check(_b)
                 if (_d > 160)
                 {
                     variable_struct_set(_drift_now, string(_nid), true);
-                    if (variable_struct_exists(_drift_prev, string(_nid))) _drift_n++; else _drift_brief++;
+                    if (variable_struct_exists(_drift_prev, string(_nid)))
+                    {
+                        _drift_n++;
+                        if (_drift_n <= 3) _drift_info += " " + string(_nid) + ":" + object_get_name(_rep.object_index) + " rep=" + string(floor(_rep.x)) + "," + string(floor(_rep.y))
+                            + " own=" + string(floor(_ox)) + "," + string(floor(_oy)) + " hp=" + string(_rep.hp);
+                    }
+                    else _drift_brief++;
                 }
             }
             catch (_e) { }
@@ -797,7 +804,7 @@ function coop_npc_on_check(_b)
     // a replica far from the owner's NPC is a ghost (shots at it hit nothing on the owner)
     if (_drift_n > 0)
     {
-        coop_log("NPC DRIFT: ", _drift_n, " replicas > 160 px from the owner's NPC, max ", floor(_drift_max));
+        coop_log("NPC DRIFT: ", _drift_n, " replicas > 160 px from the owner's NPC, max ", floor(_drift_max), " -", _drift_info);
     }
     else if (_c.test_mode)
     {
