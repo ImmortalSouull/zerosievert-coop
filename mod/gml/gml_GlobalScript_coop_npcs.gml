@@ -345,7 +345,7 @@ function coop_npc_guest_release()
     instance_activate_object(obj_npc_parent);
     with (obj_npc_parent)
     {
-        if (coop_npc_is_replica())
+        if (coop_npc_is_replica() && !(variable_instance_exists(id, "coop_event_giver") && coop_event_giver))
         {
             coop_replica = false; // AI takes over again, purge leaves it alone (variable still exists)
             // a state the replica never learned the name of would crash the NPC's state machine

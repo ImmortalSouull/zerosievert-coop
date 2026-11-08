@@ -380,6 +380,12 @@ function coop_owner_step()
         coop_npc_take_over();
         coop_notify(coop_t("You now run the raid's world", "Теперь мир рейда считается у вас"));
     }
+    else if (_o == max(0, _c.slot) && ds_map_size(_c.npc_by_nid) > 0)
+    {
+        // the owner unknown before (we took the session over after the host left, coop_migrate.gml): the NPCs we
+        // know keep their ids - new ones must not reuse them (the others mixed an old NPC and a new one up)
+        coop_npc_take_over();
+    }
 }
 
 function coop_in_raid()
