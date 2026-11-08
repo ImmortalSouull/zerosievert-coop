@@ -2360,8 +2360,14 @@ function coop_test_questloot_step()
         if (_t == 1000)
         {
             coop_log("questloot: host quest back=", coop_questloot_has(_c.ql_inst));
-            coop_log("questloot: done");
+            // we put the document back; a teammate's content for this container arrives: it stays ours here
+            var _back = [_mk("bandage"), _mk("document_quest_lab")];
+            coop_chest_quest_track(_c.ql_inst, _back);
+            coop_questloot_set(_c.ql_inst, _back);
+            var _m = coop_chest_quest_merge(_c.ql_inst, [_mk("bandage"), _mk("document_quest_lab")]);
+            coop_log("questloot: put back kept=", array_length(coop_chest_quest_list(_m)));
         }
+        if (_t == 1040) coop_log("questloot: done");
         exit;
     }
     // guest

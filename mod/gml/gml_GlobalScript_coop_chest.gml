@@ -657,6 +657,16 @@ function coop_chest_quest_track(_inst, _items_now)
             array_delete(_now, _k, 1);
         }
     }
+    // what is left in _now was put in by us: one we took and put back is ours here again
+    for (var _i = 0; _i < array_length(_now); _i++)
+    {
+        var _t = array_get_index(_inst.coop_q_taken, _now[_i]);
+        if (_t >= 0)
+        {
+            array_delete(_inst.coop_q_taken, _t, 1);
+            coop_log("quest item put back by us: ", _now[_i]);
+        }
+    }
     _inst.coop_q_last = coop_chest_quest_list(_items_now);
 }
 

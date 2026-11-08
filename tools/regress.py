@@ -316,7 +316,8 @@ SCENARIOS = [
     S("questloot", "-coop_autoraid 1 -coop_scenario questloot", "-coop_scenario questloot",
       done=[("A", r"questloot: done"), ("B", r"questloot: done")],
       checks=[("B", r"questloot: guest ready", 1), ("B", r"guest still has quest=1", 1), ("B", r"quest item kept for us: document_quest_lab", 1),
-              ("A", r"questloot: host quest back=0", 1), ("A", r"quest item taken by us", 1)], timeout=300),
+              ("A", r"questloot: host quest back=0", 1), ("A", r"quest item taken by us", 1),
+              ("A", r"questloot: put back kept=1", 1)], timeout=300),
     # personal loot: the same container rolls different content for host and guest
     S("personal", "-coop_autoraid 1 -coop_scenario chest -coop_diff coop_personal_loot=1", "-coop_scenario chest",
       done=[("A", r"scenario chest t=420"), ("B", r"scenario chest t=420")],
