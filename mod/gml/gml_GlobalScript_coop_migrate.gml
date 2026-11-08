@@ -68,6 +68,7 @@ function coop_migrate_go(_next)
             {
                 steam_lobby_set_data("zs_host", string(steam_get_user_steam_id()));
                 _c.lobby = steam_lobby_get_lobby_id();
+                coop_lobby_apply_type(); // the open games list shows our name now, not the old host's
             }
             catch (_e) { }
         }
