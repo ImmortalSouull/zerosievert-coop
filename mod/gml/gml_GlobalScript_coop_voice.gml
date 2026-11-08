@@ -66,6 +66,13 @@ function coop_voice_step()
     if (!_c.connected || _v.mode == 0)
     {
         _v.tx = false;
+        if (_v.rec >= 0)
+        {
+            // voice turned off or the session ended with the microphone open: close it
+            audio_stop_recording(_v.rec);
+            _v.rec = -1;
+            coop_log("voice: microphone off");
+        }
         exit;
     }
     _v.tx = (_v.mode == 2) || (keyboard_check(COOP_VOICE_KEY) && !coop_chat_is_open());
@@ -175,6 +182,13 @@ function coop_voice_on_msg(_b)
     }
     _s.ch = _ch;
     _s.t = current_time;
+    if (array_length(_s.bufs) >= 8)
+    {
+        // more than ~0.8 s queued (packets came in a burst after a lag): drop it, the delay must not stay
+        _s.dropped = (variable_struct_exists(_s, "dropped") ? _s.dropped : 0) + 1;
+        if (coop().test_mode && _s.dropped mod 20 == 1) coop_log("voice: dropped ", _s.dropped, " late packets from slot ", _from);
+        exit;
+    }
     _s.got += _n;
     var _pcm = buffer_create(_n * 2, buffer_fixed, 1);
     var _pos = buffer_tell(_b);
