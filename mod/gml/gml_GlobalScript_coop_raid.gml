@@ -30,6 +30,12 @@ function coop_hook_go_to_map(_map)
             _map = _p.map;
             _c.raid_late = true;
             _joined = true;
+            if (_c.role == "host")
+            {
+                // that raid's group scaling, not the one of our group of this moment (its map must come out the same)
+                _c.coop_group_enemy_mult = _p.raid_gen;
+                _c.coop_group_hp_mult = _p.raid_ghp;
+            }
             coop_notify(coop_tf("Following {0} into the raid", "Едем за {0} в рейд", _p.name));
             coop_log("train joins the raid of slot ", _t, ": map ", _map, " seed ", _c.seed);
         }
@@ -50,10 +56,7 @@ function coop_hook_go_to_map(_map)
             coop_log("raid started without partner, seed ", _c.seed);
             return _map;
         }
-        if (!_joined)
-        {
-            coop_settings_send(); // world settings must arrive before the guest generates the map
-        }
+        coop_settings_send(false); // world settings must arrive before the guest generates the map
         coop_msg_begin(COOP_MSG_RAID_START);
         buffer_write(_c.send_buf, buffer_u8, _map);
         buffer_write(_c.send_buf, buffer_f64, _c.seed);
@@ -139,7 +142,18 @@ function coop_on_room_start()
     if (room == room1)
     {
         // what this raid is generated with, for players joining it from us later (coop_on_join_request)
-        _c.raid_settings_json = json_stringify(variable_struct_exists(_c, "host_settings") ? _c.host_settings : {});
+        var _rs = {};
+        if (variable_struct_exists(_c, "host_settings"))
+        {
+            var _names = variable_struct_get_names(_c.host_settings);
+            for (var _k = 0; _k < array_length(_names); _k++) variable_struct_set(_rs, _names[_k], variable_struct_get(_c.host_settings, _names[_k]));
+        }
+        if (variable_struct_exists(_c, "raid_group"))
+        {
+            variable_struct_set(_rs, "coop_group_enemy_mult", _c.raid_group.en);
+            variable_struct_set(_rs, "coop_group_hp_mult", _c.raid_group.hp);
+        }
+        _c.raid_settings_json = json_stringify(_rs);
         coop_down_reset();
         coop_summary_reset();
         coop_chest_reset_room();

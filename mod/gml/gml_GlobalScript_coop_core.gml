@@ -129,6 +129,9 @@ function coop_parse_params()
             case "-coop_delay_join":
                 _c.delay_join = real(_v) * 1000; // test: the guest says hello only after this many seconds
                 break;
+            case "-coop_wait_slots":
+                _c.wait_slots = real(_v); // test: say hello only once slots 1..N-1 are taken (files coop_conn_<slot>.flag)
+                break;
             case "-coop_seq_dump":
                 _c.seq_dump = real(_v);
                 break;
@@ -454,6 +457,7 @@ function coop_take_seed()
     _c.seed = undefined;
     _c.gen_seed = _s;
     _c.gen_step = 0;
+    _c.raid_group = { en: coop_group_factor_live("enemies"), hp: coop_group_factor_live("hp") };
     _c.spawn_synced = false;
     if (_s != undefined)
     {

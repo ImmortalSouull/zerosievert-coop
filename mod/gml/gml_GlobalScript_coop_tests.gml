@@ -211,17 +211,21 @@ function coop_test_v3_step()
         // group scaling: the NPCs the host made (and the guest's replicas of them) carry the same hp
         var _sum = 0;
         var _n = 0;
+        var _list = "";
         instance_activate_object(obj_npc_parent);
         with (obj_npc_parent)
         {
             if (variable_instance_exists(id, "coop_nid") && coop_nid < 40 && object_is_ancestor(object_index, obj_npc_human_parent))
             {
                 // max hp: 1.4 squads may already fight each other, and host and guest measure at slightly different moments
-                _sum += variable_instance_exists(id, "hp_max") ? hp_max : hp;
+                var _hm = variable_instance_exists(id, "hp_max") ? hp_max : hp;
+                _sum += _hm;
                 _n++;
+                _list += string(coop_nid) + ":" + string(round(_hm)) + " ";
             }
         }
         coop_log("v3: group hp factor=", coop_group_factor("hp"), " npc hp sum=", _sum, " n=", _n);
+        coop_log("v3: npc hp list ", _list);
     }
     if (_c.role == "guest" && instance_exists(obj_player) && _t >= 150 && _t <= 600)
     {

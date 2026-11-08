@@ -16,11 +16,12 @@ LOGS = {k: os.path.join(SAVES, f"coop_coop{k}.log") for k in "ABCDEFGH"}
 
 
 def S(name, host, guest, done, checks, minutes=4, timeout=260, custom=None, need_identical=True, tags="", players=2,
-      solo_checks=()):
-    # solo_checks: regexes of checks that only hold while nobody else is in the session (dropped by "name@N")
+      solo_checks=(), with_others=None):
+    # solo_checks: regexes of checks that only hold while nobody else is in the session (dropped by "name@N");
+    # with_others: {regex: regex} what a check or done line becomes when more players are in the session
     return dict(name=name, host=host, guest=guest, done=done, checks=checks, minutes=minutes,
                 timeout=timeout, custom=custom, need_identical=need_identical, tags=tags, players=players,
-                bystand_from=None, solo_checks=solo_checks)
+                bystand_from=None, solo_checks=solo_checks, with_others=with_others or {})
 
 
 def with_bystanders(sc, n):
@@ -32,7 +33,15 @@ def with_bystanders(sc, n):
     v["timeout"] = sc["timeout"] + 25 * (n - sc["players"])
     v["minutes"] = sc["minutes"] + 2
     v["tags"] = "variant"
-    v["checks"] = [c for c in sc["checks"] if c[1] not in sc["solo_checks"]]
+    p = sc["players"]
+
+    def adapt(rx):
+        rx = sc["with_others"].get(rx, rx)
+        # player counts the scenario logs: the whole session now
+        rx = rx.replace(f"players={p} puppets={p - 1}", f"players={n} puppets={n - 1}")
+        return rx.replace(f"players={p - 1} puppets={p - 2}", f"players={n - 1} puppets={n - 2}")
+    v["checks"] = [(k, adapt(rx), c) for k, rx, c in sc["checks"] if rx not in sc["solo_checks"]]
+    v["done"] = [(k, adapt(rx)) for k, rx in sc["done"]]
     return v
 
 
@@ -98,7 +107,14 @@ def grouphp_ok(logs):
     n = sum(1 for k in "ABCDEFGH" if logs[k])  # the factor follows the number of players in the raid
     if a[0][0] != str(n) or b[0][0] != str(n):
         return f"factor A={a[0][0]} B={b[0][0]}"
-    return None if a[0][1] == b[0][1] else f"hp sum differs A={a[0][1]} B={b[0][1]}"
+    # the same NPCs (by network id) carry the same max hp; host and guest may not see the same set at that moment
+    la = dict(re.findall(r"(\d+):(\d+)", (re.findall(r"v3: npc hp list (.*)", logs["A"]) or [""])[0]))
+    lb = dict(re.findall(r"(\d+):(\d+)", (re.findall(r"v3: npc hp list (.*)", logs["B"]) or [""])[0]))
+    common = [k for k in la if k in lb]
+    if len(common) < 3:
+        return f"too few common npcs ({len(common)})"
+    diff = [k for k in common if la[k] != lb[k]]
+    return None if not diff else f"hp differs for npcs {diff[:5]} A={[la[k] for k in diff[:5]]} B={[lb[k] for k in diff[:5]]}"
 
 
 def files_ok(logs):
@@ -357,6 +373,7 @@ SCENARIOS = [
       done=[("A", r"barq: done"), ("B", r"barq: done")],
       checks=[("A", r"barq: barman=1 list has bandits=1 mutants=1", 1), ("A", r"barq: accepted=1", 1),
               ("A", r"after the guest left, mutants offered=0 accepted kept=1", 1), ("B", r"barman co-op tasks offered", 1)],
+      solo_checks=(r"after the guest left, mutants offered=0 accepted kept=1",),
       need_identical=False, timeout=240, minutes=4),
     # the arena in the shooting range: preset weapon in memory only (back before any save), frags, own weapon back
     S("arena", "-coop_scenario arena", "-coop_scenario arena",
@@ -369,13 +386,15 @@ SCENARIOS = [
       done=[("BC", r"migrate test: done players=2 puppets=1 owner me=1"), ("BC", r"migrate test: done players=2 puppets=1 owner me=0")],
       checks=[("A", r"migrate test: host quits", 1), ("BC", r"migrate: the host left, successor slot 1 \(me\)", 1),
               ("BC", r"migrate: the host left, successor slot 1 at 127.0.0.1", 1), ("BC", r"I host now", 1), ("BC", r"back in, slot 1", 1)],
-      need_identical=False, timeout=420, minutes=7, players=3),
+      need_identical=False, timeout=420, minutes=7, players=3,
+      with_others={r"back in, slot 1": r"back in, slot [1-7]"}),  # the new host gives slots in arrival order
     # the host crashes (no goodbye): the hand-over waits for the timeout + 30 s
     S("migrate_crash", "-coop_autoraid 1 -coop_scenario migrate_crash", "-coop_scenario migrate_crash",
       done=[("BC", r"migrate test: done players=2 puppets=1 owner me=1"), ("BC", r"migrate test: done players=2 puppets=1 owner me=0")],
       checks=[("A", r"migrate test: host quits", 1), ("BC", r"host timed out, waiting 30 s", 1), ("BC", r"migrate: the host left, successor slot 1 \(me\)", 1),
               ("BC", r"migrate: the host left, successor slot 1 at 127.0.0.1", 1), ("BC", r"I host now", 1), ("BC", r"back in, slot 1", 1)],
-      need_identical=False, timeout=420, minutes=7, players=3),
+      need_identical=False, timeout=420, minutes=7, players=3,
+      with_others={r"back in, slot 1": r"back in, slot [1-7]"}),  # the new host gives slots in arrival order
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),
@@ -411,7 +430,8 @@ SCENARIOS = [
               ("A", r"revived partner .* slot 2", 1), ("A", r"received .* from slot 2", 1)]
               + [(k, r"ping mark from slot", 2) for k in "ABC"]
               + [("B", r"ping mark removed at", 1)] + [(k, r"ping mark removed by slot 1", 1) for k in "AC"],
-      timeout=420, minutes=7, players=3),
+      timeout=420, minutes=7, players=3,
+      solo_checks=(r"received .* from slot 2",)),  # the last slot gives: a bystander with more players
     S("handoff3", "-coop_autoraid 1 -coop_scenario handoff -coop_fps 60", "-coop_scenario handoff -coop_fps 60",
       done=[(k, r"handoff: done") for k in "BC"],
       checks=[(k, r"raid owner: slot 1", 1) for k in "BC"] + [("A", r"handoff: host leaves", 1)], custom=handoff_ok,
@@ -428,7 +448,9 @@ SCENARIOS = [
     S("both3", "-coop_autoraid 1 -coop_scenario both -coop_fps 60", "-coop_scenario both -coop_fps 60",
       done=[(k, r"forced death: everyone down|both down: death for both") for k in "ABC"],
       checks=[(k, r"forced death: everyone down|both down: death for both", 1) for k in "ABC"],
-      need_identical=False, timeout=420, minutes=7, players=3),
+      need_identical=False, timeout=420, minutes=7, players=3,
+      # a teammate still standing could revive them: the downed ones die when their timers run out
+      with_others={r"forced death: everyone down|both down: death for both": r"forced death: down timer expired"}),
     # slot 2 joins the raid slot 1 owns after the host extracted (join request goes to the raid owner)
     S("ownerjoin", "-coop_autoraid 1 -coop_scenario ownerjoin -coop_fps 60", "-coop_scenario ownerjoin -coop_fps 60",
       done=[("BC", r"ownerjoin: done")], checks=[], custom=ownerjoin_ok,
@@ -496,7 +518,7 @@ def stop():
 
 def run(sc, outdir, extra):
     stop()
-    for p in LOGS.values():
+    for p in list(LOGS.values()) + [os.path.join(SAVES, f"coop_conn_{i}.flag") for i in range(8)]:
         if os.path.exists(p):
             os.remove(p)
     # the scenario's own arguments come last, so they win over the shared extra ones
@@ -512,8 +534,8 @@ def run(sc, outdir, extra):
     env.pop("COOP_BYSTAND_FROM", None)
     if sc.get("bystand_from"):
         env["COOP_BYSTAND_FROM"] = str(sc["bystand_from"])
-        # the extra players say hello a few seconds later, so the scenario's own players keep slots 0..p-1
-        env["COOP_BYSTAND_ARGS"] = f"{extra} -coop_scenario bystand -coop_fps 60 -coop_delay_join 7"
+        # the extra players say hello once the scenario's own players are in, so those keep slots 0..p-1
+        env["COOP_BYSTAND_ARGS"] = f"{extra} -coop_scenario bystand -coop_fps 60 -coop_wait_slots {sc['bystand_from']}"
     proc = subprocess.Popen([BASH, "-c", cmd], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
     t0 = time.time()
     status = "timeout"
@@ -548,8 +570,8 @@ def run(sc, outdir, extra):
                 break
     if sc["need_identical"]:
         for i, k in enumerate(keys):
-            # an extra player that never went into a raid (e.g. stays in the hub) has no map to compare
-            if sc.get("bystand_from") and i >= sc["bystand_from"] and "map generator uses coop seed" not in logs[k]:
+            # an extra player that never finished a raid's map (stays in the hub, or still loading) has none to compare
+            if sc.get("bystand_from") and i >= sc["bystand_from"] and "map fingerprint" not in logs[k]:
                 continue
             if "maps identical" not in logs[k]:
                 problems.append(f"{k}: maps not confirmed identical")

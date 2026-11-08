@@ -54,6 +54,7 @@ function coop_peer_new(_slot)
         ping: 0,
         in_raid: false,
         raid_late: false, // joined its raid while it was running (coop_raid_owner)
+        raid_gen: 1, raid_ghp: 1, // group scaling of that raid (coop_group_factor)
         raid_seed: -1, // seed of the raid it is in, -1 = none (a train ride joins it: coop_hook_go_to_map)
         ready: false,
         loc: 0,
@@ -1133,6 +1134,12 @@ function coop_net_on_welcome(_b)
     _h.name = _wname;
     coop_peers_refresh();
     coop_log("connected to host ", _wname, " v", _wver, " as slot ", _slot);
+    if (_c.test_mode)
+    {
+        // test: the extra players of a "name@N" run wait for this (coop_test_slots_taken)
+        var _ff = file_text_open_write("coop_conn_" + string(_slot) + ".flag");
+        if (_ff >= 0) { file_text_write_string(_ff, _c.tag); file_text_close(_ff); }
+    }
     coop_notify(coop_tf("Connected to {0}", "Подключено к {0}", coop_peer_name(0)));
     coop_on_connected(0);
 }
@@ -1273,6 +1280,8 @@ function coop_net_on_raid_state(_from, _b)
     var _rid = buffer_read(_b, buffer_f64);
     var _rdy = buffer_read(_b, buffer_u8);
     var _late = buffer_read(_b, buffer_u8);
+    var _gen = buffer_read(_b, buffer_f32);
+    var _ghp = buffer_read(_b, buffer_f32);
     var _p = coop_peer(_from);
     if (!is_struct(_p) || _from == _c.slot)
     {
@@ -1287,6 +1296,8 @@ function coop_net_on_raid_state(_from, _b)
     _p.in_raid = _in;
     _p.raid_late = _late;
     _p.raid_seed = (_loc == 2) ? _rid : -1;
+    _p.raid_gen = _gen;
+    _p.raid_ghp = _ghp;
     var _became_ready = _in && _rdy && !_p.ready;
     _p.ready = _in && _rdy;
     var _old_loc = _p.loc;
@@ -1353,7 +1364,8 @@ function coop_net_step()
         _c.ready_time = current_time;
     }
     // Guest keeps saying hello until welcomed.
-    if (_c.role == "guest" && !_c.connected && current_time - _c.last_hello_time > 1000 && (!variable_struct_exists(_c, "delay_join") || current_time > _c.delay_join))
+    if (_c.role == "guest" && !_c.connected && current_time - _c.last_hello_time > 1000 && (!variable_struct_exists(_c, "delay_join") || current_time > _c.delay_join)
+        && coop_test_slots_taken())
     {
         _c.last_hello_time = current_time;
         coop_msg_begin(COOP_MSG_HELLO);
@@ -1472,6 +1484,10 @@ function coop_send_raid_state()
     buffer_write(_c.send_buf, buffer_f64, (_in && _c.gen_seed != undefined) ? _c.gen_seed : -1);
     buffer_write(_c.send_buf, buffer_u8, coop_raid_ready());
     buffer_write(_c.send_buf, buffer_u8, _in && _c.raid_late);
+    // the group scaling the raid was generated with (a player whose train joins it uses the same)
+    var _g = (_in && variable_struct_exists(_c, "raid_group")) ? _c.raid_group : { en: 1, hp: 1 };
+    buffer_write(_c.send_buf, buffer_f32, _g.en);
+    buffer_write(_c.send_buf, buffer_f32, _g.hp);
     coop_msg_send_to(COOP_ALL, true);
 }
 
@@ -1504,4 +1520,16 @@ function coop_notify(_text)
         _c.notes = [];
     }
     array_push(_c.notes, { text: _text, t_end: current_time + 5000 });
+}
+
+// Test (-coop_wait_slots N): true once the players of slots 1..N-1 have connected (each wrote coop_conn_<slot>.flag).
+function coop_test_slots_taken()
+{
+    var _c = coop();
+    if (!variable_struct_exists(_c, "wait_slots")) return true;
+    for (var _i = 1; _i < _c.wait_slots; _i++)
+    {
+        if (!file_exists("coop_conn_" + string(_i) + ".flag")) return false;
+    }
+    return true;
 }

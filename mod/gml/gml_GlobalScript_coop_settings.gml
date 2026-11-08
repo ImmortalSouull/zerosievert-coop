@@ -66,7 +66,20 @@ function coop_group_fix()
     _c.coop_group_hp_mult = 1 + difficulty_get("coop_group_hp") * _extra;
 }
 
+// The group scaling of the raid we are in: fixed when its map is generated (coop_take_seed), so players who
+// connect or join later don't change it, and told to the others with the raid state - a player joining this raid
+// generates it with the same numbers (coop_raid_settings_of).
 function coop_group_factor(_what)
+{
+    var _c = coop();
+    if (room == room1 && variable_struct_exists(_c, "raid_group"))
+    {
+        return (_what == "hp") ? _c.raid_group.hp : _c.raid_group.en;
+    }
+    return coop_group_factor_live(_what);
+}
+
+function coop_group_factor_live(_what)
 {
     var _c = coop();
     var _key = (_what == "hp") ? "coop_group_hp_mult" : "coop_group_enemy_mult";
@@ -151,7 +164,7 @@ function coop_difficulty_override(_key)
     return undefined;
 }
 
-function coop_settings_send()
+function coop_settings_send(_refix = true)
 {
     var _c = coop();
     if (_c.role != "host" || !_c.connected)
@@ -160,13 +173,14 @@ function coop_settings_send()
     }
     var _data = {};
     // group scaling is fixed when the raid starts (coop_group_fix): a player joining later must generate the
-    // same raid, so it gets the numbers the raid was made with
-    if (!variable_struct_exists(_c, "coop_group_enemy_mult") || !coop_in_raid())
+    // same raid, so it gets the numbers the raid was made with (_refix false: the raid start set them already)
+    if (!variable_struct_exists(_c, "coop_group_enemy_mult") || (_refix && !coop_in_raid()))
     {
         coop_group_fix();
     }
-    variable_struct_set(_data, "coop_group_enemy_mult", _c.coop_group_enemy_mult);
-    variable_struct_set(_data, "coop_group_hp_mult", _c.coop_group_hp_mult);
+    var _in_raid_group = coop_in_raid() && variable_struct_exists(_c, "raid_group"); // the numbers our raid was made with
+    variable_struct_set(_data, "coop_group_enemy_mult", _in_raid_group ? _c.raid_group.en : _c.coop_group_enemy_mult);
+    variable_struct_set(_data, "coop_group_hp_mult", _in_raid_group ? _c.raid_group.hp : _c.coop_group_hp_mult);
     var _keys = COOP_SHARED_SETTINGS;
     for (var _i = 0; _i < array_length(_keys); _i++)
     {
