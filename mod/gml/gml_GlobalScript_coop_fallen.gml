@@ -174,28 +174,62 @@ function coop_fallen_on_raid_end(_survived)
     for (var _i = 0; _i < array_length(_f.taken); _i++)
     {
         var _e = _f.taken[_i];
-        var _have = 0;
+        var _l = [];
         try
         {
-            _have = inventory_item_exists(_e.item) ? _e.qty : 0;
+            _l = coop_fallen_pull(_e.item, _e.qty);
         }
-        catch (_ex) { }
-        if (_have <= 0)
+        catch (_ex) { coop_log("fallen: pull failed: ", _ex); }
+        // the real stacks (durability, a weapon's data and attachments), only as many as we still have
+        var _n = 0;
+        for (var _j = 0; _j < array_length(_l); _j++)
         {
-            continue; // used up or left behind
+            var _b = coop_msg_begin(COOP_MSG_RETURN);
+            buffer_write(_b, buffer_string, json_stringify(_l[_j]));
+            coop_msg_send_to(_e.owner, true);
+            _n += _l[_j].quantity;
         }
-        inventory_remove_item(_e.item, _e.qty);
-        var _b = coop_msg_begin(COOP_MSG_RETURN);
-        buffer_write(_b, buffer_string, json_stringify({ item: _e.item, quantity: _e.qty, durability: 100 }));
-        coop_msg_send_to(_e.owner, true);
+        if (_n <= 0) continue; // used up or left behind
         _sent++;
-        coop_log("fallen: returned ", _e.item, " x", _e.qty, " to slot ", _e.owner);
+        coop_log("fallen: returned ", _e.item, " x", _n, " to slot ", _e.owner);
     }
     _f.taken = [];
     if (_sent > 0)
     {
         coop_notify(coop_t("Your fallen teammate's things went back to them", "Вещи погибшего напарника вернулись к нему"));
     }
+}
+
+// Take up to _qty of _item out of our inventory (equipped or not): the stacks as they are, split if needed.
+function coop_fallen_pull(_item, _qty)
+{
+    var _out = [];
+    var _db = inventory_target_db();
+    db_open(_db);
+    var _arr = db_read("Inventory", "items", []);
+    for (var _i = 0; _i < array_length(_arr) && _qty > 0; _i++)
+    {
+        var _l = _arr[_i];
+        if (!is_struct(_l) || _l.item != _item || _l.quantity <= 0) continue;
+        var _n = min(_qty, _l.quantity);
+        var _d = coop_loot_to_struct(loot_duplicate(_l));
+        _d.quantity = _n;
+        array_push(_out, _d);
+        _l.quantity -= _n;
+        _qty -= _n;
+        if (_l.quantity <= 0)
+        {
+            if (variable_struct_exists(_l, "placement") && mods_inventory_placement_is_equipment(_l.placement))
+            {
+                mods_perform_event("equipment_changed", [player_get_local(), _l.placement, _item, "no_item"]);
+            }
+            array_delete(_arr, _i, 1);
+            _i--;
+        }
+    }
+    db_write("Inventory", "items", _arr);
+    db_close();
+    return _out;
 }
 
 // The owner: our things are back (into the inventory once we are in the bunker, coop_give_receive_pending).
