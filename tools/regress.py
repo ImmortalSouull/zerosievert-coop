@@ -338,8 +338,8 @@ SCENARIOS = [
     # waits for both locks on the final offers (2 stacks from the host, 1 from the guest)
     S("trade_race", "-coop_autoraid 1 -coop_scenario trade_race -coop_netsim 150,0,0", "-coop_scenario trade_race",
       done=[("A", r"trade test: done"), ("B", r"trade test: done")],
-      checks=[("A", r"trade: sent 2 stacks to slot 1", 1), ("B", r"trade: sent 1 stacks to slot 0", 1),
-              ("B", r"trade race: handed over against an offer of 2 stacks", 1),
+      checks=[("A", r"trade: sent 2 stacks to slot 1 for their 1", 1),
+              ("B", r"trade: sent 1 stacks to slot 0 for their 2", 1),
               ("A", r"trade: got 1 stacks from slot 1", 1), ("B", r"trade: got 2 stacks from slot 0", 1)], timeout=300),
     # voice: a test tone next to the host (full), far away (silent), on the same radio channel (heard)
     S("voice", "-coop_autoraid 1 -coop_scenario voice", "-coop_scenario voice",

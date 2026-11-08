@@ -255,7 +255,7 @@ function coop_trade_commit()
     db_write("Inventory", "items", _arr);
     db_close();
     coop_trade_send(_tr.slot, 5, json_stringify(_send));
-    coop_log("trade: sent ", array_length(_send), " stacks to slot ", _tr.slot);
+    coop_log("trade: sent ", array_length(_send), " stacks to slot ", _tr.slot, " for their ", array_length(_tr.theirs));
     coop_notify(coop_tf("Trade with {0} done", "Обмен с {0} завершён", coop_peer_name(_tr.slot)));
     if (_tr.state == "open" && variable_struct_exists(_tr, "got") && _tr.got) coop_trade_close("done");
 }
