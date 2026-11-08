@@ -466,3 +466,20 @@ Branch dev-2.0.0; built and tested locally, the user publishes it. Every feature
 - UI: compact group panel top right, aiming hides the HUD (HP returns for a few seconds after a hit), welcome
   window (tutorial / later / never), F7 panel 0.72 alpha. 201 new texts translated (tools/lang_extract.py: 0).
 - tools/regress_full.sh got a "2.0.0 FEATURES" phase (and trade/extract/migrate on the bad network).
+- Ordered run by session size (tools/regress_players.sh, 2026-11-08): every scenario with 1..8 players; a two- or
+  three-player scenario runs as "name@N" with extra players (scenario bystand: follows the host, extracts with it,
+  leaves the extraction screen; -coop_wait_slots N makes it say hello only after slots 1..N-1 are taken - files
+  coop_conn_<slot>.flag). Found and fixed:
+  * Group scaling was recomputed for the host's train joining a guest's raid (and resent while other players
+    connected), so with 4 players the latecomers generated another map than the guest who started alone. Now
+    coop_take_seed freezes it (_c.raid_group), RAID_STATE carries it (2 x f32), coop_group_factor uses it in room1.
+  * Windows UDP: every packet sent to a closed port (crashed player) comes back as an error that stalls the socket's
+    receiving - 5 players, one killed: 20 s pings and 90 % loss for the rest until ~25 s after its timeout. A peer
+    silent for COOP_QUIET_MS (3 s) gets one packet a second; when it answers the queued reliable packets go at once.
+  * An NPC killed while deactivated on the owner (roaming fights) keeps existing with hp <= 0 until activation: no
+    snapshot (hp > 0 only) and no death message (sent in Destroy) -> a live ghost on every replica. The far tick now
+    sends NPC_DIE for those and drops them from npc_by_nid.
+  * Test lessons: test clocks of two windows start when each one's map is ready - seconds apart with 5+ windows, keep
+    steps 300+ ticks apart; the game moves the host's spawn once its map is in, so guests must follow the host again;
+    "nearest teammate" picks a bystander - tests use coop_test_partner() / sim_give_to; NPC DRIFT only counts a
+    replica off in two checks in a row (a running NPC was 164 px off once under load).

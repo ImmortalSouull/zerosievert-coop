@@ -58,6 +58,8 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
   `python tools/regress.py --list`), grouphp, aiguest (1.4 AI vs a guest far
   from the host), solo (1 window, players=1 in regress.py); per map: map*/solo*/aiguest* (tag maps).
   Everything in order: `bash tools/regress_full.sh [soak minutes]` (solo > duo > trio > squad > soak > bad net).
+  By session size 1..8: `bash tools/regress_players.sh [from] [to]` ("name@N" = a scenario plus extra players,
+  scenario bystand; quadN/handoffN; `python tools/regress.py --players N` lists a size's own scenarios).
   Solo with the mod by hand:
   `python tools/game_guard.py run --max-minutes 3 --note solo --launch "-no_gpu_pref -coop_slot 1 -coop_root
   coopA -coop_autoraid 1 -coop_scenario solo"`. Test-only args: -coop_diff key=val,... (difficulty override,
