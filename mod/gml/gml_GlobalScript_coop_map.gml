@@ -1,5 +1,5 @@
 // ZERO Sievert co-op: markers of the other players on the PDA map (pda_map.ui is patched by the installer to
-// call these; CoopMate*(i) for i = 0..2, the older CoopPartner* = the nearest one).
+// call these; CoopMate*(i) for i = 0..6, the older CoopPartner* = the nearest one).
 
 // The co-op entry in the game's Mods menu (mm_mods.ui, patched by the installer).
 function coop_mod_version_label()
@@ -10,7 +10,7 @@ function coop_mod_version_label()
 
 function coop_mod_subheader()
 {
-    return coop_t("ImmortalSouull, co-op for up to 4 players", "ImmortalSouull, кооператив до 4 игроков");
+    return coop_t("ImmortalSouull, co-op for up to 8 players", "ImmortalSouull, кооператив до 8 игроков");
 }
 
 function coop_ui_register()

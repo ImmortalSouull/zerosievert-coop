@@ -1,5 +1,5 @@
 // ZERO Sievert co-op: Steam lobby + invite flow (GMEXT-Steamworks).
-// Host: F7 panel -> "Host via Steam" -> friends-only lobby (up to 4 players) -> Steam invite overlay.
+// Host: F7 panel -> "Host via Steam" -> lobby (friends only by default, up to 8 players) -> Steam invite overlay.
 // Friend: accepts the invite in Steam. Running game: lobby_join_requested event; not running:
 // Steam starts the game with "+connect_lobby <id>". Once in the lobby, gameplay traffic is Steam P2P.
 

@@ -1,4 +1,4 @@
-// ZERO Sievert co-op: transport and message dispatch for up to 4 players.
+// ZERO Sievert co-op: transport and message dispatch for up to 8 players.
 //
 // Star topology: the host (slot 0) owns the world; every guest (slots 1..3) talks only to the host, which
 // relays guest messages meant for everybody. Every packet:
