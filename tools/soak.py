@@ -1,4 +1,4 @@
-"""Long co-op session (4 players, scenario soak) with memory sampling.
+"""Long co-op session (4 players, env COOP_PLAYERS=3..8 for another size; scenario soak) with memory sampling.
 
 usage: python tools/soak.py <minutes> [extra args for every launch, e.g. "-coop_netsim 100,2,30"]
 Prints memory growth per process, errors, NPC desync repairs and crashes. The data.win under test must be
@@ -9,6 +9,8 @@ import os, re, sys, time, shutil, subprocess
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORK = os.path.join(os.path.dirname(ROOT), "zerosievert-coop-work")
 SAVES = os.path.join(os.environ["LOCALAPPDATA"], "ZERO_Sievert")
+NPL = int(os.environ.get("COOP_PLAYERS", "4"))  # 3..8, passed on to test4.sh
+LETTERS = "ABCDEFGH"[:NPL]
 BASH = r"C:\Program Files\Git\bin\bash.exe"
 
 
@@ -43,8 +45,8 @@ def main():
         samples.append((round((time.time() - t0) / 60, 1), m))
         print(f"{samples[-1][0]:5} min  " + "  ".join(f"{pid}:{mb}MB" for pid, mb in sorted(m.items())), flush=True)
         logs = "".join(open(os.path.join(SAVES, f"coop_coop{k}.log"), encoding="utf-8", errors="replace").read()
-                       for k in "ABCD" if os.path.exists(os.path.join(SAVES, f"coop_coop{k}.log")))
-        if "CRASH" in logs or len(m) < 4:
+                       for k in LETTERS if os.path.exists(os.path.join(SAVES, f"coop_coop{k}.log")))
+        if "CRASH" in logs or len(m) < NPL:
             crashed = True
             print("!! crash or a game process is gone", flush=True)
             break
@@ -53,7 +55,7 @@ def main():
     out = os.path.join(WORK, "soak", time.strftime("%Y%m%d-%H%M%S"))
     os.makedirs(out, exist_ok=True)
     report = []
-    for k in "ABCD":
+    for k in LETTERS:
         p = os.path.join(SAVES, f"coop_coop{k}.log")
         if not os.path.exists(p):
             report.append(f"{k}: no log")
