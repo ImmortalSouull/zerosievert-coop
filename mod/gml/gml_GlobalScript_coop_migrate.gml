@@ -27,18 +27,23 @@ function coop_migrate_pick()
             }
         }
     }
+    // UDP: the lowest slot; the rest in order, in case that one is gone too (coop_migrate_step tries the next)
+    var _all = [];
     for (var _k = 1; _k < COOP_MAX_PLAYERS; _k++)
     {
         if (_k == _c.slot)
         {
-            return { me: true, addr: "", slot: _k };
+            array_push(_all, { me: true, addr: "", slot: _k });
         }
-        if (is_struct(_ps[_k]) && _ps[_k].connected && variable_struct_exists(_ps[_k], "addr") && _ps[_k].addr != "")
+        else if (is_struct(_ps[_k]) && _ps[_k].connected && variable_struct_exists(_ps[_k], "addr") && _ps[_k].addr != "")
         {
-            return { me: false, addr: _ps[_k].addr, slot: _k };
+            array_push(_all, { me: false, addr: _ps[_k].addr, slot: _k });
         }
     }
-    return undefined;
+    if (array_length(_all) == 0) return undefined;
+    var _first = _all[0];
+    _first.rest = _all;
+    return _first;
 }
 
 function coop_migrate_go(_next)
@@ -69,7 +74,8 @@ function coop_migrate_go(_next)
         coop_notify(coop_t("The host left - you host the session now", "Хост вышел - теперь хост вы"));
         exit;
     }
-    // say hello to the successor (coop_guest_reset_host left peer 0 for it)
+    // say hello to the successor (coop_guest_reset_host left peer 0 for it); no answer in 15 s: the next one
+    if (variable_struct_exists(_next, "rest")) _c.migrate_try = { next: _next, t: current_time };
     var _h = coop_peer(0);
     if (_c.transport == "steam")
     {
@@ -98,6 +104,29 @@ function coop_migrate_later(_next)
 function coop_migrate_step()
 {
     var _c = coop();
+    if (variable_struct_exists(_c, "migrate_try") && is_struct(_c.migrate_try))
+    {
+        var _mt = _c.migrate_try;
+        if (_c.connected || _c.role != "guest")
+        {
+            _c.migrate_try = undefined;
+        }
+        else if (current_time - _mt.t > 15000)
+        {
+            // the successor never answered (gone as well): the next player in the same order everybody uses
+            _c.migrate_try = undefined;
+            var _rest = _mt.next.rest;
+            var _i = 0;
+            while (_i < array_length(_rest) && _rest[_i].slot != _mt.next.slot) _i++;
+            if (_i + 1 < array_length(_rest))
+            {
+                var _n2 = _rest[_i + 1];
+                _n2.rest = _rest;
+                coop_log("migrate: slot ", _mt.next.slot, " never answered, trying slot ", _n2.slot);
+                coop_migrate_go(_n2);
+            }
+        }
+    }
     if (!variable_struct_exists(_c, "migrate_pending") || !is_struct(_c.migrate_pending))
     {
         exit;

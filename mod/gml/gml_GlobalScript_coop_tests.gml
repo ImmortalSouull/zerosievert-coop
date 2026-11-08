@@ -2832,18 +2832,21 @@ function coop_test_arena_step()
 
 // -coop_scenario migrate (3 players in a raid): the host quits the game; slot 1 takes the session over, slot 2
 // reconnects to it, both stay in the raid and see each other again.
+// -coop_scenario migrate_two (4 players): the host and slot 1 crash together; slots 2 and 3 wait for slot 1, give up
+// after 15 s and slot 2 takes the session over.
 function coop_test_migrate_step()
 {
     var _c = coop();
-    if (!_c.test_mode || (_c.scenario != "migrate" && _c.scenario != "migrate_crash") || !coop_in_raid() || !instance_exists(obj_player)) exit;
+    if (!_c.test_mode || (_c.scenario != "migrate" && _c.scenario != "migrate_crash" && _c.scenario != "migrate_two") || !coop_in_raid() || !instance_exists(obj_player)) exit;
     if (!variable_struct_exists(_c, "mg")) { _c.mg = 0; _c.mg_was = _c.slot; }
     _c.mg++;
     var _t = _c.mg;
     with (obj_player) hp = hp_max;
-    if (_c.role == "host" && _c.mg_was == 0 && _t == 700 && coop_player_count() >= 3)
+    var _two = _c.scenario == "migrate_two";
+    if (((_c.role == "host" && _c.mg_was == 0) || (_two && _c.mg_was == 1)) && _t == 700 && coop_player_count() >= (_two ? 4 : 3))
     {
-        coop_log("migrate test: host quits");
-        if (_c.scenario == "migrate_crash")
+        coop_log("migrate test: ", (_c.mg_was == 0) ? "host" : "slot 1", " quits");
+        if (_c.scenario != "migrate")
         {
             // like a crash: no goodbye, the socket just goes silent
             network_destroy(_c.sock);

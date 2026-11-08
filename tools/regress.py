@@ -402,6 +402,12 @@ SCENARIOS = [
               ("BC", r"migrate: the host left, successor slot 1 at 127.0.0.1", 1), ("BC", r"I host now", 1), ("BC", r"back in, slot 1", 1)],
       need_identical=False, timeout=420, minutes=7, players=3,
       with_others={r"back in, slot 1": r"back in, slot [1-7]"}),  # the new host gives slots in arrival order
+    # the host and its successor crash together: the others give slot 1 up after 15 s, slot 2 hosts
+    S("migrate_two", "-coop_autoraid 1 -coop_scenario migrate_two", "-coop_scenario migrate_two",
+      done=[("CD", r"migrate test: done players=2 puppets=1 owner me=1"), ("CD", r"migrate test: done players=2 puppets=1 owner me=0")],
+      checks=[("A", r"migrate test: host quits", 1), ("B", r"migrate test: slot 1 quits", 1),
+              ("CD", r"slot 1 never answered, trying slot 2", 2), ("CD", r"I host now \(was slot 2\)", 1), ("CD", r"back in, slot 1", 1)],
+      need_identical=False, timeout=480, minutes=8, players=4),
     S("reconnect", "-coop_autoraid 1", "-coop_netsim 0,0,0,15,20",
       done=[("B", r"netsim: blackout(.|\n)*connected to host(.|\n)*re-adopted")],
       checks=[("A", r"timed out", 1), ("A", r"guest connected", 2), ("B", r"connected to host", 2)], timeout=300, minutes=5),
