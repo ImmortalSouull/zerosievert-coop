@@ -10,7 +10,7 @@
 // Also here: callout bubbles (1.4 AI barks), the 30 s consistency check (missing / extra replicas).
 
 #macro COOP_MSG_NPC_STATESTR 35
-#macro COOP_NPC_SPAWN_VARS ["npc_id", "faction", "npc_name", "arma_now", "armor_id", "backpack_now", "sprite_idle", "sprite_move", "sprite_dead", "hp", "hp_max", "ammo_id_now", "npc_speaker_id", "can_be_damaged", "image_xscale"]
+#macro COOP_NPC_SPAWN_VARS ["npc_id", "faction", "npc_name", "arma_now", "armor_id", "backpack_now", "sprite_idle", "sprite_move", "sprite_dead", "hp", "hp_max", "ammo_id_now", "npc_speaker_id", "can_be_damaged", "image_xscale", "coop_event_giver", "coop_event_npc"]
 
 function coop_npc_reset_room()
 {
@@ -392,6 +392,10 @@ function coop_npc_take_over()
         {
             _max = max(_max, coop_nid);
             coop_spawn_sent = true; // the others already know it
+            if (variable_instance_exists(id, "coop_event_giver") && coop_event_giver)
+            {
+                continue; // the event survivor stays without AI (coop_events_on_take_over)
+            }
             if (variable_instance_exists(id, "coop_replica") && coop_replica)
             {
                 coop_replica = false;
@@ -405,6 +409,7 @@ function coop_npc_take_over()
     }
     _c.npc_next_nid = max(_c.npc_next_nid, _max + 1);
     coop_log("took over ", _n, " NPCs, next id ", _c.npc_next_nid);
+    coop_events_on_take_over();
 }
 
 function coop_npc_on_spawn(_b)

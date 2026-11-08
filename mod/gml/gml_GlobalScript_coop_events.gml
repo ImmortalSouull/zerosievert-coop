@@ -231,6 +231,7 @@ function coop_event_spawn_wave()
             if (collision_rectangle(_x - 10, _y - 10, _x + 10, _y + 10, obj_solid, false, true) == noone) break;
         }
         var _n = instance_create_depth(_x, _y, -_y, _obj);
+        _n.coop_event_npc = true; // known to the others too: a new raid owner picks the event up (coop_events_on_take_over)
         if (_e.type == 2 && _i == 0)
         {
             // the commander: five times the health (NPCs get their hp in Create, npc_setup)
@@ -314,6 +315,9 @@ function coop_events_on_msg(_b)
             break;
         case 2:
             _e.state = "active";
+            _e.type = _a;
+            _e.wave = _w;
+            _e.waves = (_a == 0) ? 3 : 1;
             coop_log("event: wave ", _w, " from the owner");
             coop_event_notify_wave(_a, _w, (_a == 0) ? 3 : 1);
             break;
@@ -323,6 +327,34 @@ function coop_events_on_msg(_b)
             coop_notify(coop_t("Event complete - the survivor left you supplies", "Событие выполнено - выживший оставил вам припасы"));
             break;
     }
+}
+
+// coop_npc_take_over: we run the raid's world now (the owner left): the event goes on here - our replica of the
+// survivor stays without AI, and the enemies of the running wave count again.
+function coop_events_on_take_over()
+{
+    var _e = coop_ev();
+    if (_e.state != "offered" && _e.state != "active") exit;
+    var _giver = -4;
+    var _npcs = [];
+    with (obj_npc_parent)
+    {
+        if (variable_instance_exists(id, "coop_event_giver") && coop_event_giver) _giver = id;
+        else if (variable_instance_exists(id, "coop_event_npc") && coop_event_npc && hp > 0) array_push(_npcs, id);
+    }
+    _e.giver = _giver;
+    if (instance_exists(_giver))
+    {
+        _giver.coop_tx = _e.x;
+        _giver.coop_ty = _e.y;
+    }
+    if (_e.state == "active")
+    {
+        _e.npcs = _npcs;
+        if (_e.waves <= 0) _e.waves = (_e.type == 0) ? 3 : 1;
+        _e.wave = max(1, _e.wave);
+    }
+    coop_log("event: taken over (", _e.state, ", wave ", _e.wave, "/", _e.waves, ", ", array_length(_npcs), " enemies, survivor ", instance_exists(_giver), ")");
 }
 
 // Draw GUI: the SOS mark (edge arrow off screen) and the "E - talk" prompt next to the survivor.

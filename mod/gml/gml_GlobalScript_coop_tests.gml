@@ -2626,7 +2626,8 @@ function coop_test_radio_step()
 function coop_test_event_step()
 {
     var _c = coop();
-    if (!_c.test_mode || _c.scenario != "event" || !coop_shared_ready() || !instance_exists(obj_player)) exit;
+    // event_handoff (3 players): the host (the raid owner) leaves during wave 1, slot 1 runs the event on to the end
+    if (!_c.test_mode || (_c.scenario != "event" && _c.scenario != "event_handoff") || !coop_shared_ready() || !instance_exists(obj_player)) exit;
     var _e = coop_ev();
     with (obj_player) hp = hp_max;
     if (!variable_struct_exists(_c, "evt")) _c.evt = 0;
@@ -2643,8 +2644,23 @@ function coop_test_event_step()
             coop_log("event test: survivor moved ", floor(point_distance(_e.giver.x, _e.giver.y, _e.x, _e.y)), " px");
         }
     }
-    // the host shoots the event enemies down (kills them on the owner)
-    if (_c.role == "host" && _e.state == "active" && _c.evt mod 90 == 0)
+    if (_c.scenario == "event_handoff" && _c.role == "host" && _e.state == "active" && _c.evt mod 90 == 45 && !variable_struct_exists(_c, "ev_left"))
+    {
+        var _dead = 0;
+        for (var _i = 0; _i < array_length(_e.npcs); _i++) if (!instance_exists(_e.npcs[_i]) || _e.npcs[_i].hp <= 0) _dead++;
+        if (_dead >= 1)
+        {
+            _c.ev_left = true;
+            coop_log("event test: the owner leaves the raid");
+            instance_activate_all();
+            obj_controller.disattiva = false;
+            __uiGlobal().__defaultOnion.Clear();
+            room_goto(r_hub);
+            exit;
+        }
+    }
+    // the raid owner shoots the event enemies down (kills them on the owner)
+    if (coop_is_world_owner() && _e.state == "active" && _c.evt mod 90 == 0)
     {
         for (var _i = 0; _i < array_length(_e.npcs); _i++)
         {

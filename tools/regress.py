@@ -370,6 +370,13 @@ SCENARIOS = [
       checks=[("A", r"event: offered type", 1), ("A", r"survivor moved [0-2] px", 1), ("B", r"event: offered by the owner", 1), ("A", r"event: slot 1 took the job", 1),
               ("A", r"event: wave 1/", 1), ("A", r"event: commander hp \d+", 1), ("A", r"event: done, reward bag with [1-9] stacks", 1), ("B", r"event: done \(owner\)", 1),
               ("B", r"container spawned from partner .* tipo discard", 1)], timeout=420, minutes=7),
+    # the raid owner leaves during an event: the next owner keeps the survivor still and finishes the waves
+    S("event_handoff", "-coop_autoraid 1 -coop_scenario event_handoff -coop_event_type 0", "-coop_scenario event_handoff",
+      done=[("B", r"event test: done"), ("C", r"event test: done")],
+      checks=[("A", r"event: offered type", 1), ("A", r"event test: the owner leaves the raid", 1),
+              ("B", r"event: taken over \(active, wave 1/3, [1-3] enemies, survivor (1|true)\)", 1), ("B", r"event: wave 3/3", 1),
+              ("B", r"event: done, reward bag with [1-9] stacks", 1), ("C", r"event: done \(owner\)", 1)],
+      need_identical=False, timeout=480, minutes=8, players=3),
     # shared quest progress: both have a kill task, kills of either count for both, rewards split by the work
     S("quest", "-coop_autoraid 1 -coop_scenario quest", "-coop_scenario quest",
       done=[("A", r"quest test: done"), ("B", r"quest test: done")],
