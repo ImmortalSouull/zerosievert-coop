@@ -167,6 +167,7 @@ function coop_npc_host_step()
     if (_far_tick)
     {
         var _map = _c.npc_by_nid;
+        var _dead = []; // killed while deactivated (off-screen roaming fights): their Destroy waits for activation
         var _k = ds_map_find_first(_map);
         while (_k != undefined)
         {
@@ -179,7 +180,11 @@ function coop_npc_host_step()
             var _row = undefined;
             try
             {
-                if (_inst.hp > 0)
+                if (_inst.hp <= 0)
+                {
+                    array_push(_dead, [_inst.coop_nid, _inst.x, _inst.y]);
+                }
+                else
                 {
                     var _hsn = variable_instance_exists(_inst, "human_state_now") ? _inst.human_state_now : -1;
                     var _flags = (variable_instance_exists(_inst, "damage_on_hit") && _inst.damage_on_hit) ? 1 : 0;
@@ -223,6 +228,22 @@ function coop_npc_host_step()
     {
         buffer_poke(_b, _count_pos, buffer_u16, _count);
         coop_msg_send(false);
+        _count = 0;
+    }
+    // NPCs that died off our screen: the others drop them now (otherwise a live "ghost" stayed on their screens -
+    // no snapshots for the dead, and the death message waited for the Destroy event of an inactive instance)
+    if (_far_tick)
+    {
+        for (var _i = 0; _i < array_length(_dead); _i++)
+        {
+            coop_msg_begin(COOP_MSG_NPC_DIE);
+            buffer_write(_c.send_buf, buffer_u32, _dead[_i][0]);
+            buffer_write(_c.send_buf, buffer_f32, _dead[_i][1]);
+            buffer_write(_c.send_buf, buffer_f32, _dead[_i][2]);
+            coop_msg_send(true);
+            ds_map_delete(_c.npc_by_nid, _dead[_i][0]); // (its Destroy later finds no entry: the others ignore a second DIE)
+        }
+        if (array_length(_dead) > 0) coop_log("npc: ", array_length(_dead), " died off screen, told the others");
     }
 }
 
