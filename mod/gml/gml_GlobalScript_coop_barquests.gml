@@ -99,3 +99,73 @@ function coop_barq_step()
     }
     if (!_group) _c.barq_told = false;
 }
+
+// ---- saves stay vanilla-safe (hooks [150] / [151]) ----
+
+function coop_barq_is(_id)
+{
+    return is_string(_id) && string_copy(_id, 1, 7) == "coop_q_";
+}
+
+// quest_save: our group tasks never go into the game's quest slots (an empty slot instead).
+function coop_quest_state_for_save(_i)
+{
+    try
+    {
+        if (coop_barq_is(global.quest_state[_i].id)) return new class_quest_state();
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+    return global.quest_state[_i];
+}
+
+// quest_save (database "general" open): the active group tasks under their own key.
+function coop_barq_save()
+{
+    try
+    {
+        var _out = [];
+        for (var _i = 0; _i < 30; _i++)
+        {
+            if (coop_barq_is(global.quest_state[_i].id)) array_push(_out, SnapDeepCopy(global.quest_state[_i]));
+        }
+        db_write("coop", "barq", _out);
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+}
+
+// quest_load (database "general" open): definitions first, then the saved group tasks into free slots.
+function coop_barq_load()
+{
+    try
+    {
+        coop_barq_define();
+        var _l = db_read("coop", "barq", []);
+        if (!is_array(_l)) exit;
+        var _n = 0;
+        for (var _k = 0; _k < array_length(_l); _k++)
+        {
+            var _s = SnapDeepCopy(_l[_k]);
+            if (!is_struct(_s) || !coop_barq_is(_s.id) || coop_barq_active(_s.id)) continue;
+            for (var _i = 0; _i < 30; _i++)
+            {
+                if (global.quest_state[_i].id == "")
+                {
+                    global.quest_state[_i] = _s;
+                    _n++;
+                    break;
+                }
+            }
+        }
+        if (_n > 0) coop_log("barman co-op tasks loaded: ", _n);
+    }
+    catch (_e)
+    {
+        coop_report_error(_e);
+    }
+}

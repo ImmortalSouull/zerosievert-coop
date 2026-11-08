@@ -1367,3 +1367,28 @@ function db_force_save(arg0)
                 _player.hp = 10;
             }
 <<<END
+
+// [150] Saves stay playable without the mod (or with an older one): the barman's group tasks are written under a key
+// of their own ("coop" / "barq") instead of the game's quest slots - the game reads every active quest's definition
+// on each kill and in the quest log, and without the mod there is none (a crash).
+### findreplace gml_GlobalScript_quest_save
+<<<FIND
+        db_write("quest", i, SnapDeepCopy(global.quest_state[i]));
+    }
+<<<REPLACE
+        db_write("quest", i, SnapDeepCopy(coop_quest_state_for_save(i)));
+    }
+    coop_barq_save();
+<<<END
+
+// [151] ... and put back into free quest slots when the save loads, with their definitions made at once (before
+// anything reads them).
+### findreplace gml_GlobalScript_quest_load
+<<<FIND
+    db_close(true);
+    trace("Quests loaded");
+<<<REPLACE
+    coop_barq_load();
+    db_close(true);
+    trace("Quests loaded");
+<<<END
