@@ -175,16 +175,20 @@ function coop_update_prepare()
         exit;
     }
     var _full = string_replace_all(game_save_id + _inst, "/", "\\");
+    // cmd.exe reads the script in the OEM code page: a non-ASCII user folder (a Cyrillic Windows user name) breaks a
+    // full path, so the script starts in its own folder and names the installer relative to it
+    var _rel = string_replace_all(string_delete(_inst, 1, string_length(_c.upd_dir)), "/", "\\");
     var _cmd = _c.upd_dir + "update.cmd";
     var _t = file_text_open_write(_cmd);
     var _lines = [
         "@echo off",
         "title ZERO Sievert co-op update",
+        "cd /d \"%~dp0\"",
         "echo Close ZERO Sievert - the co-op mod v" + _c.upd_latest + " installs right after.",
         ":wait",
         "tasklist /FI \"IMAGENAME eq ZERO Sievert.exe\" | find /I \"ZERO Sievert.exe\" >nul",
         "if not errorlevel 1 ( timeout /t 2 /nobreak >nul & goto wait )",
-        "powershell -NoProfile -ExecutionPolicy Bypass -File \"" + _full + "\" install",
+        "powershell -NoProfile -ExecutionPolicy Bypass -File \".\\" + _rel + "\" install",
         "pause"
     ];
     for (var _i = 0; _i < array_length(_lines); _i++)
