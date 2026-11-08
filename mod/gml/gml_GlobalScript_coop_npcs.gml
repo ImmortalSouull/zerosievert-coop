@@ -769,6 +769,9 @@ function coop_npc_on_check(_b)
     var _map = _c.npc_by_nid;
     var _drift_max = 0;
     var _drift_n = 0;
+    var _drift_now = {}; // nids far off in this check; a ghost stays off in the next one too (a running NPC does not)
+    var _drift_prev = variable_struct_exists(_c, "drift_prev") ? _c.drift_prev : {};
+    var _drift_brief = 0;
     for (var _i = 0; _i < _n; _i++)
     {
         var _nid = buffer_read(_b, buffer_u32);
@@ -782,7 +785,11 @@ function coop_npc_on_check(_b)
             {
                 var _d = point_distance(_rep.x, _rep.y, _ox, _oy);
                 _drift_max = max(_drift_max, _d);
-                if (_d > 160) _drift_n++;
+                if (_d > 160)
+                {
+                    variable_struct_set(_drift_now, string(_nid), true);
+                    if (variable_struct_exists(_drift_prev, string(_nid))) _drift_n++; else _drift_brief++;
+                }
             }
             catch (_e) { }
         }
@@ -794,8 +801,9 @@ function coop_npc_on_check(_b)
     }
     else if (_c.test_mode)
     {
-        coop_log("npc drift ok: max ", floor(_drift_max));
+        coop_log("npc drift ok: max ", floor(_drift_max), (_drift_brief > 0) ? " (" + string(_drift_brief) + " off for one check)" : "");
     }
+    _c.drift_prev = _drift_now;
     // extras: replicas the owner no longer has (a missed NPC_DIE/GONE)
     var _extra = 0;
     var _k = ds_map_find_first(_map);

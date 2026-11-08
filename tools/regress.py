@@ -153,7 +153,7 @@ def livechest_ok(logs):
     out = []
     for k in "AB":
         a = re.findall(r"lc t=160 ui items=(\d+)", logs[k])
-        b = re.findall(r"lc t=280 ui items=(\d+)", logs[k])
+        b = re.findall(r"lc t=450 ui items=(\d+)", logs[k])
         if not a or not b:
             return f"{k}: missing lc lines"
         out.append((int(a[0]), int(b[0])))
@@ -245,7 +245,7 @@ SCENARIOS = [
       done=[("A", r"scenario chest t=420"), ("B", r"scenario chest t=420")],
       checks=[("A", r"scenario: host took first item", 1)], custom=chest_md5_equal),
     S("livechest", "-coop_autoraid 1 -coop_scenario livechest", "-coop_scenario livechest",
-      done=[("A", r"lc t=280"), ("B", r"lc t=280")],
+      done=[("A", r"lc t=450"), ("B", r"lc t=450")],
       checks=[], custom=livechest_ok),
     S("join", "-coop_scenario join", "-coop_scenario join",
       done=[("B", r"maps identical")],

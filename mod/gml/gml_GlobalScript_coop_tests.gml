@@ -96,7 +96,8 @@ function coop_test_ext_step()
     {
         coop_log("lc dbg t=", _t, " using=", uiGetData().chest_using, " layer=", uiLayerGetRoot("inventory layer") != undefined, " inv_state=", player_state_is(0, scr_player_state_inventory));
     }
-    if (_t == 160 || _t == 280)
+    // the second look is ~4 s after the host took the item: the two test clocks differ by seconds
+    if (_t == 160 || _t == 450)
     {
         var _it = coop_chest_ui_items();
         coop_log("lc t=", _t, " ui items=", (_it == undefined) ? -1 : array_length(_it));
@@ -117,13 +118,13 @@ function coop_test_ext_step()
             }
         }
     }
-    if (_t == 320)
+    if (_t == 470)
     {
         ui_chest_close();
         __uiGlobal().__defaultOnion.Clear();
         player_set_local_state(scr_player_state_move);
     }
-    if (_t == 360 && _c.role == "guest")
+    if (_t == 510 && _c.role == "guest")
     {
         var _bag = instance_create_depth(obj_player.x, obj_player.y + 6, -obj_player.y, obj_chest_general);
         _bag.tipo = "discard";
@@ -134,7 +135,7 @@ function coop_test_ext_step()
         db_close();
         coop_log("lc: guest dropped a bag");
     }
-    if (_t == 420 && _c.role == "host")
+    if (_t == 570 && _c.role == "host")
     {
         var _gid = "grenade_flash";
         var _g = instance_create_depth(obj_player.x, obj_player.y, 0, obj_grenade_parent,
@@ -158,15 +159,15 @@ function coop_test_ext_step()
         _g.thrown_by_player = true;
         coop_log("lc: host threw a flashbang");
     }
-    if (_t == 520 && _c.role == "host")
+    if (_t == 670 && _c.role == "host")
     {
         player_action_open_minimap();
     }
-    if (_t == 580 && _c.role == "host")
+    if (_t == 730 && _c.role == "host")
     {
         screen_save("lc_map_" + _tag + ".png");
     }
-    if (_t == 640)
+    if (_t == 790)
     {
         __uiGlobal().__defaultOnion.Clear();
         player_set_local_state(scr_player_state_move);
