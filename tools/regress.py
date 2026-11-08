@@ -387,7 +387,8 @@ SCENARIOS = [
     S("barq", "-coop_scenario barq", "-coop_scenario barq",
       done=[("A", r"barq: done"), ("B", r"barq: done")],
       checks=[("A", r"barq: barman=1 list has bandits=1 mutants=1", 1), ("A", r"barq: accepted=1", 1),
-              ("A", r"after the guest left, mutants offered=0 accepted kept=1", 1), ("B", r"barman co-op tasks offered", 1)],
+              ("A", r"after the guest left, mutants offered=0 accepted kept=1", 1), ("B", r"barman co-op tasks offered", 1),
+              ("A", r"barq: save slots clean=1 saved=1 back after load=1", 1)],
       solo_checks=(r"after the guest left, mutants offered=0 accepted kept=1",),
       need_identical=False, timeout=240, minutes=4),
     # the arena in the shooting range: preset weapon in memory only (back before any save), frags, own weapon back

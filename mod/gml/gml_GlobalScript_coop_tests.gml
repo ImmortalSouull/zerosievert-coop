@@ -2799,8 +2799,23 @@ function coop_test_barq_step()
     {
         coop_log("barq: after the guest left, mutants offered=", instance_exists(_bar) && array_contains(_bar.quest_array, "coop_q_mutants"),
             " accepted kept=", coop_barq_active("coop_q_bandits"));
+        // a save never has it in the game's quest slots (hooks [150]/[151]): out on save, back on load
+        var _clean = 1;
+        for (var _i = 0; _i < 30; _i++) if (coop_barq_is(coop_quest_state_for_save(_i).id)) _clean = 0;
+        db_open("general");
+        coop_barq_save();
+        var _saved = db_read("coop", "barq", []);
+        db_close();
+        for (var _i = 0; _i < 30; _i++) if (global.quest_state[_i].id == "coop_q_bandits") global.quest_state[_i] = new class_quest_state();
+        db_open("general");
+        coop_barq_load();
+        db_close();
+        coop_log("barq: save slots clean=", _clean, " saved=", array_length(_saved), " back after load=", coop_barq_active("coop_q_bandits"));
         // leave the test save as it was
         for (var _i = 0; _i < 30; _i++) if (global.quest_state[_i].id == "coop_q_bandits") global.quest_state[_i] = new class_quest_state();
+        db_open("general");
+        db_write("coop", "barq", []);
+        db_close();
         coop_log("barq: done");
     }
 }
