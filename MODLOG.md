@@ -504,3 +504,15 @@ Branch dev-2.0.0; built and tested locally, the user publishes it. Every feature
   * One-click update: update.cmd had the full installer path - cmd.exe reads .cmd in the OEM code page, a Cyrillic
     Windows user name broke it. It now does cd /d "%~dp0" and a relative path.
   * Mods menu line said "co-op for up to 4 players".
+  * Trade, later finds: no input once our stacks went (prune after the hand-over sent op 2, which could un-ready the
+    other side in the same packet batch as our lock -> it never handed its part over); the hand-over waits for the
+    inventory screen to be closed (it writes its own copy back on close = duplicated stacks); an offered stack moved
+    in the inventory is found by item + amount. trade_race needs latency (-coop_netsim 150 on the host): on
+    localhost the whole ready exchange fits in 3 frames.
+  * Saves without the mod: vanilla reads every active quest's definition on each kill (kill_check_quest) and in the
+    quest log - an accepted barman group task in the quest slots crashed the game without the mod / with v1.2.0
+    (trace_error = show_error fatal). Hooks [150] quest_save (coop_quest_state_for_save: an empty slot; the tasks
+    under db "general" key "coop"/"barq") and [151] quest_load (coop_barq_define first, then the saved tasks into
+    free slots). Unknown ITEMS are fine: saveslot_reload -> loot_array_update_to_zs32 deletes items missing from
+    item_data in the inventory and every stash chest (so the radio just disappears without the mod); difficulty
+    load reads known keys only; quest_line_progress is only looked up by id.
