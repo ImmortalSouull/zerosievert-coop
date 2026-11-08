@@ -407,7 +407,8 @@ SCENARIOS = [
     S("migrate_crash", "-coop_autoraid 1 -coop_scenario migrate_crash", "-coop_scenario migrate_crash",
       done=[("BC", r"migrate test: done players=2 puppets=1 owner me=1"), ("BC", r"migrate test: done players=2 puppets=1 owner me=0")],
       checks=[("A", r"migrate test: host quits", 1), ("BC", r"host timed out, waiting 30 s", 1), ("BC", r"migrate: the host left, successor slot 1 \(me\)", 1),
-              ("BC", r"migrate: the host left, successor slot 1 at 127.0.0.1", 1), ("BC", r"I host now", 1), ("BC", r"back in, slot 1", 1)],
+              # (locally the new host listens at the old address: slot 2 may get in before its own 30 s are up)
+              ("BC", r"migrate: the host left, successor slot 1 at 127.0.0.1|migrate: not needed", 1), ("BC", r"I host now", 1), ("BC", r"back in, slot 1", 1)],
       need_identical=False, timeout=420, minutes=7, players=3,
       with_others={r"back in, slot 1": r"back in, slot [1-7]"}),  # the new host gives slots in arrival order
     # the host and its successor crash together: the others give slot 1 up after 15 s, slot 2 hosts
