@@ -345,7 +345,7 @@ function coop_test_anim_step()
     var _t = _c.at;
     if (_c.role == "guest")
     {
-        var _host = coop_partner();
+        var _host = coop_test_partner();
         with (obj_player)
         {
             if (_t == 150 && instance_exists(_host))
@@ -392,7 +392,7 @@ function coop_test_anim_step()
         }
         exit;
     }
-    var _p = coop_partner();
+    var _p = coop_test_partner();
     if (!instance_exists(_p))
     {
         exit;
@@ -1816,7 +1816,7 @@ function coop_test_group_step()
     var _t = _c.gt;
     if (_c.role == "guest")
     {
-        var _host = coop_partner();
+        var _host = coop_test_partner();
         with (obj_player)
         {
             if (_t == 150 && instance_exists(_host))
@@ -1910,7 +1910,7 @@ function coop_test_ff_step()
     var _t = _c.fft;
     if (_c.role == "guest")
     {
-        var _host = coop_partner();
+        var _host = coop_test_partner();
         with (obj_player)
         {
             if (_t == 150 && instance_exists(_host)) { x = _host.x + 40; y = _host.y; }
@@ -2192,7 +2192,7 @@ function coop_test_drag_step()
         exit;
     }
     // host
-    var _p = coop_partner();
+    var _p = coop_test_partner();
     var _r = coop_revive();
     _c.dk++;
     var _k = _c.dk;
@@ -2660,7 +2660,7 @@ function coop_test_quest_step()
     var _want = (_c.role == "guest") ? 3 : 2;
     var _qw = coop_qwork();
     _c.q_kills = variable_struct_exists(_qw, "coop_test_quest") ? variable_struct_get(_qw, "coop_test_quest").me : 0;
-    if (_t > 200 && _t mod 20 == 0 && _c.q_kills < _want && !variable_struct_exists(_c, "q_wait"))
+    if (_t > 200 && _t < 1400 && _t mod 20 == 0 && _c.q_kills < _want && !variable_struct_exists(_c, "q_wait"))
     {
         // kill one human: the guest by shooting (the owner credits it), the host directly
         instance_activate_object(obj_npc_parent);
@@ -2836,10 +2836,25 @@ function coop_test_migrate_step()
 function coop_test_bystand_step()
 {
     var _c = coop();
-    if (_c.scenario != "bystand" || !instance_exists(obj_player))
+    if (_c.scenario != "bystand")
     {
         exit;
     }
+    // after an extraction: the "next" button of the extraction screen (as the host of the leave test)
+    if (instance_exists(obj_exit_screen) && obj_exit_screen.can_go_hub && !variable_struct_exists(_c, "bs_gone"))
+    {
+        _c.bs_gone = true;
+        coop_log("bystand: slot ", _c.slot, " leaves the extraction screen");
+        instance_activate_all();
+        obj_controller.disattiva = false;
+        __uiGlobal().__defaultOnion.Clear();
+        room_goto(r_hub);
+    }
+    if (!instance_exists(obj_player))
+    {
+        exit;
+    }
+    if (!instance_exists(obj_exit_screen) && variable_struct_exists(_c, "bs_gone")) variable_struct_remove(_c, "bs_gone");
     if (!variable_struct_exists(_c, "bs_t")) { _c.bs_t = 0; coop_log("bystand: slot ", _c.slot, " ready"); }
     _c.bs_t++;
     with (obj_player) hp = hp_max;
@@ -2861,4 +2876,16 @@ function coop_test_bystand_step()
         }
     }
     if (_c.bs_t mod 1800 == 0) coop_log("bystand: slot ", _c.slot, " alive, raid=", coop_in_raid(), " players=", coop_player_count());
+}
+
+// Tests are written for two players: the partner is the other one of the pair (host: slot 1, guest: slot 0), not a
+// bystander that happens to stand closer ("name@N" runs, scenario bystand).
+function coop_test_partner()
+{
+    var _want = (coop().slot == 0) ? 1 : 0;
+    with (obj_player_puppet)
+    {
+        if (variable_instance_exists(id, "coop_slot") && coop_slot == _want) return id;
+    }
+    return coop_partner();
 }

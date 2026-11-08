@@ -15,10 +15,12 @@ BASH = r"C:\Program Files\Git\bin\bash.exe"
 LOGS = {k: os.path.join(SAVES, f"coop_coop{k}.log") for k in "ABCDEFGH"}
 
 
-def S(name, host, guest, done, checks, minutes=4, timeout=260, custom=None, need_identical=True, tags="", players=2):
+def S(name, host, guest, done, checks, minutes=4, timeout=260, custom=None, need_identical=True, tags="", players=2,
+      solo_checks=()):
+    # solo_checks: regexes of checks that only hold while nobody else is in the session (dropped by "name@N")
     return dict(name=name, host=host, guest=guest, done=done, checks=checks, minutes=minutes,
                 timeout=timeout, custom=custom, need_identical=need_identical, tags=tags, players=players,
-                bystand_from=None)
+                bystand_from=None, solo_checks=solo_checks)
 
 
 def with_bystanders(sc, n):
@@ -30,6 +32,7 @@ def with_bystanders(sc, n):
     v["timeout"] = sc["timeout"] + 25 * (n - sc["players"])
     v["minutes"] = sc["minutes"] + 2
     v["tags"] = "variant"
+    v["checks"] = [c for c in sc["checks"] if c[1] not in sc["solo_checks"]]
     return v
 
 
@@ -92,15 +95,18 @@ def grouphp_ok(logs):
     b = re.findall(r"v3: group hp factor=(\S+) npc hp sum=(\d+)", logs["B"])
     if not a or not b:
         return "no hp lines"
-    if a[0][0] != "2" or b[0][0] != "2":
+    n = sum(1 for k in "ABCDEFGH" if logs[k])  # the factor follows the number of players in the raid
+    if a[0][0] != str(n) or b[0][0] != str(n):
         return f"factor A={a[0][0]} B={b[0][0]}"
     return None if a[0][1] == b[0][1] else f"hp sum differs A={a[0][1]} B={b[0][1]}"
 
 
 def files_ok(logs):
     """Each side reports the difference once (no fingerprint ping-pong)."""
+    # B (the changed files) differs from every other player once, the host only from B
+    n = sum(1 for k in "ABCDEFGH" if logs[k])
     a, b = logs["A"].count("FILES DIFFER"), logs["B"].count("FILES DIFFER")
-    return None if a == 1 and b == 1 else f"FILES DIFFER lines A={a} B={b} (expected 1 each)"
+    return None if a == 1 and b == n - 1 else f"FILES DIFFER lines A={a} B={b} (expected 1 and {n - 1})"
 
 
 def ff_ok(logs):
@@ -231,7 +237,8 @@ SCENARIOS = [
     # the host starts its raid alone, the guest connects later and joins it (group scaling must not change)
     S("latejoin", "-coop_scenario join", "-coop_scenario join -coop_delay_join 25",
       done=[("B", r"maps identical")],
-      checks=[("A", r"raid started without partner", 1), ("B", r"train joins the raid of slot 0", 1)]),
+      checks=[("A", r"raid started without partner", 1), ("B", r"train joins the raid of slot 0", 1)],
+      solo_checks=(r"raid started without partner",)),
     S("leave", "-coop_autoraid 1 -coop_scenario leave", "-coop_scenario leave",
       done=[("B", r"peer_in_raid=0(.|\n)*peer_in_raid=0")],
       checks=[("A", r"host leaves the extraction screen", 1)], timeout=320, minutes=6),
@@ -258,7 +265,7 @@ SCENARIOS = [
     S("kick", "-coop_scenario kick", "-coop_scenario kick",
       done=[("A", r"kick: done"), ("B", r"kick: done")],
       checks=[("A", r"kicked SaWka|kicked \S+ slot 1", 1), ("B", r"kicked by the host", 2), ("A", r"tried to come back - refused", 1),
-              ("A", r"kick: host players now 1", 1), ("A", r"confirm label Remove .*Click again", 1)],
+              ("A", r"kick: host players now [1-7]", 1), ("A", r"confirm label Remove .*Click again", 1)],
       need_identical=False, timeout=200, minutes=3),
     # group extraction: the host waits on the point (10 s), the guest arrives, both leave together; summary
     S("extract", "-coop_autoraid 1 -coop_scenario extract", "-coop_scenario extract",
@@ -441,7 +448,7 @@ SCENARIOS = [
     # the hub as a lobby: both players see each other; a visit shows the friend's bunker modules and saves ours
     S("lobby", "-coop_scenario lobby", "-coop_scenario lobby",
       done=[("B", r"lobby: restored")],
-      checks=[("B", r"lobby: puppets=1 together=1", 1), ("A", r"puppet of slot 1 created", 1),
+      checks=[("B", r"lobby: puppets=[1-7] together=1", 1), ("A", r"puppet of slot 1 created", 1),
               ("A", r"save backup slot 1 \(coop\): slot1_", 1), ("B", r"save backup slot 1 \(coop\): slot1_", 1),
               ("B", r"weather synced from host", 1),  # the bunker weather follows the host's
               ("B", r"gave \S+ x\d+ to slot 0 \(bunker\)", 1), ("A", r"gift placed in the inventory|gift dropped in a bag", 1),
@@ -505,7 +512,8 @@ def run(sc, outdir, extra):
     env.pop("COOP_BYSTAND_FROM", None)
     if sc.get("bystand_from"):
         env["COOP_BYSTAND_FROM"] = str(sc["bystand_from"])
-        env["COOP_BYSTAND_ARGS"] = f"{extra} -coop_scenario bystand -coop_fps 60"
+        # the extra players say hello a few seconds later, so the scenario's own players keep slots 0..p-1
+        env["COOP_BYSTAND_ARGS"] = f"{extra} -coop_scenario bystand -coop_fps 60 -coop_delay_join 7"
     proc = subprocess.Popen([BASH, "-c", cmd], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env)
     t0 = time.time()
     status = "timeout"
@@ -539,7 +547,10 @@ def run(sc, outdir, extra):
                 problems.append(f"{k}: {line[:160]}")
                 break
     if sc["need_identical"]:
-        for k in keys:
+        for i, k in enumerate(keys):
+            # an extra player that never went into a raid (e.g. stays in the hub) has no map to compare
+            if sc.get("bystand_from") and i >= sc["bystand_from"] and "map generator uses coop seed" not in logs[k]:
+                continue
             if "maps identical" not in logs[k]:
                 problems.append(f"{k}: maps not confirmed identical")
             if "MAP MISMATCH" in logs[k] or "maps differ" in logs[k]:

@@ -372,7 +372,7 @@ function coop_scenario_step()
         }
         if (_c.role == "host")
         {
-            var _p = coop_partner();
+            var _p = coop_test_partner();
             if (coop_partner_is_down() && instance_exists(_p))
             {
                 if (!variable_struct_exists(_c, "sc_rev_t"))

@@ -96,7 +96,7 @@ function coop_show_raid_step(_t)
     {
         if (_t > 80 && _t < 180) coop_show_walk_to(_hx - 30, _hy + 20, 1.2);
         if (_t >= 200 && _t < 300 && _t mod 12 == 0) coop_show_shoot_nearest();
-        var _p = coop_partner();
+        var _p = coop_test_partner();
         if (coop_partner_is_down() && instance_exists(_p))
         {
             if (!variable_struct_exists(_c, "sc_rev_t"))

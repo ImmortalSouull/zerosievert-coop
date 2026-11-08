@@ -190,7 +190,7 @@ function coop_files_step()
         array_push(_s.sig, { name: _names[_i], md5: md5_string_utf8(_all), n: array_length(_l) });
     }
     _s.groups = {}; // per-file lines are not needed any more
-    if (_c.test_mode && _c.scenario == "files" && _c.slot == 1)
+    if (_c.test_mode && _c.scenario == "files" && _c.role == "guest")
     {
         // test: a changed language folder and a mod only this player has
         for (var _i = 0; _i < array_length(_s.sig); _i++)
