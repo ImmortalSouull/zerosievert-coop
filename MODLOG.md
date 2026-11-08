@@ -483,3 +483,24 @@ Branch dev-2.0.0; built and tested locally, the user publishes it. Every feature
     steps 300+ ticks apart; the game moves the host's spawn once its map is in, so guests must follow the host again;
     "nearest teammate" picks a bystander - tests use coop_test_partner() / sim_give_to; NPC DRIFT only counts a
     replica off in two checks in a row (a running NPC was 164 px off once under load).
+- Code review of the 2.0.0 modules (2026-11-08 night, after soak 31 min / 4 players clean: 0 errors, +3 MB). Fixed:
+  * Trade: a side committed as soon as it was ready on matching signatures - a stale view (the other changed its
+    offer at the same moment) handed its stacks over and got nothing back. Now two-phase: op 6 "lock" = both
+    signature + how many offer/ready messages (op 2/3) it has seen from us; hand-over only when locked AND holding a
+    lock of the other that saw all of ours. Locked = no input, no Esc (10 s escape). Offered stacks that left the
+    inventory are pruned; crossing requests (both pressed U) open the trade. Test trade_race.
+  * Fallen teammate's things went back as { item, quantity, durability 100 } - weapons lost their data/attachments
+    and the full count was sent even when the taker had fewer (inventory_remove_item returns nothing). Now
+    coop_fallen_pull takes the real stacks (loot_duplicate, split, equipment event).
+  * Host migration (UDP): the successor is picked once; if it was gone too the others said hello to it forever.
+    pick() returns the whole order (rest), coop_migrate_step tries the next after 15 s. Test migrate_two (4 players:
+    host + slot 1 crash together). Steam migration also refreshes the lobby's zs_name.
+  * Raid event + world handoff: the new owner's replica of the survivor became an AI NPC (take_over) and its wave
+    counter was 0 (the event finished at once). coop_event_giver / coop_event_npc go with the NPC spawn data,
+    take_over keeps the survivor a replica, coop_events_on_take_over adopts the wave. Test event_handoff (3 players).
+  * Voice: turning voice off / the session ending left the microphone recording; a speaker's queue over 8 packets
+    (~0.8 s) drops new packets (a lag burst delayed the voice for good).
+  * Quest items in containers: one we took and put back stayed in coop_q_taken -> a teammate's next change deleted it.
+  * One-click update: update.cmd had the full installer path - cmd.exe reads .cmd in the OEM code page, a Cyrillic
+    Windows user name broke it. It now does cd /d "%~dp0" and a relative path.
+  * Mods menu line said "co-op for up to 4 players".
