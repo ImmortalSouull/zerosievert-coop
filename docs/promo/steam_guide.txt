@@ -1,0 +1,122 @@
+=== STEAM GUIDE: FIELDS ===
+
+Title:       ZERO Sievert CO-OP mod - play raids with friends (up to 8 players) / Кооп-мод
+Description: How to install and use the free co-op mod for ZERO Sievert: shared raids for up to 8 players, voice chat, revives, trading. EN + RU.
+Category:    Modding (or "Multiplayer"), languages: English, Russian
+Image:       any screenshot of two players in a raid (a frame from the showcase video works)
+
+Steam guides use BBCode. Make two sections: "English" and "Русский", paste each block below into its section.
+
+=== SECTION 1: English ===
+
+[h1]What is it[/h1]
+A free fan-made co-op mod for ZERO Sievert. You and your friends go into the same raid: one map, the same enemies, the same loot, and you see each other. When you take lethal damage you go down instead of dying, and a teammate can revive you.
+
+This is not an official mod and it is not on the Workshop: the Workshop doesn't support networking, so the mod patches the game with its own installer.
+
+[h2]Features[/h2]
+[list]
+[*]Up to 8 players in one session, Steam invites or direct IP
+[*]Downs and revives, crawling, dragging a downed teammate to cover
+[*]Voice chat (hold C) and a radio item to talk at any distance
+[*]Text chat (Enter), command wheel (hold Z), pings, teammates on the PDA map
+[*]Trading between players (U), look at a teammate's gear (I)
+[*]Group extraction and a raid summary
+[*]The raid goes on if the host leaves, rejoin after a crash
+[*]Raid events, shared quest progress, group tasks at the barman
+[*]Arena (PvP) in the bunker shooting range - nothing is lost
+[*]Visit a friend's bunker, save backups, works in every language of the game
+[/list]
+
+[h2]Requirements[/h2]
+[list]
+[*]ZERO Sievert [b]1.4.13[/b], Steam version (Epic is not supported)
+[*]Every player needs the mod, the same version
+[/list]
+
+[h2]Download[/h2]
+[list]
+[*]GitHub: [url=https://github.com/ImmortalSouull/zerosievert-coop/releases/latest]github.com/ImmortalSouull/zerosievert-coop[/url]
+[*]Nexus Mods: [url=https://www.nexusmods.com/zerosievert/mods/253]nexusmods.com/zerosievert/mods/253[/url]
+[/list]
+
+[h2]Installation[/h2]
+[olist]
+[*]Close the game.
+[*]Download the archive ZS-Coop-v2.0.0.zip and unpack it anywhere.
+[*]Run [b]install.bat[/b]. It finds the game by itself, makes a backup of the original files and patches your copy. A newer version installs over an older one the same way.
+[*]Start the game as usual from Steam.
+[/olist]
+
+[h2]How to play together[/h2]
+[olist]
+[*]Main menu or pause menu - [b]Co-op[/b] (or press [b]F7[/b]).
+[*]The host presses [b]Host via Steam[/b] - the Steam overlay opens - invite up to 7 friends. Friends accept the invite or use "Join game" on the host in the Steam friends list.
+[*]Fallback: [b]Host by IP[/b] (UDP port 47777) and [b]Join by IP[/b] for the friends (Radmin VPN / ZeroTier / port forwarding).
+[*]Everyone loads their own save. When the host takes the train, a zone with a countdown appears: whoever stands in it goes to the same map. The others can join the raid later.
+[/olist]
+Your saves are backed up before every co-op session (F7 - Save backups...).
+
+[h2]Uninstall[/h2]
+Run [b]uninstall.bat[/b] from the mod folder, or in Steam: ZERO Sievert - Properties - Installed files - [b]Verify integrity of game files[/b].
+After a game update the installer refuses to work until a new version of the mod is out (the mod tells you about it in the menu).
+
+[h2]Problems?[/h2]
+F7 - [b]Collect logs for a bug report[/b], then open an issue on GitHub or write in the Nexus comments and attach the folder.
+
+=== SECTION 2: Русский ===
+
+[h1]Что это[/h1]
+Бесплатный фанатский кооп-мод для ZERO Sievert. Вы с друзьями идёте в один и тот же рейд: одна карта, общие враги и лут, вы видите друг друга. От смертельного урона вы не умираете сразу, а падаете раненым — напарник может вас поднять.
+
+Мод неофициальный и в Мастерской его нет: Мастерская не поддерживает сетевую игру, поэтому мод ставится своим установщиком.
+
+[h2]Возможности[/h2]
+[list]
+[*]До 8 игроков в одной сессии, приглашение через Steam или подключение по IP
+[*]Ранения и поднятие, ползание, можно утащить раненого в укрытие
+[*]Голосовой чат (зажать C) и рация — говорить на любом расстоянии
+[*]Текстовый чат (Enter), колесо команд (зажать Z), метки, напарники на карте КПК
+[*]Обмен между игроками (U), просмотр снаряжения напарника (I)
+[*]Групповая эвакуация и итоги рейда
+[*]Рейд продолжается, если хост вышел; можно вернуться после вылета
+[*]События в рейде, общий прогресс заданий, групповые задания бармена
+[*]Арена (PvP) в тире бункера — ничего не теряется
+[*]Визиты в бункер друга, резервные копии сохранений, все языки игры
+[/list]
+
+[h2]Что нужно[/h2]
+[list]
+[*]ZERO Sievert версии [b]1.4.13[/b] в Steam (Epic не поддерживается)
+[*]Мод нужен каждому игроку, версия у всех одна
+[/list]
+
+[h2]Скачать[/h2]
+[list]
+[*]GitHub: [url=https://github.com/ImmortalSouull/zerosievert-coop/releases/latest]github.com/ImmortalSouull/zerosievert-coop[/url]
+[*]Nexus Mods: [url=https://www.nexusmods.com/zerosievert/mods/253]nexusmods.com/zerosievert/mods/253[/url]
+[/list]
+
+[h2]Установка[/h2]
+[olist]
+[*]Закройте игру.
+[*]Скачайте архив ZS-Coop-v2.0.0.zip и распакуйте куда угодно.
+[*]Запустите [b]install.bat[/b]. Он сам найдёт игру, сохранит копию оригинальных файлов и пропатчит игру. Новая версия ставится поверх старой так же.
+[*]Запускайте игру как обычно через Steam.
+[/olist]
+
+[h2]Как играть вместе[/h2]
+[olist]
+[*]Главное меню или меню паузы — [b]Кооператив[/b] (или клавиша [b]F7[/b]).
+[*]Хост жмёт [b]Создать игру в Steam[/b] — откроется оверлей Steam — пригласите до 7 друзей. Друзья принимают приглашение или жмут «Присоединиться к игре» у хоста в списке друзей.
+[*]Запасной вариант: [b]Создать игру по IP[/b] (UDP-порт 47777) и [b]Подключиться по IP[/b] у друзей (Radmin VPN / ZeroTier / проброс порта).
+[*]Каждый загружает своё сохранение. Когда хост садится на поезд, появляется зона с отсчётом: кто в ней стоит, едет на ту же карту. Остальные могут присоединиться к рейду позже.
+[/olist]
+Перед каждой кооп-сессией сохранения копируются (F7 — Резервные копии сохранений...).
+
+[h2]Удаление[/h2]
+Запустите [b]uninstall.bat[/b] из папки мода или в Steam: ZERO Sievert — Свойства — Установленные файлы — [b]Проверить целостность файлов игры[/b].
+После обновления игры установщик откажется работать, пока не выйдет новая версия мода (мод сам сообщит о ней в меню).
+
+[h2]Проблемы?[/h2]
+F7 — [b]Собрать логи для отчёта о баге[/b], затем создайте issue на GitHub или напишите в комментариях на Nexus и приложите папку.
