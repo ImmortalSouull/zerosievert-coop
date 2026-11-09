@@ -2859,7 +2859,9 @@ function coop_test_arena_step()
             var _h = coop_puppet_of(0);
             if (instance_exists(_h))
             {
-                obj_player.x = _h.x - 50;
+                // on the side of the range's middle (the range is x 1278-1930): left of a host near its left wall
+                // the shots went into the wall
+                obj_player.x = _h.x + ((_h.x < 1604) ? 50 : -50);
                 obj_player.y = _h.y;
                 with (obj_player) if (item_exists(arma_now) && item_get_category(arma_now) == "weapon") scr_shoot(point_direction(x, y, _h.x, _h.y - 6), 1, 300, 0);
             }
