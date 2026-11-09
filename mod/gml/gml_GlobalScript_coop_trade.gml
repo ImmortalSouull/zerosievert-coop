@@ -124,6 +124,13 @@ function coop_trade_nearest()
 {
     var _best = -1;
     var _bd = COOP_TRADE_RANGE;
+    var _c = coop();
+    if (_c.test_mode && variable_struct_exists(_c, "sim_trade_to"))
+    {
+        // test: the scenario's partner, not an extra player standing as close ("name@N" runs)
+        var _w = coop_puppet_of(_c.sim_trade_to);
+        if (instance_exists(_w) && point_distance(obj_player.x, obj_player.y, _w.x, _w.y) < _bd) return _c.sim_trade_to;
+    }
     var _l = coop_puppets();
     for (var _i = 0; _i < array_length(_l); _i++)
     {
