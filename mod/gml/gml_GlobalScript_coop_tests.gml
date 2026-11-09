@@ -718,7 +718,8 @@ function coop_test_handoff_step()
         coop_log("handoff: host gone at t=", _t);
     }
     var _k = _t - _c.h_gone_t;
-    if (_c.slot == 2 && _k >= 180 && _k <= 600 && _k mod 12 == 0)
+    // slot 2 shoots NPCs (humans first, any NPC if no human is around) until a kill is credited
+    if (_c.slot == 2 && _k >= 180 && _k <= 1200 && _k mod 12 == 0 && _c.my_stats.kills < 1)
     {
         if (!variable_struct_exists(_c, "h_tg") || !instance_exists(_c.h_tg) || _c.h_tg.hp <= 0)
         {
@@ -727,9 +728,9 @@ function coop_test_handoff_step()
             var _bd = infinity;
             with (obj_npc_parent)
             {
-                if (coop_npc_is_replica() && hp > 0 && object_is_ancestor(object_index, obj_npc_human_parent))
+                if (coop_npc_is_replica() && hp > 0)
                 {
-                    var _d = point_distance(x, y, obj_player.x, obj_player.y);
+                    var _d = point_distance(x, y, obj_player.x, obj_player.y) + (object_is_ancestor(object_index, obj_npc_human_parent) ? 0 : 100000);
                     if (_d < _bd) { _bd = _d; _best = id; }
                 }
             }
@@ -749,8 +750,9 @@ function coop_test_handoff_step()
             }
         }
     }
-    if (_k == 720)
+    if ((_k >= 720 && (_c.slot != 2 || _c.my_stats.kills >= 1) && !variable_struct_exists(_c, "h_done")) || (_k == 1260 && !variable_struct_exists(_c, "h_done")))
     {
+        _c.h_done = true;
         coop_log("handoff: done");
     }
 }
