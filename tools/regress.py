@@ -220,7 +220,8 @@ SCENARIOS = [
       need_identical=False, timeout=240, minutes=4, players=1),
     S("fps", "-coop_autoraid 1 -coop_scenario fps", "-coop_scenario fps -coop_fps 60",
       done=[("A", r"fpstest(.|\n)*fpstest"), ("B", r"fpstest(.|\n)*fpstest")],
-      checks=[], custom=fps_ok),
+      checks=[("B", r"weather synced from host \(hour \d+, raid=1", 1),  # raid weather follows the owner (2026-11-09)
+              ], custom=fps_ok),
     S("anim", "-coop_autoraid 1 -coop_scenario anim", "-coop_scenario anim",
       done=[("A", r"torch att_1 have=1 on=1")],
       checks=[("A", r"arms=s_arms_med_bandage", 1), ("A", r"arms=s_arms_eat", 1),

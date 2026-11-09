@@ -137,7 +137,7 @@ function coop_on_room_start()
     coop_log("room start: ", room_get_name(room));
     coop_apply_test_window();
     coop_npc_reset_room();
-    _c.weather_json_in = ""; // a new room loads its own weather: take the next bunker resend
+    _c.weather_json_in = ""; // a new room loads its own weather: take the next resend
     coop_puppets_prune(); // characters carried over from the hub lobby, if any
     if (room == room1)
     {

@@ -35,8 +35,10 @@ function coop_world_step()
     }
     if (variable_global_exists("weather") && is_struct(global.weather))
     {
-        // in the bunker also every 5 s: a guest who just came back from a raid gets it (applied only when changed)
-        if (!variable_struct_exists(_c, "weather_hour_sent") || _c.weather_hour_sent != global.weather.last_generated_hour || (_hub && _c.frame mod 300 == 150))
+        // also every 5 s (applied only when changed): a guest who just came back from a raid gets the bunker weather,
+        // and in a raid a guest who dropped the map-ready send (it came before the guest knew the raid owner, live
+        // report 2026-11-09: fog for the guest, sun for the host until the next game hour) gets it a moment later
+        if (!variable_struct_exists(_c, "weather_hour_sent") || _c.weather_hour_sent != global.weather.last_generated_hour || _c.frame mod 300 == 150)
         {
             _c.weather_hour_sent = global.weather.last_generated_hour;
             coop_world_send_weather();
@@ -97,9 +99,9 @@ function coop_world_on_weather(_b)
         exit;
     }
     var _c = coop();
-    if (coop_world_hub_slave() && variable_struct_exists(_c, "weather_json_in") && _c.weather_json_in == _json)
+    if (variable_struct_exists(_c, "weather_json_in") && _c.weather_json_in == _json)
     {
-        exit; // the bunker resend of a weather we already show
+        exit; // the periodic resend of a weather we already show
     }
     _c.weather_json_in = _json;
     global.weather = json_parse(_json);
@@ -109,7 +111,7 @@ function coop_world_on_weather(_b)
         weather_transition(pp_transition, false);
         weather_assign_wind_values();
     }
-    coop_log("weather synced from host (hour ", global.weather.last_generated_hour, ")");
+    coop_log("weather synced from host (hour ", global.weather.last_generated_hour, ", raid=", is_in_raid() ? 1 : 0, ", now ", weather_get_weather_now(), ")");
 }
 
 // Hook: top of obj_meteo_controller Alarm_1 (an emission stage starts/advances).
