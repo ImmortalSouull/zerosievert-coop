@@ -2036,7 +2036,8 @@ function coop_test_extract_step()
     var _ex = undefined;
     var _ey = undefined;
     with (obj_extraction_point) { if (_ex == undefined) { _ex = x; _ey = y; } }
-    if (_c.role == "guest" && _t >= 150 && _t <= 500 && _t mod 12 == 0)
+    // the guest shoots NPCs until one kill is credited (under lag the replicas may come in late), then goes to the point
+    if (_c.role == "guest" && _t >= 150 && _t mod 12 == 0 && _c.my_stats.kills < 1 && !(variable_struct_exists(_c, "xt_seen") && _t >= _c.xt_seen + 300))
     {
         if (!variable_struct_exists(_c, "x_tg") || !instance_exists(_c.x_tg) || _c.x_tg.hp <= 1)
         {
