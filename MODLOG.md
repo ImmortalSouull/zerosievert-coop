@@ -516,3 +516,15 @@ Branch dev-2.0.0; built and tested locally, the user publishes it. Every feature
     free slots). Unknown ITEMS are fine: saveslot_reload -> loot_array_update_to_zs32 deletes items missing from
     item_data in the inventory and every stash chest (so the radio just disappears without the mod); difficulty
     load reads known keys only; quest_line_progress is only looked up by id.
+  * Host migration: the new host's owner_last was -1 (it reconnected as host), so coop_owner_step never ran
+    coop_npc_take_over -> npc_next_nid stayed at 1 and new NPCs reused known ids (the others kept an old NPC under
+    that id: a rabbit 3700 px off). Now take_over also runs when we become the owner with known NPCs. The event
+    survivor stays a replica in coop_npc_guest_release too.
+  * Drag / revive pings (6 a second, reliable) counted for 400 ms: one lost packet resent after ~0.4 s made a
+    dragged player bleed at full speed (27/60 ticks instead of ~20 under -coop_netsim 120,3,40).
+    COOP_REVIVE_PING_MS 800; REVIVE arg 2 (stop / cancelled) now ends it on the downed side at once.
+  * Test lessons of the night (1..8 players, normal + bad network, soaks 4/8 players and bad net, 0 errors):
+    give / trade aim at the scenario's partner (sim_give_to / sim_trade_to), a bystander may stand closer; arena:
+    a host spawned at the range's left wall had the guest shooting into the wall; lobby hosts quit after 40 s
+    (7 windows: the guest's visit took longer); extract / handoff shoot until a kill is credited, any NPC if no
+    human is near (map-dependent).
