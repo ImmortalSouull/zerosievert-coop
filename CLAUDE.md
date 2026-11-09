@@ -5,10 +5,9 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 
 ## Read first
 - `MODLOG.md` — full journal: every engine fact, gotcha, decision and test result. Read it before changing code.
-- Published release: **v1.2.0** (protocol `COOP_VERSION 8`, published 2026-11-07). Branch `dev-2.0.0` holds
-  **v2.0.0** (up to 8 players, host migration, voice + radio, trade, chat/wheel, events, arena...; protocol
-  `COOP_VERSION 9`, all players must match; MODLOG "v2.0.0"). 2.0.0 is built locally: NEVER publish it yourself -
-  the user releases it.
+- Published release: **v2.0.0** (up to 8 players, host migration, voice + radio, trade, chat/wheel, events, arena...;
+  protocol `COOP_VERSION 9`, all players must match; MODLOG "v2.0.0"), published 2026-11-09 on the user's order
+  (main = dev-2.0.0). Previous: v1.2.0 (protocol 8). Ask the user before publishing any later version.
   `COOP_MOD_VERSION` in coop_update.gml must equal the release version (update check compares GitHub tags).
 
 ## Layout
