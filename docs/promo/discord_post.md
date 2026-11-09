@@ -1,19 +1,10 @@
-**ZERO Sievert CO-OP v2.0.0 — raids together, up to 8 players** 🎮
+hey everyone, I've been working on a co-op mod for ZERO Sievert and just put out 2.0
 
-A co-op mod for ZERO Sievert: you and your friends go into the same raid — one map, the same enemies and loot, you see each other. Instead of dying you go down and a teammate picks you up.
+you and your friends go into the same raid, same map, same enemies and loot. if you get dropped you go down instead of dying and your buddy can pick you up
 
-**New in 2.0.0:**
-• up to **8 players** in one session
-• **voice chat** + a **radio** item (talk at any distance)
-• **arena** (PvP) in the bunker's shooting range
-• **trading** between players, look at a teammate's gear
-• the session survives the host leaving
-• crawling & dragging downed teammates, group extraction, raid summary
-• text chat, command wheel, group panel, raid events, shared quests
-• translated into every language of the game
+new in 2.0: up to 8 players, voice chat (plus a radio so you can talk across the map), trading, a little PvP arena in the bunker shooting range, and the raid keeps going if the host leaves
 
-Steam invite or direct IP · every player needs the mod · game 1.4.13 (Steam)
+it's free, every player needs the mod. works with the Steam version (1.4.13)
+<https://github.com/ImmortalSouull/zerosievert-coop/releases/latest>
 
-⬇️ Download: <https://github.com/ImmortalSouull/zerosievert-coop/releases/latest>
-
-🇷🇺 Кооп-мод для ZERO Sievert: рейды вместе, до 8 игроков, голосовой чат и рация, арена, обмен, переживает уход хоста. Скачать — по ссылке выше.
+if you try it and something breaks let me know 🙂
