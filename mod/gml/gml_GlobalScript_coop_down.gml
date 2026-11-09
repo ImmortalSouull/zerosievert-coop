@@ -13,6 +13,8 @@
 
 #macro COOP_DOWN_REVIVE_RANGE 30
 #macro COOP_DRAG_RANGE 90
+// a revive / drag ping older than this has stopped (pings go 6 times a second; a lost one is resent after ~0.4 s)
+#macro COOP_REVIVE_PING_MS 800
 // REVIVE message args: 0 revive ping (value = mode), 1 revived (value = hp), 2 reviver stopped, 3 drag-only ping,
 // 4 the downed player moved (cancels a revive on the spot)
 #macro COOP_REVIVE_MODE_STILL 0
@@ -224,6 +226,12 @@ function coop_down_on_message(_type, _b)
                     _d.drag_mode = COOP_REVIVE_MODE_DRAG;
                 }
             }
+            else if (_arg == 2)
+            {
+                // the reviver let go / stopped: no waiting for the ping to run out
+                if (_from == _d.ping_slot) _d.ping_time = -10000;
+                if (_from == _d.drag_slot) _d.drag_time = -10000;
+            }
             else if (_arg == 3)
             {
                 _d.drag_time = current_time;
@@ -239,6 +247,7 @@ function coop_down_on_message(_type, _b)
                     _rr.active = false;
                     _rr.t = 0;
                     coop_log("revive cancelled: slot ", _from, " moved");
+                    coop_down_send(COOP_MSG_REVIVE, 2, _from); // they stop waiting at once
                     coop_notify(coop_tf("{0} moved - revive cancelled", "{0} пошевелился - поднятие прервано", _who));
                 }
             }
@@ -289,9 +298,9 @@ function coop_down_step()
             _d.active = false;
             exit;
         }
-        var _dragged_only = current_time - _d.drag_time < 400 && _d.drag_mode == COOP_REVIVE_MODE_DRAGONLY;
+        var _dragged_only = current_time - _d.drag_time < COOP_REVIVE_PING_MS && _d.drag_mode == COOP_REVIVE_MODE_DRAGONLY;
         _d.bleed_tick++;
-        var _bleed = (current_time - _d.ping_time > 400) && (!_dragged_only || _d.bleed_tick mod 3 == 0);
+        var _bleed = (current_time - _d.ping_time > COOP_REVIVE_PING_MS) && (!_dragged_only || _d.bleed_tick mod 3 == 0);
         if (!instance_exists(obj_player))
         {
             // paused (player deactivated): keep bleeding out, resolve after unpause
@@ -328,8 +337,8 @@ function coop_down_end_step()
     var _d = coop_down();
     if (instance_exists(obj_player))
     {
-        var _dragger = (current_time - _d.drag_time < 400) ? coop_puppet_of(_d.drag_slot) : -4;
-        var _still_revive = current_time - _d.ping_time < 400 && !instance_exists(_dragger);
+        var _dragger = (current_time - _d.drag_time < COOP_REVIVE_PING_MS) ? coop_puppet_of(_d.drag_slot) : -4;
+        var _still_revive = current_time - _d.ping_time < COOP_REVIVE_PING_MS && !instance_exists(_dragger);
         with (obj_player)
         {
             if (_d.active)
@@ -590,8 +599,8 @@ function coop_down_draw_gui()
     {
         coop_ui_rect(0, 0, _W, _H, c_maroon, 0.15);
         var _sec = ceil(_d.timer / 60);
-        var _being = current_time - _d.ping_time < 400;
-        var _dragged = current_time - _d.drag_time < 400;
+        var _being = current_time - _d.ping_time < COOP_REVIVE_PING_MS;
+        var _dragged = current_time - _d.drag_time < COOP_REVIVE_PING_MS;
         var _line = _dragged ? (_being ? coop_t("You are dragged and revived...", "Вас тащат и поднимают...") : coop_t("You are dragged to safety (bleeding slower)", "Вас оттаскивают (кровь идёт медленнее)"))
             : (_being ? coop_t("You are being revived - don't move", "Вас поднимают - не двигайтесь") : coop_t("Wait for help - you can crawl", "Ждите помощи - можно ползти"));
         if (_d.count == 1 && !_being)
