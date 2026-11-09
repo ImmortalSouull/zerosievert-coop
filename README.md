@@ -9,7 +9,7 @@ IP, a shared world, getting downed and reviving teammates, extended difficulty s
 > (CABO Studio / Modern Wolf). No game files are stored or distributed here: a release contains a patch and
 > an installer that are applied to your own copy of the game.
 
-**Current version: v2.0.0** — download it from [Releases](../../releases). Notes for every version (what's
+**Current version: v2.0.1** — download it from [Releases](../../releases). Notes for every version (what's
 new, fixes, known bugs) are in [docs/releases](docs/releases).
 
 ## Features
@@ -44,7 +44,7 @@ new, fixes, known bugs) are in [docs/releases](docs/releases).
 - Co-op interface in the game's style; gamepad support in the co-op menu and when reviving; mod update check.
 
 ## Installation
-1. ZERO Sievert 1.4.13 (Steam build 26317366) is required. Close the game.
+1. ZERO Sievert 1.4.13 (Steam build 26535665) is required. Close the game.
 2. Download `ZS-Coop-v<version>.zip` from the latest [release](../../releases/latest), unpack it and run
    `install.bat` — it finds the game by itself, makes a backup and patches your own copy of the game.
 3. Uninstall: `uninstall.bat` or Steam → "Verify integrity of game files".

@@ -14,7 +14,7 @@ English version: see the ENGLISH section below.  Wersja polska: sekcja POLSKI na
    Установщик сам найдёт игру, сделает резервную копию (папка coop_backup в папке игры)
    и применит патч к ВАШИМ файлам игры. Файлы игры в архиве не распространяются.
 3. Удаление: uninstall.bat (или Steam > Свойства > Проверить целостность файлов).
-Мод собран под ZERO Sievert 1.4.13 (Steam build 26317366). После обновления игры
+Мод собран под ZERO Sievert 1.4.13 (Steam build 26535665). После обновления игры
 установщик откажется работать, пока не выйдет новая версия мода (мод сам сообщит о ней в меню).
 
 КАК ИГРАТЬ
@@ -127,7 +127,7 @@ INSTALLATION (every player)
    The installer finds the game, makes a backup (coop_backup folder in the game folder) and patches
    YOUR game files. No game files are distributed in the archive.
 3. Uninstall: uninstall.bat (or Steam > Properties > Verify integrity of game files).
-Built for ZERO Sievert 1.4.13 (Steam build 26317366). After a game update the installer refuses to
+Built for ZERO Sievert 1.4.13 (Steam build 26535665). After a game update the installer refuses to
 work until a new mod version is out (the mod tells you about it in the menu).
 
 HOW TO PLAY
@@ -242,7 +242,7 @@ INSTALACJA (każdy gracz)
    Instalator sam znajdzie grę, zrobi kopię zapasową (folder coop_backup w folderze gry)
    i nałoży łatkę na TWOJE pliki gry. Archiwum nie zawiera plików gry.
 3. Odinstalowanie: uninstall.bat (albo Steam > Właściwości > Zweryfikuj spójność plików gry).
-Mod jest zbudowany dla ZERO Sievert 1.4.13 (Steam build 26317366). Po aktualizacji gry instalator
+Mod jest zbudowany dla ZERO Sievert 1.4.13 (Steam build 26535665). Po aktualizacji gry instalator
 odmówi działania, dopóki nie wyjdzie nowa wersja moda (mod sam poinformuje o niej w menu).
 
 JAK GRAĆ

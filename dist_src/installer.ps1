@@ -107,6 +107,13 @@ if (-not (Test-Path $backup) -and $h -eq $cfg.vanilla_sha256) {
     }
 }
 
+# A game update replaced data.win after an older install: the backup still holds the old game build, and
+# uninstall would bring it back. The game's file is the clean new one now: keep that.
+$bdata = Join-Path $backup "data.win"
+if ($h -eq $cfg.vanilla_sha256 -and (Test-Path $bdata) -and (Sha $bdata) -ne $cfg.vanilla_sha256) {
+    Copy-Item $data $bdata -Force
+}
+
 # 1. data.win
 if ($h -eq $cfg.vanilla_sha256) {
     $new = "$data.coop_new"

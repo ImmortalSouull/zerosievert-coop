@@ -11,7 +11,7 @@ przez Steam lub przez IP, wspólny świat, powalenie i podnoszenie towarzyszy, r
 >
 > Tłumaczenie przygotowane przy pomocy AI — jeśli coś brzmi dziwnie, daj znać.
 
-**Aktualna wersja: v2.0.0** — do pobrania w sekcji [Releases](../../releases). Opisy wszystkich wersji
+**Aktualna wersja: v2.0.1** — do pobrania w sekcji [Releases](../../releases). Opisy wszystkich wersji
 (nowości, poprawki, znane błędy) są w [docs/releases](docs/releases).
 
 ## Możliwości
@@ -51,7 +51,7 @@ przez Steam lub przez IP, wspólny świat, powalenie i podnoszenie towarzyszy, r
   aktualizacji moda.
 
 ## Instalacja
-1. Wymagane ZERO Sievert 1.4.13 (Steam build 26317366). Zamknij grę.
+1. Wymagane ZERO Sievert 1.4.13 (Steam build 26535665). Zamknij grę.
 2. Pobierz `ZS-Coop-v<wersja>.zip` z najnowszego [wydania](../../releases/latest), rozpakuj i uruchom
    `install.bat` — sam znajdzie grę, zrobi kopię zapasową i nałoży łatkę na Twoją kopię gry.
 3. Odinstalowanie: `uninstall.bat` lub Steam → „Zweryfikuj spójność plików gry”.

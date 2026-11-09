@@ -5,7 +5,7 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 
 ## Read first
 - `MODLOG.md` — full journal: every engine fact, gotcha, decision and test result. Read it before changing code.
-- Published release: **v2.0.0** (up to 8 players, host migration, voice + radio, trade, chat/wheel, events, arena...;
+- Published release: **v2.0.1** (2026-11-09: v2.0.0 rebuilt for the game hotfix, Steam build 26535665, + raid weather resend; v2.0.0 = up to 8 players, host migration, voice + radio, trade, chat/wheel, events, arena...;
   protocol `COOP_VERSION 9`, all players must match; MODLOG "v2.0.0"), published 2026-11-09 on the user's order
   (main = dev-2.0.0). Previous: v1.2.0 (protocol 8). Ask the user before publishing any later version.
   `COOP_MOD_VERSION` in coop_update.gml must equal the release version (update check compares GitHub tags).
@@ -27,7 +27,7 @@ you to send Steam invites to him for live tests — that is allowed. No Steam pl
 - Outside the repo (never commit game data): `zerosievert-coop-work\` NEXT TO the repo (now
   `C:\Users\PC\zerosievert-coop-work\`; repo `C:\Users\PC\zerosievert-coop`, new PC since 2026-11-05).
   No script hardcodes a user folder: `tools/env.sh` derives ROOT/WORK/G (game dir, override ZS_GAME_DIR)/CLI.
-  - `vanilla/data.win` pristine copy (game 1.4.13, Steam build 26317366, sha256 96c3df3a...),
+  - `vanilla/data.win` pristine copy (game 1.4.13 hotfix, Steam build 26535665, sha256 95252ac0...; the old build is kept as vanilla/data_1.4.13_26317366.win),
     `decomp/CodeEntries/` decompiled game GML
   - `tools/utmt_cli/` UndertaleModCli 0.9.2.0, `tools/xdelta/`, `build/`, `dist/`, `caps/` (videos)
 - Game: `C:\Program Files (x86)\Steam\steamapps\common\ZERO Sievert` (GameMaker, VM, data.win).
