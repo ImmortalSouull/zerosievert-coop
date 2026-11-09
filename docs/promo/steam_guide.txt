@@ -3,14 +3,25 @@
 Title:       ZERO Sievert CO-OP mod - play raids with friends (up to 8 players) / Кооп-мод
 Description: How to install and use the free co-op mod for ZERO Sievert: shared raids for up to 8 players, voice chat, revives, trading. EN + RU.
 Category:    Modding (or "Multiplayer"), languages: English, Russian
-Image:       any screenshot of two players in a raid (a frame from the showcase video works)
+Image:       04_raid_together.jpg (guide icon / cover)
 
 Steam guides use BBCode. Make two sections: "English" and "Русский", paste each block below into its section.
+
+SCREENSHOTS (folder docs/promo/steam_guide/): first upload all six images in the guide editor ("Images" on the
+right side). Every line like  >>> IMAGE: 02_coop_panel.jpg  marks the place of a picture: delete that line, put
+the text cursor there and click the uploaded image -> "Add to guide" (Steam inserts its own [previewimg] tag).
+  01_pause_menu.jpg    - the "Co-op" button in the menu and the [F7] hint
+  02_coop_panel.jpg    - the co-op panel (Host via Steam / by IP / open games...)
+  03_train_zone.jpg    - the zone at the train with the countdown
+  04_raid_together.jpg - two players in one raid
+  05_revive.jpg        - a downed teammate, "[E] Revive"
+  06_extraction.jpg    - group extraction countdown
 
 === SECTION 1: English ===
 
 [h1]What is it[/h1]
 A free fan-made co-op mod for ZERO Sievert. You and your friends go into the same raid: one map, the same enemies, the same loot, and you see each other. When you take lethal damage you go down instead of dying, and a teammate can revive you.
+>>> IMAGE: 04_raid_together.jpg
 
 This is not an official mod and it is not on the Workshop: the Workshop doesn't support networking, so the mod patches the game with its own installer.
 
@@ -43,7 +54,7 @@ This is not an official mod and it is not on the Workshop: the Workshop doesn't 
 [h2]Installation[/h2]
 [olist]
 [*]Close the game.
-[*]Download the archive ZS-Coop-v2.0.0.zip and unpack it anywhere.
+[*]Download the archive ZS-Coop-v2.0.1.zip and unpack it anywhere.
 [*]Run [b]install.bat[/b]. It finds the game by itself, makes a backup of the original files and patches your copy. A newer version installs over an older one the same way.
 [*]Start the game as usual from Steam.
 [/olist]
@@ -51,11 +62,24 @@ This is not an official mod and it is not on the Workshop: the Workshop doesn't 
 [h2]How to play together[/h2]
 [olist]
 [*]Main menu or pause menu - [b]Co-op[/b] (or press [b]F7[/b]).
+>>> IMAGE: 01_pause_menu.jpg
+
 [*]The host presses [b]Host via Steam[/b] - the Steam overlay opens - invite up to 7 friends. Friends accept the invite or use "Join game" on the host in the Steam friends list.
+>>> IMAGE: 02_coop_panel.jpg
+
 [*]Fallback: [b]Host by IP[/b] (UDP port 47777) and [b]Join by IP[/b] for the friends (Radmin VPN / ZeroTier / port forwarding).
 [*]Everyone loads their own save. When the host takes the train, a zone with a countdown appears: whoever stands in it goes to the same map. The others can join the raid later.
+>>> IMAGE: 03_train_zone.jpg
+
 [/olist]
 Your saves are backed up before every co-op session (F7 - Save backups...).
+
+[h2]In the raid[/h2]
+When a teammate goes down, a message tells you: walk up to them and press [b]E[/b] to revive (faster with a bandage or a medkit). A downed player can crawl, and you can drag them to cover.
+>>> IMAGE: 05_revive.jpg
+At an exit the countdown waits for the whole group: stand in the zone together and you leave together. After the raid everybody sees a summary (kills, damage, revives, loot).
+>>> IMAGE: 06_extraction.jpg
+Useful keys: [b]C[/b] voice, [b]Enter[/b] chat, hold [b]Z[/b] command wheel, [b]U[/b] trade, [b]I[/b] teammate's gear, [b]F7[/b] co-op panel.
 
 [h2]Uninstall[/h2]
 Run [b]uninstall.bat[/b] from the mod folder, or in Steam: ZERO Sievert - Properties - Installed files - [b]Verify integrity of game files[/b].
@@ -68,6 +92,7 @@ F7 - [b]Collect logs for a bug report[/b], then open an issue on GitHub or write
 
 [h1]Что это[/h1]
 Бесплатный фанатский кооп-мод для ZERO Sievert. Вы с друзьями идёте в один и тот же рейд: одна карта, общие враги и лут, вы видите друг друга. От смертельного урона вы не умираете сразу, а падаете раненым — напарник может вас поднять.
+>>> IMAGE: 04_raid_together.jpg
 
 Мод неофициальный и в Мастерской его нет: Мастерская не поддерживает сетевую игру, поэтому мод ставится своим установщиком.
 
@@ -100,7 +125,7 @@ F7 - [b]Collect logs for a bug report[/b], then open an issue on GitHub or write
 [h2]Установка[/h2]
 [olist]
 [*]Закройте игру.
-[*]Скачайте архив ZS-Coop-v2.0.0.zip и распакуйте куда угодно.
+[*]Скачайте архив ZS-Coop-v2.0.1.zip и распакуйте куда угодно.
 [*]Запустите [b]install.bat[/b]. Он сам найдёт игру, сохранит копию оригинальных файлов и пропатчит игру. Новая версия ставится поверх старой так же.
 [*]Запускайте игру как обычно через Steam.
 [/olist]
@@ -108,11 +133,24 @@ F7 - [b]Collect logs for a bug report[/b], then open an issue on GitHub or write
 [h2]Как играть вместе[/h2]
 [olist]
 [*]Главное меню или меню паузы — [b]Кооператив[/b] (или клавиша [b]F7[/b]).
+>>> IMAGE: 01_pause_menu.jpg
+
 [*]Хост жмёт [b]Создать игру в Steam[/b] — откроется оверлей Steam — пригласите до 7 друзей. Друзья принимают приглашение или жмут «Присоединиться к игре» у хоста в списке друзей.
+>>> IMAGE: 02_coop_panel.jpg
+
 [*]Запасной вариант: [b]Создать игру по IP[/b] (UDP-порт 47777) и [b]Подключиться по IP[/b] у друзей (Radmin VPN / ZeroTier / проброс порта).
 [*]Каждый загружает своё сохранение. Когда хост садится на поезд, появляется зона с отсчётом: кто в ней стоит, едет на ту же карту. Остальные могут присоединиться к рейду позже.
+>>> IMAGE: 03_train_zone.jpg
+
 [/olist]
 Перед каждой кооп-сессией сохранения копируются (F7 — Резервные копии сохранений...).
+
+[h2]В рейде[/h2]
+Когда напарник падает, появляется сообщение: подойдите к нему и нажмите [b]E[/b], чтобы поднять (с бинтом или аптечкой быстрее). Раненый может ползти, а вы можете утащить его в укрытие.
+>>> IMAGE: 05_revive.jpg
+На выходе отсчёт ждёт всю группу: встаньте в зону вместе — и уйдёте вместе. После рейда всем показываются итоги (убийства, урон, поднятия, лут).
+>>> IMAGE: 06_extraction.jpg
+Полезные клавиши: [b]C[/b] голос, [b]Enter[/b] чат, зажать [b]Z[/b] колесо команд, [b]U[/b] обмен, [b]I[/b] снаряжение напарника, [b]F7[/b] панель коопа.
 
 [h2]Удаление[/h2]
 Запустите [b]uninstall.bat[/b] из папки мода или в Steam: ZERO Sievert — Свойства — Установленные файлы — [b]Проверить целостность файлов игры[/b].

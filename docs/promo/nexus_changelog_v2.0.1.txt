@@ -1,0 +1,4 @@
+Version 2.0.1
+- Works with the game hotfix of 9 November (the Steam update removed the mod and the 2.0.0 installer refused the new game build)
+- Fixed: a guest could see different weather than the host in a raid
+- Installer: after a game update, uninstall no longer brings back the old game file
