@@ -945,7 +945,8 @@ function coop_test_lobby_step(_t)
     }
     if (_c.role != "guest")
     {
-        if (_t == 1200) game_end();
+        // the host stays 40 s: with 7-8 windows a guest's bunker comes up 10+ s later than the host's
+        if (_t == 2400) game_end();
         exit;
     }
     var _host = coop_peer(0);
