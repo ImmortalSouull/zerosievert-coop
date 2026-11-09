@@ -2042,20 +2042,32 @@ function coop_test_extract_step()
     // the guest shoots NPCs until one kill is credited (under lag the replicas may come in late), then goes to the point
     if (_c.role == "guest" && _t >= 150 && _t mod 12 == 0 && _c.my_stats.kills < 1 && !(variable_struct_exists(_c, "xt_seen") && _t >= _c.xt_seen + 300))
     {
+        // a new target when the old one is dead, or took 10 shots without losing health (one that can't be hurt)
+        if (variable_struct_exists(_c, "x_tg") && instance_exists(_c.x_tg))
+        {
+            if (!variable_struct_exists(_c, "x_hp") || _c.x_tg.hp < _c.x_hp) { _c.x_hp = _c.x_tg.hp; _c.x_n = 0; }
+            _c.x_n = (variable_struct_exists(_c, "x_n") ? _c.x_n : 0) + 1;
+            if (_c.x_n > 10) { if (!variable_struct_exists(_c, "x_skip")) _c.x_skip = []; array_push(_c.x_skip, _c.x_tg); _c.x_tg = -4; }
+        }
         if (!variable_struct_exists(_c, "x_tg") || !instance_exists(_c.x_tg) || _c.x_tg.hp <= 1)
         {
             instance_activate_object(obj_npc_parent);
             var _best = -4;
             var _bd = infinity;
+            var _skip = variable_struct_exists(_c, "x_skip") ? _c.x_skip : [];
             with (obj_npc_parent)
             {
-                if (coop_npc_is_replica() && hp > 1 && object_is_ancestor(object_index, obj_npc_human_parent))
+                if (coop_npc_is_replica() && hp > 1 && object_is_ancestor(object_index, obj_npc_human_parent) && !array_contains(_skip, id)
+                    && !(variable_instance_exists(id, "can_be_damaged") && !can_be_damaged))
                 {
                     var _d = point_distance(x, y, obj_player.x, obj_player.y);
                     if (_d < _bd) { _bd = _d; _best = id; }
                 }
             }
             _c.x_tg = _best;
+            _c.x_n = 0;
+            if (instance_exists(_best)) _c.x_hp = _best.hp;
+            if (instance_exists(_best)) coop_log("extract test: target ", object_get_name(_best.object_index), " faction ", variable_instance_exists(_best, "faction") ? _best.faction : "?", " hp ", _best.hp);
         }
         var _tg = _c.x_tg;
         if (instance_exists(_tg))
