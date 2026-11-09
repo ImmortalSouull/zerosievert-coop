@@ -147,6 +147,9 @@ function coop_parse_params()
             case "-coop_quiet":
                 _c.overlay = false;
                 break;
+            case "-coop_hour":
+                _c.force_hour = real(_v); // test / showcase: the host's clock is set to this hour in every room
+                break;
             case "-coop_trace":
                 global.coop_trace = true;
                 break;

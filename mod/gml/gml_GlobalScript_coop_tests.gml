@@ -4,6 +4,15 @@
 function coop_test_ext_step()
 {
     var _c = coop();
+    // -coop_hour H (showcase takes in daylight): every window sets its clock once per room
+    if (variable_struct_exists(_c, "force_hour") && instance_exists(obj_light_controller)
+        && (!variable_struct_exists(_c, "force_hour_room") || _c.force_hour_room != room))
+    {
+        _c.force_hour_room = room;
+        var _gt = obj_light_controller.game_time_played;
+        obj_light_controller.game_time_played = date_create_datetime(date_get_year(_gt), date_get_month(_gt), date_get_day(_gt), _c.force_hour, 0, 0);
+        coop_log("clock set to ", _c.force_hour, ":00");
+    }
     if (!_c.test_mode)
     {
         exit;

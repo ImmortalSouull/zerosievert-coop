@@ -1,0 +1,84 @@
+=== NEXUS MODS: FIELDS ===
+
+Mod name:      ZERO Sievert CO-OP
+Version:       2.0.0
+Category:      Gameplay (or Multiplayer, if available)
+File to upload: ZS-Coop-v2.0.0.zip (main file, "Main files")
+File description (for the file entry):
+  v2.0.0 - up to 8 players, voice chat + radio, trading, arena, host migration and more. Unpack anywhere, run install.bat. Requires ZERO Sievert 1.4.13 (Steam).
+
+Brief overview (the short "summary" field, under 350 characters):
+  Play ZERO Sievert raids together with up to 8 friends: one shared map, shared enemies and loot, downs and revives, voice chat with a radio, trading, group extraction, raid events and an arena in the bunker. Steam invites or direct IP. Every player needs the mod.
+
+Tags: Multiplayer, Co-op, Gameplay, Overhaul
+
+=== NEXUS MODS: DESCRIPTION (BBCode - paste into the description editor in BBCode mode) ===
+
+[center][size=6][b]ZERO Sievert CO-OP[/b][/size]
+[size=4]Raids together - [b]up to 8 players[/b][/size]
+[size=3]Version 2.0.0 · for ZERO Sievert 1.4.13 (Steam)[/size][/center]
+
+[size=4][b]What is it[/b][/size]
+A co-op mod for ZERO Sievert. You and your friends go into the same raid: one map, the same enemies, the same loot, you see and hear each other. Instead of dying you go down, and a teammate can pick you up. Invite friends through Steam or connect by IP. Every player needs the mod (same version).
+
+[size=4][b]New in 2.0.0[/b][/size]
+[list]
+[*][b]Up to 8 players[/b] in one session (was 4).
+[*][b]Voice chat[/b] (hold C or open mic): quieter with distance, silent far away.
+[*][b]Radio[/b] - a new item sold by the barman (Loners reputation 400) or crafted in the workshop. With the radio in hand you talk on its channel at any distance.
+[*][b]Arena in the bunker[/b]: PvP in the shooting range with your own gear or a preset weapon. Nothing is lost, a scoreboard at the end.
+[*][b]Trading[/b] between players (U), and a look at a teammate's gear (I).
+[*][b]The session survives the host leaving[/b]: another player takes over, the raid goes on. Rejoin after a crash.
+[*][b]Crawling and dragging[/b]: a downed player crawls; a teammate can drag them to cover and revive them there.
+[*][b]Group extraction[/b] with a countdown, and a [b]raid summary[/b] (kills, damage, value, revives).
+[*][b]Spectating[/b] your teammates after the final death.
+[*][b]Text chat[/b] (Enter) and a [b]command wheel[/b] (hold Z): "Follow me", "Enemy spotted", "Need ammo"...
+[*][b]Group panel[/b]: teammates' HP, distance, weapon and current action.
+[*][b]Raid events[/b]: a call for help on the map - hold out against waves, clear an area or take down a commander.
+[*][b]Shared quest progress[/b] (rewards split by the work) and [b]group tasks at the barman[/b].
+[*][b]Personal loot[/b] option, [b]friendly fire[/b] setting, difficulty that grows with the group.
+[*]A fallen teammate's things go back to them after you extract.
+[*][b]Lobby management[/b] (kick, friends only / invite only / public) and a list of open games.
+[*][b]Save backups[/b] before every co-op session, one-click updates, a "Collect logs" button, streamer mode.
+[*]Every new text is translated into all languages of the game.
+[/list]
+
+[size=4][b]Features since 1.x[/b][/size]
+[list]
+[*]Shared raids: the same map, enemies, containers, bodies and loot for everybody.
+[*]Downs and revives: lethal damage puts you down; a teammate revives you with nothing, a bandage or a medkit.
+[*]Join a raid that is already running (the train), hub lobby and visits to a friend's bunker.
+[*]Ping marks, teammates on the PDA map, name tags.
+[*]Co-op settings in the game's difficulty menu.
+[*]High refresh rate monitors supported.
+[/list]
+
+[size=4][b]Installation[/b][/size]
+[list=1]
+[*]Close the game. ZERO Sievert [b]1.4.13[/b] (Steam) is required.
+[*]Download the file, unpack it anywhere and run [b]install.bat[/b]. The installer finds the game, makes a backup and patches your copy of the game. It installs over an older version of the mod.
+[*]In the game: main menu - "Co-op" (or [b]F7[/b]). Host via Steam and invite your friends, or connect by IP (UDP port 47777).
+[*]Uninstall: [b]uninstall.bat[/b], or Steam - Properties - "Verify integrity of game files".
+[/list]
+Your saves are backed up before every co-op session (F7 - Save backups).
+
+[size=4][b]Known issues[/b][/size]
+[list]
+[*]Over Steam, more than 2 players at once, host migration and voice chat were checked by automated tests only. If something goes wrong, use "Collect logs" in F7 and send the folder.
+[*]The Epic Games Store version is not supported.
+[*]An enemy outside a guest's screen may open fire on the guest right away (this rule lives in a part of the game's code the mod can't change).
+[*]The radio exists only with the mod: without it the game removes the radio from your inventory (the save stays fine).
+[/list]
+
+[size=4][b]Links[/b][/size]
+Source code, full changelog and older versions: [url=https://github.com/ImmortalSouull/zerosievert-coop]github.com/ImmortalSouull/zerosievert-coop[/url]
+The mod's code is MIT licensed; the game itself is not included.
+
+[spoiler]
+[size=4][b]Русский[/b][/size]
+[b]ZERO Sievert CO-OP[/b] - кооператив для ZERO Sievert: рейды вместе с друзьями, [b]до 8 игроков[/b]. Одна карта, общие враги и лут, вместо смерти - ранение, напарник может поднять. Приглашение через Steam или подключение по IP. Мод нужен каждому игроку (одна версия).
+
+[b]Новое в 2.0.0:[/b] до 8 игроков; голосовой чат (C) и рация (продаёт бармен или делается в мастерской); арена в бункере; обмен (U) и просмотр снаряжения (I); сессия переживает уход хоста; ползание и перетаскивание раненого; групповая эвакуация и итоги рейда; наблюдение после смерти; чат (Enter) и колесо команд (Z); панель группы; события в рейде; общий прогресс заданий и групповые задания бармена; личный лут, огонь по своим, сложность от размера группы; вещи погибшего возвращаются владельцу; управление лобби и список открытых игр; резервные копии сохранений, обновление в один клик, режим стримера; переводы на все языки игры.
+
+[b]Установка:[/b] закройте игру (нужна версия 1.4.13 в Steam), распакуйте архив куда угодно и запустите [b]install.bat[/b]. В игре: главное меню - "Кооператив" (или F7). Удаление: uninstall.bat или проверка целостности файлов в Steam.
+[/spoiler]
