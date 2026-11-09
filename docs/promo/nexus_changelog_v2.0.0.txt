@@ -1,0 +1,16 @@
+Version 2.0.0
+- Up to 8 players in one session (was 4)
+- Voice chat (hold C or open mic) and a new Radio item: talk to your team on a channel at any distance
+- Arena in the bunker: PvP in the shooting range, nothing is lost
+- Trading between players (U) and a look at a teammate's gear (I)
+- The session survives the host leaving: another player takes over, the raid goes on; rejoin after a crash
+- Crawling and dragging a downed teammate
+- Group extraction countdown and a raid summary
+- Spectate your teammates after the final death
+- Text chat (Enter), command wheel (Z) and a group panel
+- Raid events, shared quest progress and group tasks at the barman
+- Personal loot option, friendly fire setting, difficulty that grows with the group
+- A fallen teammate's things go back to them after you extract
+- Lobby management, open games list, save backups, one-click update, streamer mode
+- Fixed: ghost enemies on a bad connection, lag for everyone when one player's game crashed, enemies killed off screen staying alive for others
+- All new texts translated into every language of the game
